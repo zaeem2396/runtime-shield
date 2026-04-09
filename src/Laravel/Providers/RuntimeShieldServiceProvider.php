@@ -10,11 +10,20 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Bindings added incrementally in follow-up commits.
+        $this->mergeConfigFrom(
+            __DIR__ . '/../../../config/runtime_shield.php',
+            'runtime_shield',
+        );
     }
 
     public function boot(): void
     {
-        // Publishing and commands added incrementally in follow-up commits.
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->publishes([
+            __DIR__ . '/../../../config/runtime_shield.php' => config_path('runtime_shield.php'),
+        ], 'runtime-shield-config');
     }
 }
