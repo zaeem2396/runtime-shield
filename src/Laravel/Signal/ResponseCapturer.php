@@ -24,7 +24,7 @@ final class ResponseCapturer implements ResponseCapturerContract
             statusText: Response::$statusTexts[$response->getStatusCode()] ?? '',
             headers: $this->normalizeHeaders($response),
             bodySize: strlen($content !== false ? $content : ''),
-            responseTimeMs: 0.0,
+            responseTimeMs: max(0.0, round((microtime(true) * 1000.0) - $startTimeMs, 2)),
             capturedAt: new DateTimeImmutable(),
         );
     }
