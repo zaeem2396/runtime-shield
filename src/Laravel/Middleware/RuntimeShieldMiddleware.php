@@ -37,8 +37,13 @@ final class RuntimeShieldMiddleware
             return $next($request);
         }
 
+        $this->startTimeMs = microtime(true) * 1000.0;
+        $this->engine->boot();
+        $this->store->storeRequest($this->requestCapturer->capture($request));
+
         return $next($request);
     }
 
     public function terminate(Request $request, Response $response): void {}
+
 }
