@@ -11,6 +11,7 @@ use RuntimeShield\Contracts\ShieldContract;
 use RuntimeShield\Core\ConfigRepository;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Engine\RuntimeShieldEngine;
+use RuntimeShield\Laravel\Console\InstallCommand;
 
 final class RuntimeShieldServiceProvider extends ServiceProvider
 {
@@ -53,5 +54,9 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../../../config/runtime_shield.php' => config_path('runtime_shield.php'),
         ], 'runtime-shield-config');
+
+        $this->commands([
+            InstallCommand::class,
+        ]);
     }
 }
