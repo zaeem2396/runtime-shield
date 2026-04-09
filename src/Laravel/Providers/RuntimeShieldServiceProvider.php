@@ -16,8 +16,13 @@ use RuntimeShield\Contracts\Signal\SignalStoreContract;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\Engine\RuntimeShieldEngine;
 use RuntimeShield\Laravel\Console\InstallCommand;
+use RuntimeShield\Contracts\Signal\AuthCollectorContract;
+use RuntimeShield\Contracts\Signal\RouteCollectorContract;
+use Illuminate\Contracts\Auth\Factory as AuthFactory;
+use RuntimeShield\Laravel\Signal\AuthSignalCollector;
 use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;
+use RuntimeShield\Laravel\Signal\RouteSignalCollector;
 
 final class RuntimeShieldServiceProvider extends ServiceProvider
 {
@@ -46,6 +51,12 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         $this->app->singleton(RequestCapturerContract::class, static fn (): RequestCapturer => new RequestCapturer());
 
         $this->app->singleton(ResponseCapturerContract::class, static fn (): ResponseCapturer => new ResponseCapturer());
+
+        $this->app->singleton(RouteCollectorContract::class, static fn (): RouteSignalCollector => new RouteSignalCollector());
+
+        $this->app->singleton(AuthCollectorContract::class, static fn ($app): AuthSignalCollector => new AuthSignalCollector(
+            $app->make(AuthFactory::class),
+        ));
 
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
