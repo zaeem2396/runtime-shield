@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\DTO\Signal;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\DTO\Signal\ResponseSignal;
@@ -14,15 +13,15 @@ final class ResponseSignalTest extends TestCase
     #[Test]
     public function it_creates_from_array_with_all_fields(): void
     {
-        $capturedAt = new DateTimeImmutable('2026-04-09 12:00:00');
+        $capturedAt = new \DateTimeImmutable('2026-04-09 12:00:00');
 
         $signal = ResponseSignal::fromArray([
-            'status_code'     => 201,
-            'status_text'     => 'Created',
-            'headers'         => ['content-type' => 'application/json'],
-            'body_size'       => 512,
+            'status_code' => 201,
+            'status_text' => 'Created',
+            'headers' => ['content-type' => 'application/json'],
+            'body_size' => 512,
             'response_time_ms' => 42.5,
-            'captured_at'     => $capturedAt,
+            'captured_at' => $capturedAt,
         ]);
 
         $this->assertSame(201, $signal->statusCode);
@@ -43,7 +42,7 @@ final class ResponseSignalTest extends TestCase
         $this->assertSame([], $signal->headers);
         $this->assertSame(0, $signal->bodySize);
         $this->assertSame(0.0, $signal->responseTimeMs);
-        $this->assertInstanceOf(DateTimeImmutable::class, $signal->capturedAt);
+        $this->assertInstanceOf(\DateTimeImmutable::class, $signal->capturedAt);
     }
 
     #[Test]
@@ -65,7 +64,7 @@ final class ResponseSignalTest extends TestCase
     #[Test]
     public function it_can_be_constructed_directly(): void
     {
-        $now    = new DateTimeImmutable();
+        $now = new \DateTimeImmutable();
         $signal = new ResponseSignal(404, 'Not Found', [], 0, 5.1, $now);
 
         $this->assertSame(404, $signal->statusCode);

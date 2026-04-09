@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\DTO\Signal;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\DTO\Signal\RequestSignal;
@@ -14,16 +13,16 @@ final class RequestSignalTest extends TestCase
     #[Test]
     public function it_creates_from_array_with_all_fields(): void
     {
-        $capturedAt = new DateTimeImmutable('2026-04-09 12:00:00');
+        $capturedAt = new \DateTimeImmutable('2026-04-09 12:00:00');
 
         $signal = RequestSignal::fromArray([
-            'method'      => 'post',
-            'url'         => 'https://example.com/api/users',
-            'path'        => 'api/users',
-            'ip'          => '10.0.0.1',
-            'headers'     => ['accept' => 'application/json'],
-            'query'       => ['page' => '2'],
-            'body_size'   => 256,
+            'method' => 'post',
+            'url' => 'https://example.com/api/users',
+            'path' => 'api/users',
+            'ip' => '10.0.0.1',
+            'headers' => ['accept' => 'application/json'],
+            'query' => ['page' => '2'],
+            'body_size' => 256,
             'captured_at' => $capturedAt,
         ]);
 
@@ -49,7 +48,7 @@ final class RequestSignalTest extends TestCase
         $this->assertSame([], $signal->headers);
         $this->assertSame([], $signal->query);
         $this->assertSame(0, $signal->bodySize);
-        $this->assertInstanceOf(DateTimeImmutable::class, $signal->capturedAt);
+        $this->assertInstanceOf(\DateTimeImmutable::class, $signal->capturedAt);
     }
 
     #[Test]
@@ -62,9 +61,9 @@ final class RequestSignalTest extends TestCase
     #[Test]
     public function it_falls_back_to_new_datetime_when_captured_at_is_not_a_datetime_immutable(): void
     {
-        $before = new DateTimeImmutable();
+        $before = new \DateTimeImmutable();
         $signal = RequestSignal::fromArray(['captured_at' => 'not-a-date']);
-        $after  = new DateTimeImmutable();
+        $after = new \DateTimeImmutable();
 
         $this->assertGreaterThanOrEqual($before->getTimestamp(), $signal->capturedAt->getTimestamp());
         $this->assertLessThanOrEqual($after->getTimestamp(), $signal->capturedAt->getTimestamp());
@@ -81,7 +80,7 @@ final class RequestSignalTest extends TestCase
     #[Test]
     public function it_can_be_constructed_directly(): void
     {
-        $now    = new DateTimeImmutable();
+        $now = new \DateTimeImmutable();
         $signal = new RequestSignal('GET', 'https://x.com', 'x', '1.2.3.4', [], [], 0, $now);
 
         $this->assertSame('GET', $signal->method);

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Core\Signal;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
@@ -16,11 +15,6 @@ use RuntimeShield\DTO\Signal\RouteSignal;
 final class InMemorySignalStoreTest extends TestCase
 {
     private InMemorySignalStore $store;
-
-    protected function setUp(): void
-    {
-        $this->store = new InMemorySignalStore();
-    }
 
     #[Test]
     public function all_signals_are_null_before_any_storage(): void
@@ -70,7 +64,7 @@ final class InMemorySignalStoreTest extends TestCase
     #[Test]
     public function it_overwrites_an_existing_signal_on_second_store(): void
     {
-        $first  = $this->makeRequestSignal('GET');
+        $first = $this->makeRequestSignal('GET');
         $second = $this->makeRequestSignal('POST');
 
         $this->store->storeRequest($first);
@@ -94,15 +88,20 @@ final class InMemorySignalStoreTest extends TestCase
         $this->assertNull($this->store->getAuth());
     }
 
+    protected function setUp(): void
+    {
+        $this->store = new InMemorySignalStore();
+    }
+
     // -------------------------------------------------------------------------
 
     private function makeRequestSignal(string $method = 'GET'): RequestSignal
     {
-        return new RequestSignal($method, 'https://x.com', '/', '127.0.0.1', [], [], 0, new DateTimeImmutable());
+        return new RequestSignal($method, 'https://x.com', '/', '127.0.0.1', [], [], 0, new \DateTimeImmutable());
     }
 
     private function makeResponseSignal(int $status = 200): ResponseSignal
     {
-        return new ResponseSignal($status, 'OK', [], 0, 0.0, new DateTimeImmutable());
+        return new ResponseSignal($status, 'OK', [], 0, 0.0, new \DateTimeImmutable());
     }
 }

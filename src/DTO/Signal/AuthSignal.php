@@ -14,7 +14,8 @@ final class AuthSignal
         public readonly string|null $userId,
         public readonly string|null $guardName,
         public readonly string|null $userType,
-    ) {}
+    ) {
+    }
 
     /**
      * Convenience factory for unauthenticated requests.

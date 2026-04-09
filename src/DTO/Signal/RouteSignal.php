@@ -19,5 +19,6 @@ final class RouteSignal
         public readonly string $controller,
         public readonly array $middleware,
         public readonly bool $hasNamedRoute,
-    ) {}
+    ) {
+    }
 }

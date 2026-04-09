@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Laravel\Providers;
 
+use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Support\ServiceProvider;
 use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\ShieldContract;
-use RuntimeShield\Core\ConfigRepository;
-use RuntimeShield\Core\RuntimeShieldManager;
+use RuntimeShield\Contracts\Signal\AuthCollectorContract;
 use RuntimeShield\Contracts\Signal\RequestCapturerContract;
 use RuntimeShield\Contracts\Signal\ResponseCapturerContract;
+use RuntimeShield\Contracts\Signal\RouteCollectorContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
+use RuntimeShield\Core\ConfigRepository;
+use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\Engine\RuntimeShieldEngine;
 use RuntimeShield\Laravel\Console\InstallCommand;
-use RuntimeShield\Contracts\Signal\AuthCollectorContract;
-use RuntimeShield\Contracts\Signal\RouteCollectorContract;
-use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use RuntimeShield\Laravel\Signal\AuthSignalCollector;
 use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;

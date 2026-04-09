@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Laravel\Signal;
 
-use DateTimeImmutable;
 use Illuminate\Http\Request;
 use RuntimeShield\Contracts\Signal\RequestCapturerContract;
 use RuntimeShield\DTO\Signal\RequestSignal;
@@ -25,7 +24,7 @@ final class RequestCapturer implements RequestCapturerContract
             headers: $this->normalizeHeaders($request),
             query: $request->query->all(),
             bodySize: strlen($request->getContent()),
-            capturedAt: new DateTimeImmutable(),
+            capturedAt: new \DateTimeImmutable(),
         );
     }
 

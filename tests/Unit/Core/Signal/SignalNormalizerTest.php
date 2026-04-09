@@ -14,11 +14,6 @@ final class SignalNormalizerTest extends TestCase
 {
     private SignalNormalizer $normalizer;
 
-    protected function setUp(): void
-    {
-        $this->normalizer = new SignalNormalizer();
-    }
-
     #[Test]
     public function normalize_request_returns_a_request_signal(): void
     {
@@ -71,5 +66,10 @@ final class SignalNormalizerTest extends TestCase
         $signal = $this->normalizer->normalizeResponse(['response_time_ms' => '75.3']);
 
         $this->assertSame(75.3, $signal->responseTimeMs);
+    }
+
+    protected function setUp(): void
+    {
+        $this->normalizer = new SignalNormalizer();
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Laravel\Signal;
 
-use DateTimeImmutable;
 use RuntimeShield\Contracts\Signal\ResponseCapturerContract;
 use RuntimeShield\DTO\Signal\ResponseSignal;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,7 +24,7 @@ final class ResponseCapturer implements ResponseCapturerContract
             headers: $this->normalizeHeaders($response),
             bodySize: strlen($content !== false ? $content : ''),
             responseTimeMs: max(0.0, round((microtime(true) * 1000.0) - $startTimeMs, 2)),
-            capturedAt: new DateTimeImmutable(),
+            capturedAt: new \DateTimeImmutable(),
         );
     }
 

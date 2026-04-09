@@ -66,9 +66,9 @@ final class InMemorySignalStore implements SignalStoreContract
 
     public function reset(): void
     {
-        $this->request  = null;
+        $this->request = null;
         $this->response = null;
-        $this->route    = null;
-        $this->auth     = null;
+        $this->route = null;
+        $this->auth = null;
     }
 }

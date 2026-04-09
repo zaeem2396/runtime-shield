@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Laravel\Middleware;
 
-use Closure;
 use Illuminate\Http\Request;
 use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\Signal\RequestCapturerContract;
@@ -29,9 +28,10 @@ final class RuntimeShieldMiddleware
         private readonly SignalStoreContract $store,
         private readonly RequestCapturerContract $requestCapturer,
         private readonly ResponseCapturerContract $responseCapturer,
-    ) {}
+    ) {
+    }
 
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, \Closure $next): Response
     {
         if (! $this->manager->isEnabled()) {
             return $next($request);
