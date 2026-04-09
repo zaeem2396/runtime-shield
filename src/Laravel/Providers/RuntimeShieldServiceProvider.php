@@ -10,10 +10,14 @@ use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\ShieldContract;
 use RuntimeShield\Core\ConfigRepository;
 use RuntimeShield\Core\RuntimeShieldManager;
+use RuntimeShield\Contracts\Signal\RequestCapturerContract;
+use RuntimeShield\Contracts\Signal\ResponseCapturerContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\Engine\RuntimeShieldEngine;
 use RuntimeShield\Laravel\Console\InstallCommand;
+use RuntimeShield\Laravel\Signal\RequestCapturer;
+use RuntimeShield\Laravel\Signal\ResponseCapturer;
 
 final class RuntimeShieldServiceProvider extends ServiceProvider
 {
@@ -38,6 +42,10 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         $this->app->alias(RuntimeShieldManager::class, ShieldContract::class);
 
         $this->app->singleton(SignalStoreContract::class, static fn (): InMemorySignalStore => new InMemorySignalStore());
+
+        $this->app->singleton(RequestCapturerContract::class, static fn (): RequestCapturer => new RequestCapturer());
+
+        $this->app->singleton(ResponseCapturerContract::class, static fn (): ResponseCapturer => new ResponseCapturer());
 
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
