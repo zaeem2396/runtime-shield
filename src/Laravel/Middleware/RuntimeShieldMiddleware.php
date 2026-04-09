@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Laravel\Middleware;
 
-use Closure;
 use Illuminate\Http\Request;
 use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Core\RuntimeShieldManager;
@@ -24,9 +23,10 @@ final class RuntimeShieldMiddleware
     public function __construct(
         private readonly RuntimeShieldManager $manager,
         private readonly EngineContract $engine,
-    ) {}
+    ) {
+    }
 
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, \Closure $next): Response
     {
         if (! $this->manager->isEnabled()) {
             return $next($request);

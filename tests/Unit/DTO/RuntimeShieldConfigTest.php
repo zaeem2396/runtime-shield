@@ -14,10 +14,10 @@ final class RuntimeShieldConfigTest extends TestCase
     public function it_creates_from_a_full_config_array(): void
     {
         $config = RuntimeShieldConfig::fromArray([
-            'enabled'      => true,
+            'enabled' => true,
             'sampling_rate' => 0.5,
-            'rules'        => ['auth' => true],
-            'performance'  => ['async' => false],
+            'rules' => ['auth' => true],
+            'performance' => ['async' => false],
         ]);
 
         $this->assertTrue($config->enabled);
@@ -68,10 +68,10 @@ final class RuntimeShieldConfigTest extends TestCase
     public function with_enabled_preserves_remaining_fields(): void
     {
         $original = RuntimeShieldConfig::fromArray([
-            'enabled'      => true,
+            'enabled' => true,
             'sampling_rate' => 0.9,
-            'rules'        => ['csrf' => true],
-            'performance'  => ['timeout_ms' => 50],
+            'rules' => ['csrf' => true],
+            'performance' => ['timeout_ms' => 50],
         ]);
 
         $copy = $original->withEnabled(false);
@@ -85,7 +85,7 @@ final class RuntimeShieldConfigTest extends TestCase
     public function with_sampling_rate_returns_new_instance(): void
     {
         $original = RuntimeShieldConfig::fromArray(['sampling_rate' => 1.0]);
-        $partial  = $original->withSamplingRate(0.25);
+        $partial = $original->withSamplingRate(0.25);
 
         $this->assertSame(1.0, $original->samplingRate, 'original must not be mutated');
         $this->assertSame(0.25, $partial->samplingRate);

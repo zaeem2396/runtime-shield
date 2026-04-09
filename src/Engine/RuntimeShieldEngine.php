@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Engine;
 
-use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Core\RuntimeShieldManager;
 
@@ -22,8 +21,8 @@ final class RuntimeShieldEngine implements EngineContract
 
     public function __construct(
         private readonly RuntimeShieldManager $manager,
-        private readonly ConfigRepositoryContract $config,
-    ) {}
+    ) {
+    }
 
     /**
      * Boot the engine for the current request.

@@ -87,7 +87,7 @@ final class ConfigRepositoryTest extends TestCase
     public function all_contains_all_expected_keys(): void
     {
         $repo = new ConfigRepository(['enabled' => true, 'sampling_rate' => 1.0]);
-        $all  = $repo->all();
+        $all = $repo->all();
 
         $this->assertArrayHasKey('enabled', $all);
         $this->assertArrayHasKey('sampling_rate', $all);

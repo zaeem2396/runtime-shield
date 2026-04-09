@@ -16,12 +16,6 @@ use RuntimeShield\Laravel\Providers\RuntimeShieldServiceProvider;
 
 final class RuntimeShieldServiceProviderTest extends TestCase
 {
-    /** @return list<class-string> */
-    protected function getPackageProviders($app): array
-    {
-        return [RuntimeShieldServiceProvider::class];
-    }
-
     #[Test]
     public function it_merges_package_config_under_runtime_shield_key(): void
     {
@@ -96,5 +90,10 @@ final class RuntimeShieldServiceProviderTest extends TestCase
         // Manager reads directly from repo, so check the manager instead.
         $manager = $this->app->make(RuntimeShieldManager::class);
         $this->assertFalse($manager->isEnabled());
+    }
+    /** @return list<class-string> */
+    protected function getPackageProviders($app): array
+    {
+        return [RuntimeShieldServiceProvider::class];
     }
 }

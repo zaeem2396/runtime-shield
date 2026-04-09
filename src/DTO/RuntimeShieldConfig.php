@@ -11,7 +11,7 @@ namespace RuntimeShield\DTO;
 final class RuntimeShieldConfig
 {
     /**
-     * @param array<string, bool>  $rules
+     * @param array<string, mixed> $rules
      * @param array<string, mixed> $performance
      */
     public function __construct(
@@ -19,7 +19,8 @@ final class RuntimeShieldConfig
         public readonly float $samplingRate,
         public readonly array $rules,
         public readonly array $performance,
-    ) {}
+    ) {
+    }
 
     /**
      * Construct from a raw configuration array (e.g. from Laravel config()).
@@ -28,11 +29,16 @@ final class RuntimeShieldConfig
      */
     public static function fromArray(array $config): self
     {
+        $rawEnabled = $config['enabled'] ?? true;
+        $rawRate = $config['sampling_rate'] ?? 1.0;
+        $rawRules = $config['rules'] ?? [];
+        $rawPerf = $config['performance'] ?? [];
+
         return new self(
-            enabled: (bool) ($config['enabled'] ?? true),
-            samplingRate: (float) ($config['sampling_rate'] ?? 1.0),
-            rules: (array) ($config['rules'] ?? []),
-            performance: (array) ($config['performance'] ?? []),
+            enabled: (bool) $rawEnabled,
+            samplingRate: is_numeric($rawRate) ? (float) $rawRate : 1.0,
+            rules: is_array($rawRules) ? $rawRules : [],
+            performance: is_array($rawPerf) ? $rawPerf : [],
         );
     }
 

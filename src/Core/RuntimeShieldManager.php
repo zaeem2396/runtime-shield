@@ -14,7 +14,8 @@ final class RuntimeShieldManager implements ShieldContract
 
     public function __construct(
         private readonly ConfigRepositoryContract $config,
-    ) {}
+    ) {
+    }
 
     /**
      * Programmatically disable the shield regardless of config.
@@ -54,7 +55,7 @@ final class RuntimeShieldManager implements ShieldContract
             return true;
         }
 
-        return (mt_rand() / mt_getrandmax()) <= $rate;
+        return (mt_rand() / getrandmax()) <= $rate;
     }
 
     public function version(): string

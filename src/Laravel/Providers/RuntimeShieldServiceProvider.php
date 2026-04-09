@@ -29,20 +29,15 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             return new ConfigRepository($raw);
         });
 
-        $this->app->singleton(RuntimeShieldManager::class, static function ($app): RuntimeShieldManager {
-            return new RuntimeShieldManager(
-                $app->make(ConfigRepositoryContract::class),
-            );
-        });
+        $this->app->singleton(RuntimeShieldManager::class, static fn ($app): RuntimeShieldManager => new RuntimeShieldManager(
+            $app->make(ConfigRepositoryContract::class),
+        ));
 
         $this->app->alias(RuntimeShieldManager::class, ShieldContract::class);
 
-        $this->app->singleton(EngineContract::class, static function ($app): RuntimeShieldEngine {
-            return new RuntimeShieldEngine(
-                $app->make(RuntimeShieldManager::class),
-                $app->make(ConfigRepositoryContract::class),
-            );
-        });
+        $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
+            $app->make(RuntimeShieldManager::class),
+        ));
     }
 
     public function boot(): void

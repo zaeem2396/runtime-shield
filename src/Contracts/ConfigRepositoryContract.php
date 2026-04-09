@@ -9,7 +9,6 @@ interface ConfigRepositoryContract
     /**
      * Retrieve a configuration value by dot-notation key.
      *
-     * @param mixed $default
      */
     public function get(string $key, mixed $default = null): mixed;
 

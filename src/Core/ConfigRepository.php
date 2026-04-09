@@ -20,11 +20,11 @@ final class ConfigRepository implements ConfigRepositoryContract
     public function get(string $key, mixed $default = null): mixed
     {
         return match ($key) {
-            'enabled'      => $this->config->enabled,
+            'enabled' => $this->config->enabled,
             'sampling_rate' => $this->config->samplingRate,
-            'rules'        => $this->config->rules,
-            'performance'  => $this->config->performance,
-            default        => $default,
+            'rules' => $this->config->rules,
+            'performance' => $this->config->performance,
+            default => $default,
         };
     }
 
@@ -32,10 +32,10 @@ final class ConfigRepository implements ConfigRepositoryContract
     public function all(): array
     {
         return [
-            'enabled'      => $this->config->enabled,
+            'enabled' => $this->config->enabled,
             'sampling_rate' => $this->config->samplingRate,
-            'rules'        => $this->config->rules,
-            'performance'  => $this->config->performance,
+            'rules' => $this->config->rules,
+            'performance' => $this->config->performance,
         ];
     }
 
