@@ -44,6 +44,19 @@ final class RuntimeShieldMiddleware
         return $next($request);
     }
 
-    public function terminate(Request $request, Response $response): void {}
+    /**
+     * Called by Laravel after the response has been sent to the client.
+     * Captures the ResponseSignal without blocking the HTTP response.
+     */
+    public function terminate(Request $request, Response $response): void
+    {
+        if (! $this->manager->isEnabled() || $this->startTimeMs === null) {
+            return;
+        }
+
+        $this->store->storeResponse(
+            $this->responseCapturer->capture($response, $this->startTimeMs),
+        );
+    }
 
 }
