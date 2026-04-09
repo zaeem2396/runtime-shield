@@ -10,6 +10,8 @@ use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\ShieldContract;
 use RuntimeShield\Core\ConfigRepository;
 use RuntimeShield\Core\RuntimeShieldManager;
+use RuntimeShield\Contracts\Signal\SignalStoreContract;
+use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\Engine\RuntimeShieldEngine;
 use RuntimeShield\Laravel\Console\InstallCommand;
 
@@ -34,6 +36,8 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         ));
 
         $this->app->alias(RuntimeShieldManager::class, ShieldContract::class);
+
+        $this->app->singleton(SignalStoreContract::class, static fn (): InMemorySignalStore => new InMemorySignalStore());
 
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
