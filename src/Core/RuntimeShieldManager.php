@@ -16,7 +16,21 @@ final class RuntimeShieldManager implements ShieldContract
 
     public function isEnabled(): bool
     {
-        return $this->config->isEnabled();
+        if (! $this->config->isEnabled()) {
+            return false;
+        }
+
+        $rate = $this->config->samplingRate();
+
+        if ($rate <= 0.0) {
+            return false;
+        }
+
+        if ($rate >= 1.0) {
+            return true;
+        }
+
+        return (mt_rand() / mt_getrandmax()) <= $rate;
     }
 
     public function version(): string
