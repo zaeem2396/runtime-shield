@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RuntimeShield\Core\Signal;
 
 use RuntimeShield\DTO\Signal\RequestSignal;
+use RuntimeShield\DTO\Signal\ResponseSignal;
 
 /**
  * Framework-agnostic converter from raw data maps to typed Signal DTOs.
@@ -23,5 +24,15 @@ final class SignalNormalizer
     public function normalizeRequest(array $data): RequestSignal
     {
         return RequestSignal::fromArray($data);
+    }
+
+    /**
+     * Convert a raw key-value map into a ResponseSignal.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function normalizeResponse(array $data): ResponseSignal
+    {
+        return ResponseSignal::fromArray($data);
     }
 }
