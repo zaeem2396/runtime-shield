@@ -5,6 +5,12 @@ declare(strict_types=1);
 namespace RuntimeShield\Laravel\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use RuntimeShield\Contracts\ConfigRepositoryContract;
+use RuntimeShield\Contracts\EngineContract;
+use RuntimeShield\Contracts\ShieldContract;
+use RuntimeShield\Core\ConfigRepository;
+use RuntimeShield\Core\RuntimeShieldManager;
+use RuntimeShield\Engine\RuntimeShieldEngine;
 
 final class RuntimeShieldServiceProvider extends ServiceProvider
 {
@@ -14,6 +20,28 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             __DIR__ . '/../../../config/runtime_shield.php',
             'runtime_shield',
         );
+
+        $this->app->singleton(ConfigRepositoryContract::class, static function ($app): ConfigRepository {
+            /** @var array<string, mixed> $raw */
+            $raw = $app['config']->get('runtime_shield', []);
+
+            return new ConfigRepository($raw);
+        });
+
+        $this->app->singleton(RuntimeShieldManager::class, static function ($app): RuntimeShieldManager {
+            return new RuntimeShieldManager(
+                $app->make(ConfigRepositoryContract::class),
+            );
+        });
+
+        $this->app->alias(RuntimeShieldManager::class, ShieldContract::class);
+
+        $this->app->singleton(EngineContract::class, static function ($app): RuntimeShieldEngine {
+            return new RuntimeShieldEngine(
+                $app->make(RuntimeShieldManager::class),
+                $app->make(ConfigRepositoryContract::class),
+            );
+        });
     }
 
     public function boot(): void
