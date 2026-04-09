@@ -22,10 +22,26 @@ final class RequestCapturer implements RequestCapturerContract
             url: $request->fullUrl(),
             path: $request->path(),
             ip: $request->ip() ?? '',
-            headers: [],
+            headers: $this->normalizeHeaders($request),
             query: $request->query->all(),
             bodySize: strlen($request->getContent()),
             capturedAt: new DateTimeImmutable(),
         );
+    }
+
+    /**
+     * Flatten multi-value header bags to single strings joined by ", ".
+     *
+     * @return array<string, string>
+     */
+    private function normalizeHeaders(Request $request): array
+    {
+        $normalized = [];
+
+        foreach ($request->headers->all() as $name => $values) {
+            $normalized[$name] = implode(', ', $values);
+        }
+
+        return $normalized;
     }
 }
