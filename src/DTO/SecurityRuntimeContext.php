@@ -6,7 +6,9 @@ namespace RuntimeShield\DTO;
 
 use DateTimeImmutable;
 use RuntimeShield\DTO\Signal\RequestSignal;
+use RuntimeShield\DTO\Signal\AuthSignal;
 use RuntimeShield\DTO\Signal\ResponseSignal;
+use RuntimeShield\DTO\Signal\RouteSignal;
 
 /**
  * Immutable, fully assembled security context for a single request lifecycle.
@@ -22,6 +24,8 @@ final class SecurityRuntimeContext
         public readonly DateTimeImmutable $createdAt,
         public readonly RequestSignal|null $request = null,
         public readonly ResponseSignal|null $response = null,
+        public readonly RouteSignal|null $route = null,
+        public readonly AuthSignal|null $auth = null,
     ) {
     }
 }
