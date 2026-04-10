@@ -54,7 +54,7 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
         $this->app->singleton(SamplerContract::class, static function ($app): SamplerContract {
             /** @var array<string, mixed> $raw */
-            $raw  = $app['config']->get('runtime_shield', []);
+            $raw = $app['config']->get('runtime_shield', []);
             $rate = isset($raw['sampling_rate']) && is_numeric($raw['sampling_rate'])
                 ? (float) $raw['sampling_rate']
                 : 1.0;

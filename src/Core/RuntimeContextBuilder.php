@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Core;
 
-use DateTimeImmutable;
 use RuntimeShield\Contracts\RuntimeContextBuilderContract;
 use RuntimeShield\DTO\SecurityRuntimeContext;
 use RuntimeShield\DTO\Signal\AuthSignal;
@@ -35,7 +34,7 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 
     public function withRequest(RequestSignal $signal): static
     {
-        $clone          = clone $this;
+        $clone = clone $this;
         $clone->request = $signal;
 
         return $clone;
@@ -43,7 +42,7 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 
     public function withResponse(ResponseSignal $signal): static
     {
-        $clone           = clone $this;
+        $clone = clone $this;
         $clone->response = $signal;
 
         return $clone;
@@ -51,7 +50,7 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 
     public function withRoute(RouteSignal $signal): static
     {
-        $clone        = clone $this;
+        $clone = clone $this;
         $clone->route = $signal;
 
         return $clone;
@@ -59,7 +58,7 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 
     public function withAuth(AuthSignal $signal): static
     {
-        $clone       = clone $this;
+        $clone = clone $this;
         $clone->auth = $signal;
 
         return $clone;
@@ -67,7 +66,7 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 
     public function withRequestId(string $id): static
     {
-        $clone            = clone $this;
+        $clone = clone $this;
         $clone->requestId = $id;
 
         return $clone;
@@ -75,7 +74,7 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 
     public function withProcessingTimeMs(float $ms): static
     {
-        $clone                   = clone $this;
+        $clone = clone $this;
         $clone->processingTimeMs = $ms;
 
         return $clone;
@@ -89,7 +88,7 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
     {
         return new SecurityRuntimeContext(
             requestId:       $this->requestId ?? bin2hex(random_bytes(8)),
-            createdAt:       new DateTimeImmutable(),
+            createdAt:       new \DateTimeImmutable(),
             processingTimeMs: $this->processingTimeMs,
             request:         $this->request,
             response:        $this->response,

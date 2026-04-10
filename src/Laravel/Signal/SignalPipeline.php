@@ -53,9 +53,11 @@ final class SignalPipeline implements SignalPipelineContract
             $this->requestCapturer->capture($request),
         );
 
-        $this->signalStore->storeRoute(
-            $this->routeCollector->collect($request),
-        );
+        $route = $this->routeCollector->collect($request);
+
+        if ($route !== null) {
+            $this->signalStore->storeRoute($route);
+        }
 
         $this->signalStore->storeAuth(
             $this->authCollector->collect(),

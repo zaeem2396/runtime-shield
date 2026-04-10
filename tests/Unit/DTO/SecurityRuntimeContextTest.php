@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\DTO;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\DTO\SecurityRuntimeContext;
 use RuntimeShield\DTO\Signal\AuthSignal;
@@ -18,11 +17,11 @@ final class SecurityRuntimeContextTest extends TestCase
     {
         $ctx = new SecurityRuntimeContext(
             requestId: 'abc123',
-            createdAt: new DateTimeImmutable('2026-01-01T00:00:00Z'),
+            createdAt: new \DateTimeImmutable('2026-01-01T00:00:00Z'),
         );
 
         $this->assertSame('abc123', $ctx->requestId);
-        $this->assertInstanceOf(DateTimeImmutable::class, $ctx->createdAt);
+        $this->assertInstanceOf(\DateTimeImmutable::class, $ctx->createdAt);
         $this->assertSame(0.0, $ctx->processingTimeMs);
         $this->assertNull($ctx->request);
         $this->assertNull($ctx->response);
@@ -32,7 +31,7 @@ final class SecurityRuntimeContextTest extends TestCase
 
     public function test_has_request_returns_false_when_null(): void
     {
-        $ctx = new SecurityRuntimeContext('id', new DateTimeImmutable());
+        $ctx = new SecurityRuntimeContext('id', new \DateTimeImmutable());
 
         $this->assertFalse($ctx->hasRequest());
     }
@@ -41,7 +40,7 @@ final class SecurityRuntimeContextTest extends TestCase
     {
         $ctx = new SecurityRuntimeContext(
             requestId: 'id',
-            createdAt: new DateTimeImmutable(),
+            createdAt: new \DateTimeImmutable(),
             request: $this->makeRequestSignal(),
         );
 
@@ -50,7 +49,7 @@ final class SecurityRuntimeContextTest extends TestCase
 
     public function test_has_response_returns_false_when_null(): void
     {
-        $ctx = new SecurityRuntimeContext('id', new DateTimeImmutable());
+        $ctx = new SecurityRuntimeContext('id', new \DateTimeImmutable());
 
         $this->assertFalse($ctx->hasResponse());
     }
@@ -59,7 +58,7 @@ final class SecurityRuntimeContextTest extends TestCase
     {
         $ctx = new SecurityRuntimeContext(
             requestId: 'id',
-            createdAt: new DateTimeImmutable(),
+            createdAt: new \DateTimeImmutable(),
             response: $this->makeResponseSignal(),
         );
 
@@ -70,7 +69,7 @@ final class SecurityRuntimeContextTest extends TestCase
     {
         $ctx = new SecurityRuntimeContext(
             requestId: 'id',
-            createdAt: new DateTimeImmutable(),
+            createdAt: new \DateTimeImmutable(),
             route: $this->makeRouteSignal(),
             auth: AuthSignal::unauthenticated('web'),
         );
@@ -83,7 +82,7 @@ final class SecurityRuntimeContextTest extends TestCase
     {
         $ctx = new SecurityRuntimeContext(
             requestId: 'id',
-            createdAt: new DateTimeImmutable(),
+            createdAt: new \DateTimeImmutable(),
             request: $this->makeRequestSignal(),
             response: $this->makeResponseSignal(),
             route: $this->makeRouteSignal(),
@@ -96,7 +95,7 @@ final class SecurityRuntimeContextTest extends TestCase
     {
         $ctx = new SecurityRuntimeContext(
             requestId: 'id',
-            createdAt: new DateTimeImmutable(),
+            createdAt: new \DateTimeImmutable(),
             request: $this->makeRequestSignal(),
             response: $this->makeResponseSignal(),
             route: $this->makeRouteSignal(),
@@ -110,7 +109,7 @@ final class SecurityRuntimeContextTest extends TestCase
     {
         $ctx = new SecurityRuntimeContext(
             requestId: 'test-id',
-            createdAt: new DateTimeImmutable('2026-01-01T12:00:00+00:00'),
+            createdAt: new \DateTimeImmutable('2026-01-01T12:00:00+00:00'),
             processingTimeMs: 42.5,
         );
 
@@ -130,7 +129,7 @@ final class SecurityRuntimeContextTest extends TestCase
     {
         $ctx = new SecurityRuntimeContext(
             requestId: 'id',
-            createdAt: new DateTimeImmutable(),
+            createdAt: new \DateTimeImmutable(),
             request: $this->makeRequestSignal(),
         );
 
@@ -145,7 +144,7 @@ final class SecurityRuntimeContextTest extends TestCase
     {
         $ctx = new SecurityRuntimeContext(
             requestId: 'id',
-            createdAt: new DateTimeImmutable(),
+            createdAt: new \DateTimeImmutable(),
             response: $this->makeResponseSignal(),
         );
 
@@ -167,7 +166,7 @@ final class SecurityRuntimeContextTest extends TestCase
             headers: [],
             query: [],
             bodySize: 0,
-            capturedAt: new DateTimeImmutable(),
+            capturedAt: new \DateTimeImmutable(),
         );
     }
 
@@ -179,7 +178,7 @@ final class SecurityRuntimeContextTest extends TestCase
             headers: [],
             bodySize: 0,
             responseTimeMs: 10.0,
-            capturedAt: new DateTimeImmutable(),
+            capturedAt: new \DateTimeImmutable(),
         );
     }
 

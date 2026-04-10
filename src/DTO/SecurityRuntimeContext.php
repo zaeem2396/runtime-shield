@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace RuntimeShield\DTO;
 
-use DateTimeImmutable;
-use RuntimeShield\DTO\Signal\RequestSignal;
 use RuntimeShield\DTO\Signal\AuthSignal;
+use RuntimeShield\DTO\Signal\RequestSignal;
 use RuntimeShield\DTO\Signal\ResponseSignal;
 use RuntimeShield\DTO\Signal\RouteSignal;
 
@@ -21,7 +20,7 @@ final class SecurityRuntimeContext
 {
     public function __construct(
         public readonly string $requestId,
-        public readonly DateTimeImmutable $createdAt,
+        public readonly \DateTimeImmutable $createdAt,
         public readonly float $processingTimeMs = 0.0,
         public readonly RequestSignal|null $request = null,
         public readonly ResponseSignal|null $response = null,
@@ -67,38 +66,38 @@ final class SecurityRuntimeContext
     public function toArray(): array
     {
         return [
-            'request_id'         => $this->requestId,
-            'created_at'         => $this->createdAt->format(\DateTimeInterface::ATOM),
+            'request_id' => $this->requestId,
+            'created_at' => $this->createdAt->format(\DateTimeInterface::ATOM),
             'processing_time_ms' => $this->processingTimeMs,
-            'is_complete'        => $this->isComplete(),
-            'request'            => $this->request !== null ? [
-                'method'      => $this->request->method,
-                'url'         => $this->request->url,
-                'path'        => $this->request->path,
-                'ip'          => $this->request->ip,
-                'body_size'   => $this->request->bodySize,
+            'is_complete' => $this->isComplete(),
+            'request' => $this->request !== null ? [
+                'method' => $this->request->method,
+                'url' => $this->request->url,
+                'path' => $this->request->path,
+                'ip' => $this->request->ip,
+                'body_size' => $this->request->bodySize,
                 'captured_at' => $this->request->capturedAt->format(\DateTimeInterface::ATOM),
             ] : null,
-            'response'           => $this->response !== null ? [
-                'status_code'      => $this->response->statusCode,
-                'status_text'      => $this->response->statusText,
-                'body_size'        => $this->response->bodySize,
+            'response' => $this->response !== null ? [
+                'status_code' => $this->response->statusCode,
+                'status_text' => $this->response->statusText,
+                'body_size' => $this->response->bodySize,
                 'response_time_ms' => $this->response->responseTimeMs,
-                'captured_at'      => $this->response->capturedAt->format(\DateTimeInterface::ATOM),
+                'captured_at' => $this->response->capturedAt->format(\DateTimeInterface::ATOM),
             ] : null,
-            'route'              => $this->route !== null ? [
-                'name'            => $this->route->name,
-                'uri'             => $this->route->uri,
-                'action'          => $this->route->action,
-                'controller'      => $this->route->controller,
-                'middleware'      => $this->route->middleware,
+            'route' => $this->route !== null ? [
+                'name' => $this->route->name,
+                'uri' => $this->route->uri,
+                'action' => $this->route->action,
+                'controller' => $this->route->controller,
+                'middleware' => $this->route->middleware,
                 'has_named_route' => $this->route->hasNamedRoute,
             ] : null,
-            'auth'               => $this->auth !== null ? [
+            'auth' => $this->auth !== null ? [
                 'is_authenticated' => $this->auth->isAuthenticated,
-                'user_id'          => $this->auth->userId,
-                'guard_name'       => $this->auth->guardName,
-                'user_type'        => $this->auth->userType,
+                'user_id' => $this->auth->userId,
+                'guard_name' => $this->auth->guardName,
+                'user_type' => $this->auth->userType,
             ] : null,
         ];
     }

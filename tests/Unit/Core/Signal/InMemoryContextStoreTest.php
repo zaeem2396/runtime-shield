@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Core\Signal;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
 use RuntimeShield\DTO\SecurityRuntimeContext;
@@ -27,7 +26,7 @@ final class InMemoryContextStoreTest extends TestCase
 
     public function test_store_and_get_round_trip(): void
     {
-        $store   = new InMemoryContextStore();
+        $store = new InMemoryContextStore();
         $context = $this->makeContext();
 
         $store->store($context);
@@ -45,9 +44,9 @@ final class InMemoryContextStoreTest extends TestCase
 
     public function test_store_overwrites_previous_context(): void
     {
-        $store    = new InMemoryContextStore();
-        $first    = $this->makeContext('first');
-        $second   = $this->makeContext('second');
+        $store = new InMemoryContextStore();
+        $first = $this->makeContext('first');
+        $second = $this->makeContext('second');
 
         $store->store($first);
         $store->store($second);
@@ -71,7 +70,7 @@ final class InMemoryContextStoreTest extends TestCase
     {
         return new SecurityRuntimeContext(
             requestId: $id,
-            createdAt: new DateTimeImmutable(),
+            createdAt: new \DateTimeImmutable(),
         );
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Core\Signal;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Contracts\Signal\AuthCollectorContract;
 use RuntimeShield\Contracts\Signal\RequestCapturerContract;
@@ -25,9 +24,9 @@ final class SignalPipelineTest extends TestCase
 {
     public function test_collect_request_does_nothing_when_not_sampled(): void
     {
-        $signalStore  = new InMemorySignalStore();
+        $signalStore = new InMemorySignalStore();
         $contextStore = new InMemoryContextStore();
-        $pipeline     = $this->makePipeline(
+        $pipeline = $this->makePipeline(
             sampler: new NeverSampler(),
             signalStore: $signalStore,
             contextStore: $contextStore,
@@ -40,9 +39,9 @@ final class SignalPipelineTest extends TestCase
 
     public function test_collect_request_stores_signals_when_sampled(): void
     {
-        $signalStore  = new InMemorySignalStore();
+        $signalStore = new InMemorySignalStore();
         $contextStore = new InMemoryContextStore();
-        $pipeline     = $this->makePipeline(
+        $pipeline = $this->makePipeline(
             sampler: new AlwaysSampler(),
             signalStore: $signalStore,
             contextStore: $contextStore,
@@ -68,7 +67,7 @@ final class SignalPipelineTest extends TestCase
     public function test_assemble_returns_context_when_sampled(): void
     {
         $contextStore = new InMemoryContextStore();
-        $pipeline     = $this->makePipeline(
+        $pipeline = $this->makePipeline(
             sampler: new AlwaysSampler(),
             contextStore: $contextStore,
         );
@@ -83,9 +82,9 @@ final class SignalPipelineTest extends TestCase
 
     public function test_reset_clears_sampling_flag_and_stores(): void
     {
-        $signalStore  = new InMemorySignalStore();
+        $signalStore = new InMemorySignalStore();
         $contextStore = new InMemoryContextStore();
-        $pipeline     = $this->makePipeline(
+        $pipeline = $this->makePipeline(
             sampler: new AlwaysSampler(),
             signalStore: $signalStore,
             contextStore: $contextStore,
@@ -112,12 +111,12 @@ final class SignalPipelineTest extends TestCase
     ): SignalPipeline {
         $requestCapturer = $this->createMock(RequestCapturerContract::class);
         $requestCapturer->method('capture')->willReturn(
-            new RequestSignal('GET', 'http://localhost/', '/', '127.0.0.1', [], [], 0, new DateTimeImmutable()),
+            new RequestSignal('GET', 'http://localhost/', '/', '127.0.0.1', [], [], 0, new \DateTimeImmutable()),
         );
 
         $responseCapturer = $this->createMock(ResponseCapturerContract::class);
         $responseCapturer->method('capture')->willReturn(
-            new ResponseSignal(200, 'OK', [], 0, 5.0, new DateTimeImmutable()),
+            new ResponseSignal(200, 'OK', [], 0, 5.0, new \DateTimeImmutable()),
         );
 
         $routeCollector = $this->createMock(RouteCollectorContract::class);
