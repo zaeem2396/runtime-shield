@@ -239,9 +239,9 @@ Add colors + grouping
 
 ---
 
-# 🧪 v0.5.0 — CLI Experience (Viral Layer) &nbsp;🔴 Planned
+# 🧪 v0.5.0 — CLI Experience (Viral Layer) &nbsp;🟢 Completed
 
-## STEP 17 — Report Command &nbsp;🔴 Planned
+## STEP 17 — Report Command &nbsp;🟢 Completed
 
 ```
 Create:
@@ -252,7 +252,7 @@ Show summarized report
 
 ---
 
-## STEP 18 — Pretty CLI Output &nbsp;🔴 Planned
+## STEP 18 — Pretty CLI Output &nbsp;🟢 Completed
 
 ```
 Add:
@@ -264,7 +264,7 @@ Add:
 
 ---
 
-## STEP 19 — Issue Grouping &nbsp;🔴 Planned
+## STEP 19 — Issue Grouping &nbsp;🟢 Completed
 
 ```
 Group by:
@@ -275,7 +275,7 @@ Group by:
 
 ---
 
-## STEP 20 — Route Inspection Command &nbsp;🔴 Planned
+## STEP 20 — Route Inspection Command &nbsp;🟢 Completed
 
 ```
 Command:
