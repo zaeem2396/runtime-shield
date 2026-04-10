@@ -25,6 +25,10 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 
     private ResponseSignal|null $response = null;
 
+    private RouteSignal|null $route = null;
+
+    private AuthSignal|null $auth = null;
+
     public function withRequest(RequestSignal $signal): static
     {
         $clone          = clone $this;
@@ -37,6 +41,22 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
     {
         $clone           = clone $this;
         $clone->response = $signal;
+
+        return $clone;
+    }
+
+    public function withRoute(RouteSignal $signal): static
+    {
+        $clone        = clone $this;
+        $clone->route = $signal;
+
+        return $clone;
+    }
+
+    public function withAuth(AuthSignal $signal): static
+    {
+        $clone       = clone $this;
+        $clone->auth = $signal;
 
         return $clone;
     }
