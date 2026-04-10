@@ -16,10 +16,26 @@ use RuntimeShield\DTO\Rule\ViolationCollection;
  */
 final class SecurityReport
 {
+    /** @param list<RouteProtection> $routeProtections */
     public function __construct(
         public readonly DateTimeImmutable $scannedAt,
         public readonly int $routeCount,
         public readonly ViolationCollection $violations,
+        public readonly array $routeProtections = [],
     ) {
+    }
+
+    /** Number of routes with at least one violation. */
+    public function exposedRouteCount(): int
+    {
+        $count = 0;
+
+        foreach ($this->routeProtections as $protection) {
+            if (! $protection->isFullyProtected()) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }
