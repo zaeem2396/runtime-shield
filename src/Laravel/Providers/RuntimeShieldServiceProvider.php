@@ -121,6 +121,12 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         ));
 
         $this->app->singleton(RouteProtectionAnalyzer::class, static fn (): RouteProtectionAnalyzer => new RouteProtectionAnalyzer());
+
+        $this->app->singleton(ReportBuilderContract::class, static fn ($app): ReportBuilder => new ReportBuilder(
+            $app->make(\Illuminate\Routing\Router::class),
+            $app->make(RuleEngineContract::class),
+            $app->make(RouteProtectionAnalyzer::class),
+        ));
     }
 
     public function boot(): void
