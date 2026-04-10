@@ -16,8 +16,10 @@ use RuntimeShield\Contracts\Signal\ResponseCapturerContract;
 use RuntimeShield\Contracts\Signal\RouteCollectorContract;
 use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
 use RuntimeShield\Contracts\Signal\SignalPipelineContract;
+use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
 use RuntimeShield\Core\ConfigRepository;
+use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Core\Sampling\SamplerFactory;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
@@ -86,8 +88,11 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             $app->make(AuthCollectorContract::class),
         ));
 
+        $this->app->singleton(RuleRegistry::class, static fn (): RuleRegistry => new RuleRegistry());
+
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
+            $app->make(RuleEngineContract::class),
         ));
     }
 
