@@ -8,14 +8,19 @@ use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Support\ServiceProvider;
 use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
+use RuntimeShield\Contracts\SamplerContract;
 use RuntimeShield\Contracts\ShieldContract;
 use RuntimeShield\Contracts\Signal\AuthCollectorContract;
 use RuntimeShield\Contracts\Signal\RequestCapturerContract;
 use RuntimeShield\Contracts\Signal\ResponseCapturerContract;
 use RuntimeShield\Contracts\Signal\RouteCollectorContract;
+use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
+use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
 use RuntimeShield\Core\ConfigRepository;
 use RuntimeShield\Core\RuntimeShieldManager;
+use RuntimeShield\Core\Sampling\SamplerFactory;
+use RuntimeShield\Core\Signal\InMemoryContextStore;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\Engine\RuntimeShieldEngine;
 use RuntimeShield\Laravel\Console\InstallCommand;
@@ -23,6 +28,7 @@ use RuntimeShield\Laravel\Signal\AuthSignalCollector;
 use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;
 use RuntimeShield\Laravel\Signal\RouteSignalCollector;
+use RuntimeShield\Laravel\Signal\SignalPipeline;
 
 final class RuntimeShieldServiceProvider extends ServiceProvider
 {
@@ -45,6 +51,16 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         ));
 
         $this->app->alias(RuntimeShieldManager::class, ShieldContract::class);
+
+        $this->app->singleton(SamplerContract::class, static function ($app): SamplerContract {
+            /** @var array<string, mixed> $raw */
+            $raw  = $app['config']->get('runtime_shield', []);
+            $rate = isset($raw['sampling_rate']) && is_numeric($raw['sampling_rate'])
+                ? (float) $raw['sampling_rate']
+                : 1.0;
+
+            return SamplerFactory::fromRate($rate);
+        });
 
         $this->app->singleton(SignalStoreContract::class, static fn (): InMemorySignalStore => new InMemorySignalStore());
 
