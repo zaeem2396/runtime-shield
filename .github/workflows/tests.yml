@@ -23,42 +23,52 @@ jobs:
             laravel: '10'
             illuminate: '^10.0'
             testbench: '^8.0'
+            phpunit: '^10.5'
           - php: '8.3'
             laravel: '10'
             illuminate: '^10.0'
             testbench: '^8.0'
+            phpunit: '^10.5'
           - php: '8.2'
             laravel: '11'
             illuminate: '^11.0'
             testbench: '^9.0'
+            phpunit: '^10.5'
           - php: '8.3'
             laravel: '11'
             illuminate: '^11.0'
             testbench: '^9.0'
+            phpunit: '^10.5'
           - php: '8.4'
             laravel: '11'
             illuminate: '^11.0'
             testbench: '^9.0'
+            phpunit: '^10.5'
           - php: '8.2'
             laravel: '12'
             illuminate: '^12.0'
             testbench: '^10.0'
+            phpunit: '^11.5'
           - php: '8.3'
             laravel: '12'
             illuminate: '^12.0'
             testbench: '^10.0'
+            phpunit: '^11.5'
           - php: '8.4'
             laravel: '12'
             illuminate: '^12.0'
             testbench: '^10.0'
+            phpunit: '^11.5'
           - php: '8.3'
             laravel: '13'
             illuminate: '^13.0'
             testbench: '^11.0'
+            phpunit: '^12.0'
           - php: '8.4'
             laravel: '13'
             illuminate: '^13.0'
             testbench: '^11.0'
+            phpunit: '^12.0'
 
     steps:
       - name: Checkout
@@ -76,7 +86,8 @@ jobs:
         run: |
           composer update -W --prefer-dist --no-interaction --no-progress \
             "illuminate/support:${{ matrix.illuminate }}" \
-            "orchestra/testbench:${{ matrix.testbench }}"
+            "orchestra/testbench:${{ matrix.testbench }}" \
+            "phpunit/phpunit:${{ matrix.phpunit }}"
 
       - name: Run PHPUnit
         run: composer test
