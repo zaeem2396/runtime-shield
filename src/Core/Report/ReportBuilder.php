@@ -43,6 +43,21 @@ final class ReportBuilder implements ReportBuilderContract
             $context    = $this->buildContext($route);
             $violations = $this->ruleEngine->run($context);
             $all        = $all->merge($violations);
+
+            $routeSignal = $context->route;
+
+            if ($routeSignal !== null) {
+                $method      = $context->request?->method ?? 'GET';
+                $protections[] = new RouteProtection(
+                    method: $method,
+                    uri: $routeSignal->uri,
+                    name: $routeSignal->name,
+                    hasAuth: $this->analyzer->hasAuth($routeSignal),
+                    hasCsrf: $this->analyzer->hasCsrf($routeSignal, $method),
+                    hasRateLimit: $this->analyzer->hasRateLimit($routeSignal),
+                    violations: $violations,
+                );
+            }
         }
 
         return new SecurityReport(
