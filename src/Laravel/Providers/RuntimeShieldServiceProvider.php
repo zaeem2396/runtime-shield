@@ -76,6 +76,16 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
         $this->app->singleton(RuntimeContextStoreContract::class, static fn (): InMemoryContextStore => new InMemoryContextStore());
 
+        $this->app->singleton(SignalPipelineContract::class, static fn ($app): SignalPipeline => new SignalPipeline(
+            $app->make(SamplerContract::class),
+            $app->make(SignalStoreContract::class),
+            $app->make(RuntimeContextStoreContract::class),
+            $app->make(RequestCapturerContract::class),
+            $app->make(ResponseCapturerContract::class),
+            $app->make(RouteCollectorContract::class),
+            $app->make(AuthCollectorContract::class),
+        ));
+
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
         ));
