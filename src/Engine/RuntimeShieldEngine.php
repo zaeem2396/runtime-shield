@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace RuntimeShield\Engine;
 
 use RuntimeShield\Contracts\EngineContract;
+use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Core\RuntimeShieldManager;
+use RuntimeShield\DTO\Rule\ViolationCollection;
+use RuntimeShield\DTO\SecurityRuntimeContext;
 
 /**
  * Central evaluation engine for the request lifecycle.
@@ -21,6 +24,7 @@ final class RuntimeShieldEngine implements EngineContract
 
     public function __construct(
         private readonly RuntimeShieldManager $manager,
+        private readonly RuleEngineContract $ruleEngine,
     ) {
     }
 
@@ -55,5 +59,18 @@ final class RuntimeShieldEngine implements EngineContract
     public function reset(): void
     {
         $this->booted = false;
+    }
+
+    /**
+     * Run all registered security rules against the given context and return
+     * a collection of any violations found.
+     *
+     * This is the primary entry-point for on-demand rule evaluation; the CLI
+     * scanner and any event listeners can call this directly without touching
+     * the middleware pipeline.
+     */
+    public function evaluate(SecurityRuntimeContext $context): ViolationCollection
+    {
+        return $this->ruleEngine->run($context);
     }
 }

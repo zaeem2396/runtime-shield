@@ -187,9 +187,9 @@ Add percentage-based sampling
 
 ---
 
-# ⚙️ v0.4.0 — Rule Engine (MVP Core) &nbsp;🔴 Planned
+# ⚙️ v0.4.0 — Rule Engine (MVP Core) &nbsp;🟢 Completed
 
-## STEP 13 — Rule Engine &nbsp;🔴 Planned
+## STEP 13 — Rule Engine &nbsp;🟢 Completed
 
 ```
 Create:
@@ -200,7 +200,7 @@ Violation DTO
 
 ---
 
-## STEP 14 — Core Rules &nbsp;🔴 Planned
+## STEP 14 — Core Rules &nbsp;🟢 Completed
 
 ```
 Implement:
@@ -211,7 +211,7 @@ Implement:
 
 ---
 
-## STEP 15 — Validation Rules &nbsp;🔴 Planned
+## STEP 15 — Validation Rules &nbsp;🟢 Completed
 
 ```
 Implement:
@@ -221,7 +221,7 @@ Implement:
 
 ---
 
-## STEP 16 — CLI Scanner &nbsp;🔴 Planned
+## STEP 16 — CLI Scanner &nbsp;🟢 Completed
 
 ```
 Command:
