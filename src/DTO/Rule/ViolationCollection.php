@@ -66,4 +66,23 @@ final class ViolationCollection
     {
         return $this->bySeverity(Severity::LOW);
     }
+
+    /** Merge another collection into this one, returning a new instance. */
+    public function merge(self $other): self
+    {
+        return new self(array_merge($this->violations, $other->violations));
+    }
+
+    /**
+     * Return all violations sorted by severity priority (CRITICAL first).
+     *
+     * @return list<Violation>
+     */
+    public function sorted(): array
+    {
+        $copy = $this->violations;
+        usort($copy, static fn (Violation $a, Violation $b): int => $a->severity->priority() <=> $b->severity->priority());
+
+        return $copy;
+    }
 }
