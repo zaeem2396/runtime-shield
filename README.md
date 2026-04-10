@@ -25,7 +25,7 @@ RuntimeShield sits transparently in your HTTP middleware stack, captures request
 ## Installation
 
 ```bash
-composer require runtime-shield/runtime-shield
+composer require zaeem2396/runtime-shield
 ```
 
 ### Publish configuration
