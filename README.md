@@ -192,11 +192,109 @@ $auth     = $store->getAuth();      // AuthSignal|null
 
 ---
 
+## Rule Engine (v0.4.0+)
+
+The Rule Engine evaluates every assembled `SecurityRuntimeContext` against a set of
+security rules and returns a typed `ViolationCollection`.
+
+### Built-in rules
+
+| Rule | Severity | What it detects |
+|------|----------|----------------|
+| `PublicRouteWithoutAuthRule` | `CRITICAL` | Routes with no authentication middleware |
+| `MissingRateLimitRule` | `MEDIUM` | Routes with no throttle / rate-limit middleware |
+| `MissingCsrfRule` | `HIGH` | Mutable web routes (POST / PUT / PATCH / DELETE) missing CSRF middleware |
+| `MissingValidationRule` | `LOW` | Mutable routes without any input-validation middleware (advisory) |
+| `FileUploadValidationRule` | `MEDIUM` | POST routes whose URI suggests file upload with no upload-validation middleware |
+
+### Evaluating violations in code
+
+```php
+use RuntimeShield\Contracts\Rule\RuleEngineContract;
+use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
+
+$context = app(RuntimeContextStoreContract::class)->get();
+
+if ($context !== null) {
+    $violations = app(RuleEngineContract::class)->run($context);
+
+    foreach ($violations->sorted() as $violation) {
+        echo "[{$violation->severity->label()}] {$violation->title} — {$violation->route}\n";
+    }
+}
+```
+
+### Adding custom rules
+
+```php
+use RuntimeShield\Contracts\Rule\RuleContract;
+use RuntimeShield\Core\Rule\RuleRegistry;
+use RuntimeShield\DTO\Rule\Severity;
+use RuntimeShield\DTO\Rule\Violation;
+use RuntimeShield\DTO\SecurityRuntimeContext;
+
+class MyCustomRule implements RuleContract
+{
+    public function id(): string      { return 'my-custom-rule'; }
+    public function title(): string   { return 'My Custom Security Rule'; }
+    public function severity(): Severity { return Severity::HIGH; }
+
+    public function evaluate(SecurityRuntimeContext $context): array
+    {
+        // inspect $context->route, $context->request, etc.
+        return [];
+    }
+}
+
+// In a service provider:
+app(RuleRegistry::class)->register(new MyCustomRule());
+```
+
+---
+
+## Security Scan Command (v0.4.0+)
+
+Scan all registered routes for security violations without sending a real request:
+
+```bash
+php artisan runtime-shield:scan
+```
+
+**Example output:**
+
+```
+ RuntimeShield Security Scan
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Scanning 12 route(s)…
+
+ ┌─────────────────────┬──────────────────────────────────────┬──────────┐
+ │ Route / URI         │ Rule                                 │ Severity │
+ ├─────────────────────┼──────────────────────────────────────┼──────────┤
+ │ dashboard           │ Public Route Without Authentication  │ CRITICAL │
+ │ contact             │ Missing CSRF Protection              │ HIGH     │
+ │ api/users           │ Missing Rate Limit                   │ MEDIUM   │
+ └─────────────────────┴──────────────────────────────────────┴──────────┘
+
+  Found 3 violation(s)  (1 critical · 1 high · 1 medium · 0 low)
+```
+
+Output as JSON for CI pipelines:
+
+```bash
+php artisan runtime-shield:scan --format=json
+```
+
+The command exits with code `1` when any `CRITICAL` or `HIGH` violations are found,
+making it suitable as a CI gate.
+
+---
+
 ## Artisan Commands
 
 | Command | Description |
 |---------|-------------|
 | `runtime-shield:install` | Publish the configuration file |
+| `runtime-shield:scan` | Scan all routes for security violations |
 
 ---
 
