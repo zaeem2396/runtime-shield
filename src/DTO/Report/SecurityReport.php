@@ -65,4 +65,29 @@ final class SecurityReport
 
         return $count;
     }
+
+    /**
+     * Serialize to a JSON-compatible array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'scanned_at'         => $this->scannedAt->format(\DateTimeInterface::ATOM),
+            'route_count'        => $this->routeCount,
+            'exposed_routes'     => $this->exposedRouteCount(),
+            'score'              => $this->score(),
+            'grade'              => $this->grade(),
+            'total_violations'   => $this->violations->count(),
+            'critical'           => count($this->violations->critical()),
+            'high'               => count($this->violations->high()),
+            'medium'             => count($this->violations->medium()),
+            'low'                => count($this->violations->low()),
+            'violations'         => array_map(
+                static fn ($v) => $v->toArray(),
+                $this->violations->sorted(),
+            ),
+        ];
+    }
 }
