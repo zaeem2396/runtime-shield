@@ -237,14 +237,5 @@ Register the middleware in your HTTP kernel or middleware stack:
 
 ---
 
-### What's Next — v0.2.0 (Runtime Observation)
-
-- Request signal capture: method, URL, headers, query, IP, size → `RequestSignal` DTO
-- Response listener: status, headers, size, response time → `ResponseSignal` DTO
-- Route and auth signals: `RouteSignal`, `AuthSignal`
-- Full immutable DTO layer: Request, Response, Route, Auth
-
----
-
 [v0.2.0]: https://github.com/zaeem2396/runtime-shield/releases/tag/v0.2.0
 [v0.1.0]: https://github.com/zaeem2396/runtime-shield/releases/tag/v0.1.0
