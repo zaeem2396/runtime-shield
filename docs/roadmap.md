@@ -101,9 +101,9 @@ Ensure:
 
 ---
 
-# 🔍 v0.2.0 — Runtime Observation &nbsp;🔴 Planned
+# 🔍 v0.2.0 — Runtime Observation &nbsp;🟢 Completed
 
-## STEP 5 — Request Middleware &nbsp;🔴 Planned
+## STEP 5 — Request Middleware &nbsp;🟢 Completed
 
 ```
 Capture request:
@@ -114,7 +114,7 @@ Convert to RequestSignal DTO
 
 ---
 
-## STEP 6 — Response Listener &nbsp;🔴 Planned
+## STEP 6 — Response Listener &nbsp;🟢 Completed
 
 ```
 Capture:
@@ -123,7 +123,7 @@ status, headers, size, response time
 
 ---
 
-## STEP 7 — Route + Auth Signals &nbsp;🔴 Planned
+## STEP 7 — Route + Auth Signals &nbsp;🟢 Completed
 
 ```
 Create RouteSignal + AuthSignal
@@ -133,7 +133,7 @@ Extract from Laravel router + auth
 
 ---
 
-## STEP 8 — DTO Layer &nbsp;🔴 Planned
+## STEP 8 — DTO Layer &nbsp;🟢 Completed
 
 ```
 Create immutable DTOs:
