@@ -44,7 +44,7 @@ This publishes `config/runtime_shield.php` to your application's config director
 
 Add `RuntimeShieldMiddleware` to your HTTP middleware stack.
 
-**Laravel 11** (`bootstrap/app.php`):
+**Laravel 11, 12, 13** (`bootstrap/app.php`):
 
 ```php
 use RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware;
