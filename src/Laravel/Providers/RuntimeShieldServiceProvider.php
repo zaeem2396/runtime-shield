@@ -142,6 +142,8 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         $this->commands([
             InstallCommand::class,
             ScanCommand::class,
+            ReportCommand::class,
+            RoutesCommand::class,
         ]);
     }
 }
