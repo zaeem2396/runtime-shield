@@ -29,4 +29,17 @@ final class ViolationCollection
     {
         return count($this->violations);
     }
+
+    public function isEmpty(): bool
+    {
+        return $this->violations === [];
+    }
+
+    /** @return list<Violation> */
+    public function bySeverity(Severity $severity): array
+    {
+        return array_values(
+            array_filter($this->violations, static fn (Violation $v): bool => $v->severity === $severity),
+        );
+    }
 }
