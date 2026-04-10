@@ -36,6 +36,53 @@ final class ScanCommand extends Command
         parent::__construct();
     }
 
+    public function handle(): int
+    {
+        $routes = $this->collectRoutes();
+
+        $this->line('');
+        $this->line('<fg=cyan;options=bold> RuntimeShield Security Scan</>');
+        $this->line('<fg=gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</>');
+        $this->line("  Scanning <options=bold>" . count($routes) . "</> route(s)…");
+        $this->line('');
+
+        $violations = $this->evaluateRoutes($routes);
+
+        if ($violations->isEmpty()) {
+            $this->line('<fg=green>  ✔ No security violations detected.</>');
+            $this->line('');
+
+            return self::SUCCESS;
+        }
+
+        $sorted = $violations->sorted();
+
+        $format = $this->option('format');
+
+        if ($format === 'json') {
+            $this->renderJson($violations);
+        } else {
+            $this->renderTable($sorted);
+        }
+
+        $criticalCount = count($violations->critical());
+        $highCount     = count($violations->high());
+
+        $this->line('');
+        $this->line(sprintf(
+            '  Found <options=bold>%d</> violation(s)  '
+            . '(<fg=red>%d critical</> · <fg=yellow>%d high</> · <fg=cyan>%d medium</> · <fg=blue>%d low</>)',
+            $violations->count(),
+            $criticalCount,
+            $highCount,
+            count($violations->medium()),
+            count($violations->low()),
+        ));
+        $this->line('');
+
+        return ($criticalCount > 0 || $highCount > 0) ? self::FAILURE : self::SUCCESS;
+    }
+
     /**
      * Scan all routes and return a merged ViolationCollection.
      *
