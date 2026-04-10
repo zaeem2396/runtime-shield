@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.4.0] — 2026-04-10 — Rule Engine (MVP Core)
+
+### Overview
+
+Introduces the **Rule Engine** — the active security analysis layer of RuntimeShield.
+A composable set of rules evaluates every assembled `SecurityRuntimeContext` and produces
+typed `Violation` records. Five rules ship out of the box: unauthenticated public routes,
+missing rate limits, absent CSRF protection, missing input validation, and unvalidated
+file-upload endpoints. A new `runtime-shield:scan` Artisan command scans all registered
+routes offline and outputs a severity-sorted, colour-coded violation table.
+
+---
+
+### Added
+
+#### DTO — `RuntimeShield\DTO\Rule`
+
+- `Severity` (backed enum) — `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`, `INFO`
+  - `label(): string` — uppercase display name
+  - `color(): string` — ANSI colour tag for CLI output (`red`, `yellow`, `cyan`, `blue`, `white`)
+  - `priority(): int` — sort weight (0 = most critical)
+- `Violation` — immutable record of a single detected security issue
+  - Properties: `ruleId`, `title`, `description`, `severity` (`Severity`), `route` (`string`), `context` (`array<string, mixed>`)
+  - `toArray(): array<string, mixed>` — JSON-serializable snapshot
+- `ViolationCollection` — typed, immutable collection of `Violation` records
+  - `all()`, `count()`, `isEmpty()`, `bySeverity()`, `critical()`, `high()`, `medium()`, `low()`
+  - `merge(self): self` — combines two collections without mutation
+  - `sorted(): list<Violation>` — returns violations sorted by severity priority (CRITICAL first)
+
+#### Contracts — `RuntimeShield\Contracts\Rule`
+
+- `RuleContract` — `id(): string`, `title(): string`, `severity(): Severity`, `evaluate(SecurityRuntimeContext): list<Violation>`
+- `RuleEngineContract` — `run(SecurityRuntimeContext): ViolationCollection`
+
+#### Core — `RuntimeShield\Core\Rule`
+
+- `RuleRegistry` — mutable singleton holding all registered `RuleContract` instances
+  - `register()`, `all()`, `count()`, `has()`, `find()`
+- `RuleEngine` — implements `RuleEngineContract`; iterates registry, aggregates violations; fast-exits on empty registry
+
+#### Rules — `RuntimeShield\Rules`
+
+| Rule | Severity | Trigger |
+|------|----------|---------|
+| `PublicRouteWithoutAuthRule` | `CRITICAL` | No `auth`, `can:*`, `sanctum`, or similar middleware on the route |
+| `MissingRateLimitRule` | `MEDIUM` | No `throttle` or `rate_limit` middleware on the route |
+| `MissingCsrfRule` | `HIGH` | Mutable (`POST`/`PUT`/`PATCH`/`DELETE`) non-API web route missing `web` or `csrf` middleware |
+| `MissingValidationRule` | `LOW` | `POST`/`PUT`/`PATCH` route without any `validate*` middleware (advisory) |
+| `FileUploadValidationRule` | `MEDIUM` | `POST` route whose URI contains upload-related keywords (`upload`, `file`, `image`, `photo`, `avatar`, `attachment`, `media`, `document`, `import`) with no upload-validation middleware |
+
+#### Engine — `RuntimeShield\Engine`
+
+- `RuntimeShieldEngine::evaluate(SecurityRuntimeContext): ViolationCollection` — delegates rule evaluation to the injected `RuleEngineContract`
+- `RuntimeShieldEngine` now accepts `RuleEngineContract` as a constructor dependency
+
+#### Artisan — `RuntimeShield\Laravel\Console`
+
+- `ScanCommand` (`runtime-shield:scan`) — offline security scanner
+  - Iterates all registered routes, skipping framework internals (`_ignition`, `telescope`, `horizon`, `debugbar`)
+  - Builds a synthetic `SecurityRuntimeContext` per route using `RuntimeContextBuilder`
+  - Evaluates all rules and renders a severity-sorted, ANSI-coloured table
+  - Supports `--format=json` for machine-readable output
+  - Exits with code `1` when any `CRITICAL` or `HIGH` violations are found
+
+#### Service Provider — `RuntimeShieldServiceProvider`
+
+- `RuleRegistry` registered as singleton with all five default rules pre-loaded
+- `RuleEngineContract` bound to `RuleEngine`
+- `ScanCommand` registered alongside `InstallCommand`
+
+#### Tests — `tests/Unit`
+
+- `DTO/Rule/SeverityTest` — label, color, priority ordering, enum construction
+- `DTO/Rule/ViolationTest` — fields, defaults, `toArray()` serialization
+- `DTO/Rule/ViolationCollectionTest` — `isEmpty`, severity getters, `merge`, `sorted`
+- `Core/Rule/RuleRegistryTest` — register, count, `has`, `find`
+- `Core/Rule/RuleEngineTest` — empty registry fast-path, aggregation, multi-rule isolation
+- `Rules/PublicRouteWithoutAuthRuleTest`
+- `Rules/MissingRateLimitRuleTest`
+- `Rules/MissingCsrfRuleTest`
+- `Rules/MissingValidationRuleTest`
+- `Rules/FileUploadValidationRuleTest`
+
+---
+
 ## [v0.3.0] — 2026-04-10 — Signal Engine
 
 ### Overview
