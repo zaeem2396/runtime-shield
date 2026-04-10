@@ -130,7 +130,28 @@ if ($shield->isEnabled()) {
 }
 ```
 
-### Reading captured signals
+### Reading the assembled context (v0.3.0+)
+
+```php
+use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
+
+$store   = app(RuntimeContextStoreContract::class);
+$context = $store->get(); // SecurityRuntimeContext|null
+
+if ($context !== null && $context->isComplete()) {
+    echo $context->requestId;            // unique request identifier
+    echo $context->processingTimeMs;     // total wall-clock time in ms
+    echo $context->request->method;      // e.g. "GET"
+    echo $context->response->statusCode; // e.g. 200
+    echo $context->route->name;          // e.g. "dashboard"
+    echo $context->auth->isAuthenticated ? 'auth' : 'guest';
+
+    // JSON-serializable snapshot
+    $payload = $context->toArray();
+}
+```
+
+### Reading individual signals
 
 ```php
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
