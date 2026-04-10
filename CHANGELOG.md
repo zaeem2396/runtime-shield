@@ -7,6 +7,140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.2.0] — 2026-04-10 — Runtime Observation
+
+### Overview
+
+Introduces the complete HTTP signal capture layer. Every inbound request and
+outbound response is recorded as an immutable DTO inside an in-memory signal
+store per request lifecycle, with zero overhead when the shield is disabled.
+Also extends Laravel support to versions 12 and 13 and renames the Packagist
+slug to `zaeem2396/runtime-shield`.
+
+---
+
+### Added
+
+#### DTOs — `RuntimeShield\DTO\Signal`
+
+- `RequestSignal` — immutable snapshot of an inbound HTTP request
+  - Properties: `method`, `url`, `path`, `ip`, `headers` (`array<string, mixed>`), `query` (`array<string, mixed>`), `bodySize` (`int`), `capturedAt` (`DateTimeImmutable`)
+  - `fromArray(array $data): self` factory with full type narrowing (PHPStan level 9 safe)
+- `ResponseSignal` — immutable snapshot of an outbound HTTP response
+  - Properties: `statusCode` (`int`), `statusText` (`string`), `headers` (`array<string, mixed>`), `bodySize` (`int`), `responseTimeMs` (`float`), `capturedAt` (`DateTimeImmutable`)
+  - `fromArray(array $data): self` factory with full type narrowing
+- `RouteSignal` — immutable route metadata snapshot
+  - Properties: `name`, `uri`, `action`, `controller`, `middleware` (`list<string>`), `hasNamedRoute` (`bool`)
+- `AuthSignal` — immutable authentication state snapshot
+  - Properties: `isAuthenticated` (`bool`), `userId` (`string|null`), `guardName` (`string`), `userType` (`string|null`)
+  - `unauthenticated(string $guard): self` named factory
+
+#### Contracts — `RuntimeShield\Contracts\Signal`
+
+- `SignalStoreContract` — per-request signal storage with `setRequest()`, `setResponse()`, `setRoute()`, `setAuth()`, corresponding getters, and `reset()`
+- `RequestCapturerContract` — `capture(Request $request): RequestSignal`
+- `ResponseCapturerContract` — `capture(Response $response, float $startTimeMs): ResponseSignal`
+- `RouteCollectorContract` — `collect(Request $request): RouteSignal`
+- `AuthCollectorContract` — `collect(): AuthSignal`
+
+#### Core — `RuntimeShield\Core\Signal`
+
+- `InMemorySignalStore` — `SignalStoreContract` implementation; holds one signal of each type per request lifecycle; `reset()` clears state for Octane / long-running workers
+- `SignalNormalizer` — framework-agnostic converter; delegates raw data arrays to `RequestSignal::fromArray()` and `ResponseSignal::fromArray()`
+
+#### Laravel Adapters — `RuntimeShield\Laravel\Signal`
+
+- `RequestCapturer` — extracts and normalizes data from `Illuminate\Http\Request`; normalizes headers to `array<string, string>`
+- `ResponseCapturer` — extracts data from `Symfony\Component\HttpFoundation\Response`; computes `responseTimeMs` from a start-time float passed at capture time
+- `RouteSignalCollector` — pulls route metadata from `Illuminate\Http\Request`; normalizes middleware list to `list<string>`
+- `AuthSignalCollector` — inspects auth state via `Illuminate\Contracts\Auth\Factory`; `resolveUserId()` helper safely narrows the `mixed` identifier from `getAuthIdentifier()` (PHPStan level 9 safe)
+
+#### Middleware — updated
+
+- `RuntimeShieldMiddleware` — now injects `SignalStoreContract`, `RequestCapturerContract`, `ResponseCapturerContract` via constructor
+  - `handle()` — records `startTimeMs` and stores `RequestSignal` on every sampled request
+  - `terminate()` — stores `ResponseSignal` after the response is sent (non-blocking)
+
+#### Service Provider — updated
+
+- `RuntimeShieldServiceProvider` — registers five new singletons:
+
+  | Contract | Implementation |
+  |----------|---------------|
+  | `SignalStoreContract` | `InMemorySignalStore` |
+  | `RequestCapturerContract` | `RequestCapturer` |
+  | `ResponseCapturerContract` | `ResponseCapturer` |
+  | `RouteCollectorContract` | `RouteSignalCollector` |
+  | `AuthCollectorContract` | `AuthSignalCollector` |
+
+#### Tests
+
+- 80 tests, 175 assertions — all passing
+- `RequestSignalTest` — DTO construction, `fromArray()`, defaults, type coercion
+- `ResponseSignalTest` — DTO construction, `fromArray()`, defaults, type coercion
+- `RouteSignalTest` / `AuthSignalTest` — DTO fields and `unauthenticated()` factory
+- `InMemorySignalStoreTest` — store / retrieve all signal types, overwrite, `reset()`
+- `SignalNormalizerTest` — `normalizeRequest()` and `normalizeResponse()` with defaults and coercion
+- `RequestCapturerTest` / `ResponseCapturerTest` — Laravel adapter data extraction
+
+---
+
+### Changed
+
+- **Package name** — Packagist slug renamed from `runtime-shield/runtime-shield` to `zaeem2396/runtime-shield`; update your `composer require` accordingly
+- **Laravel support** — extended to `^12.0` and `^13.0`; `illuminate/support` constraint is now `^10.0|^11.0|^12.0|^13.0`
+- **PHPUnit** — dev constraint broadened to `^10.5|^11.0|^12.0` to match testbench requirements per Laravel version
+- **CI test matrix** — five new entries added (Laravel 12 × PHP 8.2/8.3/8.4, Laravel 13 × PHP 8.3/8.4) with per-entry `phpunit` version pinning
+
+---
+
+### Installation
+
+```bash
+composer require zaeem2396/runtime-shield
+php artisan runtime-shield:install
+```
+
+Register the middleware:
+
+**Laravel 11, 12, 13** (`bootstrap/app.php`):
+
+```php
+use RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware;
+
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->append(RuntimeShieldMiddleware::class);
+})
+```
+
+**Laravel 10** (`app/Http/Kernel.php`):
+
+```php
+use RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware;
+
+protected $middleware = [
+    RuntimeShieldMiddleware::class,
+];
+```
+
+---
+
+### Requirements
+
+- PHP `^8.2`
+- Laravel `^10.0`, `^11.0`, `^12.0`, or `^13.0`
+
+---
+
+### What's Next — v0.3.0 (Signal Engine)
+
+- `SecurityRuntimeContext` — builder-pattern immutable context assembled from all four signals
+- Normalization layer — unified DTO conversion pipeline
+- In-memory store per request lifecycle (Octane-safe)
+- Percentage-based request sampling
+
+---
+
 ## [v0.1.0] — 2026-04-09 — Foundation
 
 ### Overview
@@ -81,40 +215,6 @@ and formatted with PHP CS Fixer.
 
 ---
 
-### Commits (26)
-
-| Hash | Description |
-|------|-------------|
-| `edf7a99` | Merge pull request #1 from zaeem2396/feature/v0.1.0-foundation |
-| `3b17f44` | docs(roadmap): add completion status labels to all phases and steps |
-| `da4cce6` | fix: resolve PHPStan level-9 errors and CS after pre-check run |
-| `4cfcb07` | chore: update root façade, phpunit config, and base unit test |
-| `534669a` | test: add ServiceProvider integration tests via Orchestra Testbench |
-| `058716e` | test: add RuntimeShieldManager unit tests |
-| `67a8f8a` | test: add ConfigRepository unit tests |
-| `223640c` | test: add RuntimeShieldConfig DTO unit tests |
-| `fea0ed4` | feat(laravel/console): add InstallCommand (runtime-shield:install) |
-| `c75eb96` | feat(laravel/middleware): add RuntimeShieldMiddleware |
-| `8548235` | feat(laravel): register CLI commands in ServiceProvider boot() |
-| `d5ee9c5` | feat(laravel): bind contracts to implementations in container |
-| `a3353a3` | feat(laravel): add config merging and publishing to ServiceProvider |
-| `61926b9` | feat(laravel): scaffold RuntimeShieldServiceProvider |
-| `f620fc1` | feat(engine): implement RuntimeShieldEngine boot lifecycle |
-| `478a93b` | feat(core): add force enable/disable to RuntimeShieldManager |
-| `5057edf` | feat(core): add isEnabled() with config and sampling rate guard |
-| `c27e2dd` | feat(core): add RuntimeShieldManager skeleton implementing ShieldContract |
-| `3edbe8f` | feat(core): implement ConfigRepository |
-| `eba3e0f` | feat(config): add runtime_shield.php package configuration |
-| `2505dde` | feat(dto): add RuntimeShieldConfig immutable value object |
-| `6c84b2b` | feat(support): add PackageVersion class with semver constants |
-| `b259216` | feat(contracts): add EngineContract interface |
-| `5f302b4` | feat(contracts): add ConfigRepositoryContract interface |
-| `3f3ac45` | feat(contracts): add ShieldContract interface |
-| `9ecfd06` | feat(skeleton): establish namespace directory structure |
-| `4053248` | chore: initial project scaffold with CI pipelines |
-
----
-
 ### Installation
 
 ```bash
@@ -137,13 +237,5 @@ Register the middleware in your HTTP kernel or middleware stack:
 
 ---
 
-### What's Next — v0.2.0 (Runtime Observation)
-
-- Request signal capture: method, URL, headers, query, IP, size → `RequestSignal` DTO
-- Response listener: status, headers, size, response time → `ResponseSignal` DTO
-- Route and auth signals: `RouteSignal`, `AuthSignal`
-- Full immutable DTO layer: Request, Response, Route, Auth
-
----
-
+[v0.2.0]: https://github.com/zaeem2396/runtime-shield/releases/tag/v0.2.0
 [v0.1.0]: https://github.com/zaeem2396/runtime-shield/releases/tag/v0.1.0
