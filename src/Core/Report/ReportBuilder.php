@@ -30,12 +30,100 @@ final class ReportBuilder implements ReportBuilderContract
     ) {
     }
 
+    /** @var list<string> */
+    private const SKIP_PREFIXES = ['_ignition', '_telescope', 'horizon/', 'telescope/', 'debugbar/'];
+
     public function build(): SecurityReport
     {
+        $routes     = $this->collectRoutes();
+        $all        = new ViolationCollection();
+        $protections = [];
+
+        foreach ($routes as $route) {
+            $context    = $this->buildContext($route);
+            $violations = $this->ruleEngine->run($context);
+            $all        = $all->merge($violations);
+        }
+
         return new SecurityReport(
             scannedAt: new DateTimeImmutable(),
-            routeCount: 0,
-            violations: new ViolationCollection(),
+            routeCount: count($routes),
+            violations: $all,
+            routeProtections: $protections,
         );
+    }
+
+    /**
+     * @return list<Route>
+     */
+    private function collectRoutes(): array
+    {
+        $routes = [];
+
+        foreach ($this->router->getRoutes()->getRoutes() as $route) {
+            $uri  = $route->uri();
+            $skip = false;
+
+            foreach (self::SKIP_PREFIXES as $prefix) {
+                if (str_starts_with($uri, $prefix)) {
+                    $skip = true;
+                    break;
+                }
+            }
+
+            if (! $skip) {
+                $routes[] = $route;
+            }
+        }
+
+        return $routes;
+    }
+
+    private function buildContext(Route $route): \RuntimeShield\DTO\SecurityRuntimeContext
+    {
+        $methods = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
+        $method  = $this->pickMethod(array_values($methods));
+
+        /** @var list<string> $middleware */
+        $middleware = array_values(
+            array_filter($route->gatherMiddleware(), static fn (mixed $v): bool => is_string($v)),
+        );
+
+        $routeSignal = new RouteSignal(
+            name: (string) ($route->getName() ?? ''),
+            uri: $route->uri(),
+            action: $route->getActionName(),
+            controller: (string) ($route->getControllerClass() ?? ''),
+            middleware: $middleware,
+            hasNamedRoute: $route->getName() !== null,
+        );
+
+        $requestSignal = new RequestSignal(
+            method: $method,
+            url: 'http://localhost/' . ltrim($route->uri(), '/'),
+            path: '/' . ltrim($route->uri(), '/'),
+            ip: '127.0.0.1',
+            headers: [],
+            query: [],
+            bodySize: 0,
+            capturedAt: new \DateTimeImmutable(),
+        );
+
+        return (new RuntimeContextBuilder())
+            ->withRoute($routeSignal)
+            ->withRequest($requestSignal)
+            ->build();
+    }
+
+    /** @param list<string> $methods */
+    private function pickMethod(array $methods): string
+    {
+        foreach (['POST', 'PUT', 'PATCH', 'DELETE', 'GET'] as $preferred) {
+            if (in_array($preferred, $methods, true)) {
+                return $preferred;
+            }
+        }
+
+        return $methods[0] ?? 'GET';
     }
 }
