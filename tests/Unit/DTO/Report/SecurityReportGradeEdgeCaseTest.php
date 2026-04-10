@@ -28,7 +28,8 @@ final class SecurityReportGradeEdgeCaseTest extends TestCase
     #[Test]
     public function d_grade_for_score_in_40_to_59_range(): void
     {
-        $this->assertSame('D', $this->reportWith(Severity::HIGH, 4)->grade());
+        // 5 HIGH violations: deduction = 50, score = 50 → D (40–59)
+        $this->assertSame('D', $this->reportWith(Severity::HIGH, 5)->grade());
     }
 
     #[Test]

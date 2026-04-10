@@ -58,8 +58,11 @@ final class SecurityReportTest extends TestCase
             new ViolationCollection(array_fill(0, $n, new Violation('r', 'T', 'D', $s))),
         );
 
+        // 0 violations → score 100 → A
         $this->assertSame('A', $withViolations(0, Severity::INFO)->grade());
-        $this->assertSame('B', $withViolations(1, Severity::MEDIUM)->grade());
+        // 3 MEDIUM violations → deduction 15 → score 85 → B
+        $this->assertSame('B', $withViolations(3, Severity::MEDIUM)->grade());
+        // 5 CRITICAL violations → deduction 100 → score 0 → F
         $this->assertSame('F', $withViolations(5, Severity::CRITICAL)->grade());
     }
 

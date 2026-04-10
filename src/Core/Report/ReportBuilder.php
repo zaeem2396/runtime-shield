@@ -45,7 +45,7 @@ final class ReportBuilder implements ReportBuilderContract
             $routeSignal = $context->route;
 
             if ($routeSignal !== null) {
-                $method = $context->request?->method ?? 'GET';
+                $method = $context->request !== null ? $context->request->method : 'GET';
                 $protections[] = new RouteProtection(
                     method: $method,
                     uri: $routeSignal->uri,
