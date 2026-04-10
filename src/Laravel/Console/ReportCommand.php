@@ -20,7 +20,8 @@ use RuntimeShield\Support\CliRenderer;
 final class ReportCommand extends Command
 {
     protected $signature = 'runtime-shield:report
-                            {--format=table : Output format (table|json)}';
+                            {--format=table : Output format (table|json)}
+                            {--save= : Optional file path to write JSON report output}';
 
     protected $description = 'Generate a full security report for all registered routes';
 
