@@ -289,12 +289,90 @@ making it suitable as a CI gate.
 
 ---
 
+## Security Report Command (v0.5.0+)
+
+Generate a comprehensive security report with violation sections, score, and grade:
+
+```bash
+php artisan runtime-shield:report
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--format=json` | Output the full report as JSON |
+| `--save=<path>` | Write the JSON report to a file |
+
+**Example output:**
+
+```
+ RuntimeShield Security Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Scanning 12 route(s)…
+  Generated: 2026-04-10 14:00:00
+
+🔴 CRITICAL — 1 violation(s)
+──────────────────────────────────────────────────────
+  dashboard
+  ↳ Public Route Without Authentication
+
+🟡 HIGH — 1 violation(s)
+──────────────────────────────────────────────────────
+  contact
+  ↳ Missing CSRF Protection
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Security Score: 70/100   Grade: C
+  Routes: 12  Exposed: 3
+  Violations: 3  (1 critical · 1 high · 1 medium · 0 low)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+## Route Protection Inspector (v0.5.0+)
+
+Inspect every registered route's security coverage — auth, CSRF, and rate-limiting:
+
+```bash
+php artisan runtime-shield:routes
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--filter=exposed` | Show only routes with at least one missing protection |
+| `--method=POST` | Filter rows by HTTP method |
+| `--sort=risk` | Order rows by highest risk first |
+
+**Example output:**
+
+```
+ RuntimeShield Route Protection Inspector
+────────────────────────────────────────────────────────
+ ┌────────┬───────────────────┬──────┬──────┬────────────┬──────────┐
+ │ Method │ URI               │ Auth │ CSRF │ Rate Limit │ Status   │
+ ├────────┼───────────────────┼──────┼──────┼────────────┼──────────┤
+ │ GET    │ dashboard         │ ✘    │ —    │ ✘          │ CRITICAL │
+ │ POST   │ contact           │ ✔    │ ✘    │ ✘          │ HIGH RISK│
+ │ POST   │ api/users         │ ✔    │ —    │ ✔          │ SAFE     │
+ └────────┴───────────────────┴──────┴──────┴────────────┴──────────┘
+
+  3 route(s) shown   1 protected   2 exposed
+```
+
+---
+
 ## Artisan Commands
 
 | Command | Description |
 |---------|-------------|
 | `runtime-shield:install` | Publish the configuration file |
-| `runtime-shield:scan` | Scan all routes for security violations |
+| `runtime-shield:scan` | Scan all routes for security violations (table/JSON) |
+| `runtime-shield:report` | Full security report with score and grade |
+| `runtime-shield:routes` | Route protection inspector (auth · CSRF · rate-limit) |
 
 ---
 
