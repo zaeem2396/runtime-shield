@@ -21,4 +21,21 @@ final class Violation
         public readonly array $context = [],
     ) {
     }
+
+    /**
+     * Serialize to a JSON-compatible array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'rule_id'     => $this->ruleId,
+            'title'       => $this->title,
+            'description' => $this->description,
+            'severity'    => $this->severity->value,
+            'route'       => $this->route,
+            'context'     => $this->context,
+        ];
+    }
 }
