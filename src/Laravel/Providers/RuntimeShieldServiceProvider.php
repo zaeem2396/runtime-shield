@@ -19,7 +19,13 @@ use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
 use RuntimeShield\Core\ConfigRepository;
+use RuntimeShield\Core\Rule\RuleEngine;
 use RuntimeShield\Core\Rule\RuleRegistry;
+use RuntimeShield\Rules\FileUploadValidationRule;
+use RuntimeShield\Rules\MissingCsrfRule;
+use RuntimeShield\Rules\MissingRateLimitRule;
+use RuntimeShield\Rules\MissingValidationRule;
+use RuntimeShield\Rules\PublicRouteWithoutAuthRule;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Core\Sampling\SamplerFactory;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
@@ -88,7 +94,16 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             $app->make(AuthCollectorContract::class),
         ));
 
-        $this->app->singleton(RuleRegistry::class, static fn (): RuleRegistry => new RuleRegistry());
+        $this->app->singleton(RuleRegistry::class, static function (): RuleRegistry {
+            $registry = new RuleRegistry();
+            $registry->register(new PublicRouteWithoutAuthRule());
+            $registry->register(new MissingRateLimitRule());
+            $registry->register(new MissingCsrfRule());
+            $registry->register(new MissingValidationRule());
+            $registry->register(new FileUploadValidationRule());
+
+            return $registry;
+        });
 
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
