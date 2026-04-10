@@ -193,20 +193,6 @@ All workflows use concurrency cancellation so only the latest run is active per 
 
 ---
 
-## Versioning
-
-This project follows [Semantic Versioning](https://semver.org/).
-
-| Version | Status | Description |
-|---------|--------|-------------|
-| v0.1.0 | 🟢 Released | Foundation — architecture, config, contracts, engine |
-| v0.2.0 | 🟡 In Progress | Runtime Observation — request/response signal capture |
-| v0.3.0+ | 🔴 Planned | Signal engine, rules, CLI, scoring, extensibility, AI |
-
-See [CHANGELOG.md](CHANGELOG.md) for the full history.
-
----
-
 ## License
 
 MIT © [RuntimeShield](https://github.com/zaeem2396/runtime-shield)
