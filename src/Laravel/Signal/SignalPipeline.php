@@ -64,11 +64,24 @@ final class SignalPipeline implements SignalPipelineContract
 
     public function assemble(Response $response, float $startTimeMs): SecurityRuntimeContext|null
     {
-        if (! $this->sampling) {
+        if (! $this->sampling || $this->signalStore->getRequest() === null) {
             return null;
         }
 
-        return null;
+        $responseSignal = $this->responseCapturer->capture($response, $startTimeMs);
+        $this->signalStore->storeResponse($responseSignal);
+
+        $context = (new RuntimeContextBuilder())
+            ->withRequest($this->signalStore->getRequest())
+            ->withResponse($responseSignal)
+            ->withRoute($this->signalStore->getRoute())
+            ->withAuth($this->signalStore->getAuth())
+            ->withProcessingTimeMs($responseSignal->responseTimeMs)
+            ->build();
+
+        $this->contextStore->store($context);
+
+        return $context;
     }
 
     public function reset(): void
