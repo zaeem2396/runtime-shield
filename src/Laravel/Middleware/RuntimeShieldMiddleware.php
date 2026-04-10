@@ -6,14 +6,13 @@ namespace RuntimeShield\Laravel\Middleware;
 
 use Illuminate\Http\Request;
 use RuntimeShield\Contracts\EngineContract;
-use RuntimeShield\Contracts\Signal\RequestCapturerContract;
-use RuntimeShield\Contracts\Signal\ResponseCapturerContract;
-use RuntimeShield\Contracts\Signal\SignalStoreContract;
+use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Core\RuntimeShieldManager;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * HTTP middleware that boots the RuntimeShield engine and captures signals.
+ * HTTP middleware that boots the RuntimeShield engine and drives the
+ * two-phase signal pipeline.
  *
  * Zero-overhead path: when the shield is disabled the entire body of
  * handle() reduces to a single $next($request) call.
@@ -25,9 +24,7 @@ final class RuntimeShieldMiddleware
     public function __construct(
         private readonly RuntimeShieldManager $manager,
         private readonly EngineContract $engine,
-        private readonly SignalStoreContract $store,
-        private readonly RequestCapturerContract $requestCapturer,
-        private readonly ResponseCapturerContract $responseCapturer,
+        private readonly SignalPipelineContract $pipeline,
     ) {
     }
 
@@ -39,14 +36,14 @@ final class RuntimeShieldMiddleware
 
         $this->startTimeMs = microtime(true) * 1000.0;
         $this->engine->boot();
-        $this->store->storeRequest($this->requestCapturer->capture($request));
+        $this->pipeline->collectRequest($request);
 
         return $next($request);
     }
 
     /**
      * Called by Laravel after the response has been sent to the client.
-     * Captures the ResponseSignal without blocking the HTTP response.
+     * Assembles the full SecurityRuntimeContext without blocking HTTP.
      */
     public function terminate(Request $request, Response $response): void
     {
@@ -54,9 +51,6 @@ final class RuntimeShieldMiddleware
             return;
         }
 
-        $this->store->storeResponse(
-            $this->responseCapturer->capture($response, $this->startTimeMs),
-        );
+        $this->pipeline->assemble($response, $this->startTimeMs);
     }
-
 }

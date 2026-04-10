@@ -7,6 +7,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.3.0] — 2026-04-10 — Signal Engine
+
+### Overview
+
+Introduces the `SecurityRuntimeContext` — an immutable, fully assembled
+context object that aggregates all four signals per request. A dedicated
+`SignalPipeline` orchestrates two-phase collection (request phase in
+`handle()`, assembly phase in `terminate()`), with a pluggable
+`SamplerContract` layer that replaces the ad-hoc sampling logic in
+`RuntimeShieldManager`. The middleware is simplified to a two-method
+delegation contract.
+
+---
+
+### Added
+
+#### DTO — `RuntimeShield\DTO`
+
+- `SecurityRuntimeContext` — immutable context aggregating all four signals
+  - Properties: `requestId` (`string`), `createdAt` (`DateTimeImmutable`), `processingTimeMs` (`float`), `request`, `response`, `route`, `auth` (all nullable)
+  - Guard methods: `hasRequest()`, `hasResponse()`, `hasRoute()`, `hasAuth()`
+  - `isComplete(): bool` — true when all four signals are present
+  - `toArray(): array<string, mixed>` — JSON-serializable snapshot
+
+#### Contracts — `RuntimeShield\Contracts`
+
+- `RuntimeContextBuilderContract` — fluent builder interface with `withRequest()`, `withResponse()`, `withRoute()`, `withAuth()`, `withRequestId()`, `withProcessingTimeMs()`, `build()`
+- `SamplerContract` — `shouldSample(): bool` + `rate(): float`
+
+#### Contracts — `RuntimeShield\Contracts\Signal`
+
+- `RuntimeContextStoreContract` — `store()`, `get()`, `has()`, `reset()`
+- `SignalPipelineContract` — `collectRequest(Request): void`, `assemble(Response, float): SecurityRuntimeContext|null`, `reset(): void`
+
+#### Core — `RuntimeShield\Core`
+
+- `RuntimeContextBuilder` — `RuntimeContextBuilderContract` implementation; clones on every `with*()` call for immutability; auto-generates a 16-character hex `requestId` via `random_bytes(8)` when none is set
+
+#### Core — `RuntimeShield\Core\Sampling`
+
+- `PercentageSampler` — probabilistic sampler using `mt_rand()`; short-circuits at 0.0 and 1.0
+- `AlwaysSampler` — unconditionally accepts all requests; intended for dev / test
+- `NeverSampler` — unconditionally rejects all requests
+- `SamplerFactory` — `fromRate(float): SamplerContract`; returns `NeverSampler` / `AlwaysSampler` / `PercentageSampler` based on the rate
+
+#### Core — `RuntimeShield\Core\Signal`
+
+- `InMemoryContextStore` — `RuntimeContextStoreContract` implementation; holds one `SecurityRuntimeContext` per lifecycle; `reset()` for Octane support
+
+#### Laravel — `RuntimeShield\Laravel\Signal`
+
+- `SignalPipeline` — `SignalPipelineContract` implementation
+  - Phase 1 `collectRequest()`: sampling gate → request + route + auth capture into `SignalStoreContract`
+  - Phase 2 `assemble()`: response capture → `RuntimeContextBuilder` → `RuntimeContextStoreContract`
+
+#### Middleware — updated
+
+- `RuntimeShieldMiddleware` — simplified; now injects only `SignalPipelineContract` (no longer directly depends on individual capturer contracts); delegates to `pipeline->collectRequest()` in `handle()` and `pipeline->assemble()` in `terminate()`
+
+#### Service Provider — updated
+
+- `RuntimeShieldServiceProvider` — registers three new singletons:
+
+  | Contract | Implementation |
+  |----------|---------------|
+  | `SamplerContract` | `SamplerFactory::fromRate(config sampling_rate)` |
+  | `RuntimeContextStoreContract` | `InMemoryContextStore` |
+  | `SignalPipelineContract` | `SignalPipeline` |
+
+#### Tests
+
+- 55 tests, 91 assertions — all passing (new tests added alongside existing 80/175)
+- `SecurityRuntimeContextTest` — 11 cases: construction, has*(), isComplete(), toArray()
+- `RuntimeContextBuilderTest` — 10 cases: defaults, auto-ID, chaining, all signals, isComplete
+- `SamplerTest` — 13 cases: AlwaysSampler, NeverSampler, PercentageSampler, SamplerFactory
+- `SignalPipelineTest` — 5 cases: sampling gate, collect, assemble, context store, reset
+- `InMemoryContextStoreTest` — 6 cases: get, has, store, overwrite, reset
+
+---
+
+### Changed
+
+- **Middleware** — constructor now takes `SignalPipelineContract` instead of three separate capturer contracts; external API is unchanged
+- **Service Provider** — three new singleton registrations; existing bindings unchanged
+
+---
+
+### Installation
+
+```bash
+composer require zaeem2396/runtime-shield
+php artisan runtime-shield:install
+```
+
+---
+
+### Requirements
+
+- PHP `^8.2`
+- Laravel `^10.0`, `^11.0`, `^12.0`, or `^13.0`
+
+---
+
+### What's Next — v0.4.0 (Rule Engine)
+
+- `RuleInterface` and `RuleEngine`
+- `Violation` DTO
+- Core rules: `PublicRouteWithoutAuthRule`, `MissingRateLimitRule`, `MissingCsrfRule`
+- Validation rules and CLI scanner (`runtime:security:scan`)
+
+---
+
 ## [v0.2.0] — 2026-04-10 — Runtime Observation
 
 ### Overview
@@ -237,5 +349,6 @@ Register the middleware in your HTTP kernel or middleware stack:
 
 ---
 
+[v0.3.0]: https://github.com/zaeem2396/runtime-shield/releases/tag/v0.3.0
 [v0.2.0]: https://github.com/zaeem2396/runtime-shield/releases/tag/v0.2.0
 [v0.1.0]: https://github.com/zaeem2396/runtime-shield/releases/tag/v0.1.0

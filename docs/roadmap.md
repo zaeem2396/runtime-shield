@@ -146,9 +146,9 @@ Request, Response, Route, Auth
 
 ---
 
-# 🧠 v0.3.0 — Signal Engine &nbsp;🔴 Planned
+# 🧠 v0.3.0 — Signal Engine &nbsp;🟡 In Progress
 
-## STEP 9 — Runtime Context &nbsp;🔴 Planned
+## STEP 9 — Runtime Context &nbsp;🟢 Completed
 
 ```
 Create SecurityRuntimeContext
@@ -159,7 +159,7 @@ Immutable object
 
 ---
 
-## STEP 10 — Normalization Layer &nbsp;🔴 Planned
+## STEP 10 — Normalization Layer &nbsp;🟢 Completed
 
 ```
 Convert Laravel data → unified DTOs
@@ -167,7 +167,7 @@ Convert Laravel data → unified DTOs
 
 ---
 
-## STEP 11 — In-Memory Store &nbsp;🔴 Planned
+## STEP 11 — In-Memory Store &nbsp;🟢 Completed
 
 ```
 Store signals per request lifecycle
@@ -175,7 +175,7 @@ Store signals per request lifecycle
 
 ---
 
-## STEP 12 — Sampling &nbsp;🔴 Planned
+## STEP 12 — Sampling &nbsp;🟢 Completed
 
 ```
 Add percentage-based sampling
