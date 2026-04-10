@@ -29,6 +29,10 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 
     private AuthSignal|null $auth = null;
 
+    private string|null $requestId = null;
+
+    private float $processingTimeMs = 0.0;
+
     public function withRequest(RequestSignal $signal): static
     {
         $clone          = clone $this;
@@ -57,6 +61,22 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
     {
         $clone       = clone $this;
         $clone->auth = $signal;
+
+        return $clone;
+    }
+
+    public function withRequestId(string $id): static
+    {
+        $clone            = clone $this;
+        $clone->requestId = $id;
+
+        return $clone;
+    }
+
+    public function withProcessingTimeMs(float $ms): static
+    {
+        $clone                  = clone $this;
+        $clone->processingTimeMs = $ms;
 
         return $clone;
     }
