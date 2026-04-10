@@ -7,6 +7,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.5.0] — 2026-04-10 — CLI Experience (Viral Layer)
+
+### Overview
+
+Elevates the command-line experience with two new Artisan commands and a
+rich set of supporting primitives. `runtime-shield:report` generates a
+full security report with grouped violation sections, a security score,
+letter grade, and optional JSON/file export. `runtime-shield:routes`
+inspects every registered route and shows its auth, CSRF, and rate-limit
+coverage in a colour-coded table. A new `CliRenderer` helper provides
+shared, unit-testable output utilities (severity icons, grade colours, risk
+labels, checkmarks) used by all CLI commands.
+
+---
+
+### Added
+
+#### DTO — `RuntimeShield\DTO\Report`
+
+- `RouteProtection` — immutable snapshot of a single route's protection status
+  - Properties: `method`, `uri`, `name`, `hasAuth`, `hasCsrf`, `hasRateLimit`, `violations` (`ViolationCollection`)
+  - `violationCount(): int`, `highestSeverity(): Severity|null`
+  - `isFullyProtected(): bool`, `riskLabel(): string` — `SAFE` / `LOW RISK` / `MEDIUM RISK` / `HIGH RISK` / `CRITICAL`
+- `SecurityReport` — immutable aggregate of a full route scan
+  - Properties: `scannedAt` (`DateTimeImmutable`), `routeCount`, `violations`, `routeProtections`
+  - `score(): int` — 0–100; deductions per severity (CRITICAL −20, HIGH −10, MEDIUM −5, LOW −2)
+  - `grade(): string` — A / B / C / D / F based on score
+  - `exposedRouteCount(): int` — number of routes with at least one violation
+  - `toArray(): array<string, mixed>` — full JSON-serializable snapshot
+
+#### Support — `RuntimeShield\Support`
+
+- `CliRenderer` — stateless helper for styled CLI output strings
+  - `severityIcon(Severity): string` — emoji (🔴 CRITICAL · 🟡 HIGH · 🔵 MEDIUM · ⚪ LOW · 💬 INFO)
+  - `badge(Severity): string` — ANSI bold colour tag with severity label
+  - `gradeColor(string): string` — ANSI colour name for letter grades
+  - `divider(int): string` — horizontal rule of box-drawing characters
+  - `riskLabel(string): string` — colour-tagged risk string for table cells
+  - `checkmark(bool): string` — green ✔ / red ✘
+
+#### Contracts — `RuntimeShield\Contracts\Report`
+
+- `ReportBuilderContract` — `build(): SecurityReport`
+
+#### Core — `RuntimeShield\Core\Report`
+
+- `RouteProtectionAnalyzer` — stateless analyzer detecting auth / CSRF / rate-limit middleware on a `RouteSignal`
+  - `hasAuth(RouteSignal): bool`
+  - `hasCsrf(RouteSignal, string $method): bool` — skips API routes; returns `true` for GET-family methods
+  - `hasRateLimit(RouteSignal): bool`
+- `ReportBuilder` — implements `ReportBuilderContract`; iterates routes, runs `RuleEngineContract`, builds `RouteProtection` per route, returns `SecurityReport`
+
+#### Artisan — New Commands
+
+**`runtime-shield:report`**
+```bash
+php artisan runtime-shield:report
+php artisan runtime-shield:report --format=json
+php artisan runtime-shield:report --save=report.json
+```
+- Severity-grouped violation sections with emoji icons
+- Security score panel (score/100 · grade · exposed routes)
+- `--format=json` for machine-readable output
+- `--save=<path>` writes JSON report to a file
+- Exits `1` when any CRITICAL or HIGH violations are found
+
+**`runtime-shield:routes`**
+```bash
+php artisan runtime-shield:routes
+php artisan runtime-shield:routes --filter=exposed
+php artisan runtime-shield:routes --method=POST
+php artisan runtime-shield:routes --sort=risk
+```
+- Colour-coded table: Method · URI · Name · Auth · CSRF · Rate Limit · Status
+- `--filter=exposed` shows only routes missing at least one protection
+- `--method=<METHOD>` filters by HTTP method
+- `--sort=risk` orders rows by highest risk first
+
+#### Service Provider — `RuntimeShieldServiceProvider`
+
+- `RouteProtectionAnalyzer` registered as singleton
+- `ReportBuilderContract` bound to `ReportBuilder`
+- `ReportCommand` and `RoutesCommand` registered in `$commands`
+
+#### Tests — `tests/Unit`
+
+- `DTO/Report/RouteProtectionTest` — fields, isFullyProtected, riskLabel, highestSeverity
+- `DTO/Report/RouteProtectionRiskLabelTest` — per-severity riskLabel and violationCount
+- `DTO/Report/SecurityReportTest` — score, grade, toArray serialization
+- `DTO/Report/SecurityReportExposedRoutesTest` — exposedRouteCount
+- `DTO/Report/SecurityReportGradeEdgeCaseTest` — B/C/D grade boundaries
+- `Core/Report/RouteProtectionAnalyzerTest` — auth, csrf, rate-limit detection
+- `Core/Report/RouteProtectionAnalyzerApiTest` — API routes and edge cases
+- `Core/Report/ReportBuilderTest` — empty router, scannedAt, violation aggregation
+- `Support/CliRendererTest` — icons, badges, colors, checkmarks
+- `Support/CliRendererGradeTest` — grade colors and risk label colors
+- `Support/CliRendererSeverityIconTest` — exact emoji per severity
+
+---
+
 ## [v0.4.0] — 2026-04-10 — Rule Engine (MVP Core)
 
 ### Overview
