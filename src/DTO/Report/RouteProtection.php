@@ -42,4 +42,29 @@ final class RouteProtection
 
         return $sorted[0]->severity;
     }
+
+    public function isFullyProtected(): bool
+    {
+        return $this->violations->isEmpty();
+    }
+
+    /**
+     * Human-readable risk label derived from the highest violation severity.
+     */
+    public function riskLabel(): string
+    {
+        $severity = $this->highestSeverity();
+
+        if ($severity === null) {
+            return 'SAFE';
+        }
+
+        return match ($severity) {
+            Severity::CRITICAL => 'CRITICAL',
+            Severity::HIGH     => 'HIGH RISK',
+            Severity::MEDIUM   => 'MEDIUM RISK',
+            Severity::LOW      => 'LOW RISK',
+            Severity::INFO     => 'INFO',
+        };
+    }
 }
