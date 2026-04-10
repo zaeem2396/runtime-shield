@@ -4,10 +4,10 @@
 [![Code Style](https://github.com/zaeem2396/runtime-shield/actions/workflows/code-style.yml/badge.svg)](https://github.com/zaeem2396/runtime-shield/actions/workflows/code-style.yml)
 [![Static Analysis](https://github.com/zaeem2396/runtime-shield/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/zaeem2396/runtime-shield/actions/workflows/static-analysis.yml)
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-blue)](https://php.net)
-[![Laravel](https://img.shields.io/badge/Laravel-10%2F11-red)](https://laravel.com)
+[![Laravel](https://img.shields.io/badge/Laravel-10%2F11%2F12%2F13-red)](https://laravel.com)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-> Runtime security analysis and observation for PHP 8.2+ applications — with first-class Laravel 10 / 11 support.
+> Runtime security analysis and observation for PHP 8.2+ applications — with first-class Laravel 10 / 11 / 12 / 13 support.
 
 RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, and evaluates configurable security rules — with zero overhead when disabled.
 
@@ -18,7 +18,7 @@ RuntimeShield sits transparently in your HTTP middleware stack, captures request
 | Dependency | Version |
 |------------|---------|
 | PHP        | `^8.2`  |
-| Laravel    | `^10.0` or `^11.0` |
+| Laravel    | `^10.0`, `^11.0`, `^12.0`, or `^13.0` |
 
 ---
 
@@ -187,7 +187,7 @@ Three independent workflows run on every push and pull request:
 |----------|---------|----------------|
 | **Code Style** | push / PR | PHP CS Fixer (PSR-12 + PHP 8.2 migration rules) |
 | **Static Analysis** | push / PR | PHPStan level 9 — zero errors |
-| **Tests** | push / PR | PHPUnit — PHP 8.2/8.3/8.4 × Laravel 10/11 matrix |
+| **Tests** | push / PR | PHPUnit — PHP 8.2/8.3/8.4 × Laravel 10/11/12/13 matrix |
 
 All workflows use concurrency cancellation so only the latest run is active per branch.
 
