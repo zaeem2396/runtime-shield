@@ -24,4 +24,14 @@ final class InMemoryContextStore implements RuntimeContextStoreContract
     {
         return $this->context;
     }
+
+    public function has(): bool
+    {
+        return $this->context !== null;
+    }
+
+    public function reset(): void
+    {
+        $this->context = null;
+    }
 }
