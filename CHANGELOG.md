@@ -94,59 +94,6 @@ slug to `zaeem2396/runtime-shield`.
 
 ---
 
-### Commits (45)
-
-| Hash | Description |
-|------|-------------|
-| `6b88d42` | Merge pull request #3 from zaeem2396/feature/v0.2.0-runtime-observation |
-| `ba0c4ea` | fix(ci): pin phpunit version per Laravel matrix entry |
-| `0358ef3` | docs: remove versioning section from README |
-| `0a426ff` | docs: extend setup section to cover Laravel 12 and 13 |
-| `4c10f95` | fix: rename package to zaeem2396/runtime-shield |
-| `6045f6b` | feat: add Laravel 12 and 13 support |
-| `ebb08ff` | fix: resolve PHPStan level-9 errors and CS after pre-check run |
-| `9da59fb` | docs: add README.md with installation, usage, and CI badges |
-| `f37f6a1` | test: add SignalNormalizer unit tests |
-| `8b266ed` | test: add RequestCapturer and ResponseCapturer unit tests |
-| `af31aa8` | test: add InMemorySignalStore unit tests |
-| `686c120` | test: add RouteSignal and AuthSignal DTO unit tests |
-| `52b9828` | test: add ResponseSignal DTO unit tests |
-| `16541d5` | test: add RequestSignal DTO unit tests |
-| `ff15868` | feat(laravel): register RouteSignalCollector and AuthSignalCollector |
-| `0304b41` | feat(laravel): register RequestCapturer and ResponseCapturer bindings |
-| `e0a0e9e` | feat(laravel): register SignalStoreContract singleton in ServiceProvider |
-| `0ec5759` | feat(laravel/middleware): add terminate() for ResponseSignal capture |
-| `9b80c91` | feat(laravel/middleware): capture RequestSignal in handle() |
-| `b750e9a` | feat(laravel/middleware): inject SignalStoreContract and capturer contracts |
-| `67b8765` | feat(laravel/signal): add AuthSignalCollector |
-| `e214b1a` | feat(laravel/signal): add RouteSignalCollector |
-| `8aaea74` | feat(laravel/signal): add response time measurement to ResponseCapturer |
-| `70dff49` | feat(laravel/signal): add ResponseCapturer with status and headers |
-| `0bace7d` | feat(laravel/signal): add header normalization to RequestCapturer |
-| `b1cee59` | feat(laravel/signal): add RequestCapturer |
-| `6c1f298` | feat(core): add normalizeResponse() to SignalNormalizer |
-| `1304e60` | feat(core): add SignalNormalizer with normalizeRequest() |
-| `b7915f1` | feat(core): add reset() to InMemorySignalStore for Octane support |
-| `e0faeba` | feat(core): add response, route, and auth signal storage to InMemorySignalStore |
-| `8f0a7aa` | feat(core): add request signal storage to InMemorySignalStore |
-| `2c15609` | feat(core): add InMemorySignalStore skeleton implementing SignalStoreContract |
-| `227ecfd` | feat(contracts): add AuthCollectorContract |
-| `d5af4ca` | feat(contracts): add RouteCollectorContract |
-| `eb1bf68` | feat(contracts): add ResponseCapturerContract |
-| `20e2d7d` | feat(contracts): add RequestCapturerContract |
-| `dddae79` | feat(contracts): add SignalStoreContract |
-| `d54f9b7` | feat(dto/signal): add AuthSignal DTO with unauthenticated() factory |
-| `154300c` | feat(dto/signal): add RouteSignal DTO |
-| `68eb291` | feat(dto/signal): add responseTimeMs and fromArray() to ResponseSignal |
-| `449d2bf` | feat(dto/signal): add bodySize and capturedAt to ResponseSignal |
-| `8b2be0e` | feat(dto/signal): add ResponseSignal DTO — statusCode, statusText, headers |
-| `e9b6e29` | feat(dto/signal): add bodySize, capturedAt, and fromArray() to RequestSignal |
-| `f68a9e0` | feat(dto/signal): add headers and query map to RequestSignal |
-| `ac84332` | feat(dto/signal): add RequestSignal DTO — method, url, path, ip |
-| `accf779` | feat(skeleton): add Signal sub-namespace directories |
-
----
-
 ### Installation
 
 ```bash
@@ -265,40 +212,6 @@ and formatted with PHP CS Fixer.
 
 #### Documentation
 - `docs/roadmap.md` — full build execution guide (v0.1.0 → v1.2.0) with 🟢 / 🟡 / 🔴 status labels
-
----
-
-### Commits (26)
-
-| Hash | Description |
-|------|-------------|
-| `edf7a99` | Merge pull request #1 from zaeem2396/feature/v0.1.0-foundation |
-| `3b17f44` | docs(roadmap): add completion status labels to all phases and steps |
-| `da4cce6` | fix: resolve PHPStan level-9 errors and CS after pre-check run |
-| `4cfcb07` | chore: update root façade, phpunit config, and base unit test |
-| `534669a` | test: add ServiceProvider integration tests via Orchestra Testbench |
-| `058716e` | test: add RuntimeShieldManager unit tests |
-| `67a8f8a` | test: add ConfigRepository unit tests |
-| `223640c` | test: add RuntimeShieldConfig DTO unit tests |
-| `fea0ed4` | feat(laravel/console): add InstallCommand (runtime-shield:install) |
-| `c75eb96` | feat(laravel/middleware): add RuntimeShieldMiddleware |
-| `8548235` | feat(laravel): register CLI commands in ServiceProvider boot() |
-| `d5ee9c5` | feat(laravel): bind contracts to implementations in container |
-| `a3353a3` | feat(laravel): add config merging and publishing to ServiceProvider |
-| `61926b9` | feat(laravel): scaffold RuntimeShieldServiceProvider |
-| `f620fc1` | feat(engine): implement RuntimeShieldEngine boot lifecycle |
-| `478a93b` | feat(core): add force enable/disable to RuntimeShieldManager |
-| `5057edf` | feat(core): add isEnabled() with config and sampling rate guard |
-| `c27e2dd` | feat(core): add RuntimeShieldManager skeleton implementing ShieldContract |
-| `3edbe8f` | feat(core): implement ConfigRepository |
-| `eba3e0f` | feat(config): add runtime_shield.php package configuration |
-| `2505dde` | feat(dto): add RuntimeShieldConfig immutable value object |
-| `6c84b2b` | feat(support): add PackageVersion class with semver constants |
-| `b259216` | feat(contracts): add EngineContract interface |
-| `5f302b4` | feat(contracts): add ConfigRepositoryContract interface |
-| `3f3ac45` | feat(contracts): add ShieldContract interface |
-| `9ecfd06` | feat(skeleton): establish namespace directory structure |
-| `4053248` | chore: initial project scaffold with CI pipelines |
 
 ---
 
