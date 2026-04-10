@@ -142,6 +142,17 @@ final class ScanCommand extends Command
     }
 
     /**
+     * Render violations as a JSON document to stdout.
+     */
+    private function renderJson(ViolationCollection $collection): void
+    {
+        $this->line((string) json_encode(
+            array_map(static fn (Violation $v): array => $v->toArray(), $collection->all()),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+        ));
+    }
+
+    /**
      * Render the violation table, grouped and sorted by severity (worst first).
      *
      * @param list<Violation> $violations
