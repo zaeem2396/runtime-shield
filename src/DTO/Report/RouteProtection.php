@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace RuntimeShield\DTO\Report;
+
+use RuntimeShield\DTO\Rule\Severity;
+
+/**
+ * Immutable snapshot of a single route's security protection coverage.
+ *
+ * Produced by RouteProtectionAnalyzer for every scanned route. Carries both
+ * the middleware coverage booleans and the violation data from rule evaluation
+ * so the CLI commands have a single, self-contained object per route.
+ */
+final class RouteProtection
+{
+    public function __construct(
+        public readonly string $method,
+        public readonly string $uri,
+        public readonly string $name,
+        public readonly bool $hasAuth,
+        public readonly bool $hasCsrf,
+        public readonly bool $hasRateLimit,
+    ) {
+    }
+}
