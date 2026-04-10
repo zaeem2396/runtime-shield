@@ -52,6 +52,14 @@ final class SignalPipeline implements SignalPipelineContract
         $this->signalStore->storeRequest(
             $this->requestCapturer->capture($request),
         );
+
+        $this->signalStore->storeRoute(
+            $this->routeCollector->collect($request),
+        );
+
+        $this->signalStore->storeAuth(
+            $this->authCollector->collect(),
+        );
     }
 
     public function assemble(Response $response, float $startTimeMs): SecurityRuntimeContext|null
