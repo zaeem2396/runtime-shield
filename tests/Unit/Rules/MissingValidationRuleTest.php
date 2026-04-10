@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Rules;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Core\RuntimeContextBuilder;
@@ -17,19 +16,6 @@ use RuntimeShield\Rules\MissingValidationRule;
 final class MissingValidationRuleTest extends TestCase
 {
     private MissingValidationRule $rule;
-
-    protected function setUp(): void
-    {
-        $this->rule = new MissingValidationRule();
-    }
-
-    private function makeContext(string $method, array $middleware = []): SecurityRuntimeContext
-    {
-        $route   = new RouteSignal('', 'users', 'Closure', '', $middleware, false);
-        $request = new RequestSignal($method, 'http://localhost/users', '/users', '127.0.0.1', [], [], 0, new DateTimeImmutable());
-
-        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
-    }
 
     #[Test]
     public function it_has_correct_id_and_severity(): void
@@ -76,5 +62,18 @@ final class MissingValidationRuleTest extends TestCase
         $context = (new RuntimeContextBuilder())->build();
 
         $this->assertCount(0, $this->rule->evaluate($context));
+    }
+
+    protected function setUp(): void
+    {
+        $this->rule = new MissingValidationRule();
+    }
+
+    private function makeContext(string $method, array $middleware = []): SecurityRuntimeContext
+    {
+        $route = new RouteSignal('', 'users', 'Closure', '', $middleware, false);
+        $request = new RequestSignal($method, 'http://localhost/users', '/users', '127.0.0.1', [], [], 0, new \DateTimeImmutable());
+
+        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
     }
 }

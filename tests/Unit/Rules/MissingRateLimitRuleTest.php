@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Rules;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Core\RuntimeContextBuilder;
@@ -17,19 +16,6 @@ use RuntimeShield\Rules\MissingRateLimitRule;
 final class MissingRateLimitRuleTest extends TestCase
 {
     private MissingRateLimitRule $rule;
-
-    protected function setUp(): void
-    {
-        $this->rule = new MissingRateLimitRule();
-    }
-
-    private function makeContext(array $middleware): SecurityRuntimeContext
-    {
-        $route   = new RouteSignal('', 'api/users', 'Closure', '', $middleware, false);
-        $request = new RequestSignal('GET', 'http://localhost/api/users', '/api/users', '127.0.0.1', [], [], 0, new DateTimeImmutable());
-
-        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
-    }
 
     #[Test]
     public function it_has_correct_id_and_severity(): void
@@ -77,5 +63,18 @@ final class MissingRateLimitRuleTest extends TestCase
         $violations = $this->rule->evaluate($this->makeContext([]));
 
         $this->assertStringContainsString('api/users', $violations[0]->description);
+    }
+
+    protected function setUp(): void
+    {
+        $this->rule = new MissingRateLimitRule();
+    }
+
+    private function makeContext(array $middleware): SecurityRuntimeContext
+    {
+        $route = new RouteSignal('', 'api/users', 'Closure', '', $middleware, false);
+        $request = new RequestSignal('GET', 'http://localhost/api/users', '/api/users', '127.0.0.1', [], [], 0, new \DateTimeImmutable());
+
+        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
     }
 }

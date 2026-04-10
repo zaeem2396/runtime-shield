@@ -12,11 +12,6 @@ use RuntimeShield\DTO\Rule\ViolationCollection;
 
 final class ViolationCollectionTest extends TestCase
 {
-    private function violation(Severity $severity = Severity::MEDIUM, string $id = 'rule-id'): Violation
-    {
-        return new Violation($id, 'Title', 'Desc', $severity);
-    }
-
     #[Test]
     public function it_starts_empty(): void
     {
@@ -92,5 +87,9 @@ final class ViolationCollectionTest extends TestCase
 
         $this->assertSame(1, $a->count());
         $this->assertSame(1, $b->count());
+    }
+    private function violation(Severity $severity = Severity::MEDIUM, string $id = 'rule-id'): Violation
+    {
+        return new Violation($id, 'Title', 'Desc', $severity);
     }
 }

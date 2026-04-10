@@ -30,12 +30,12 @@ final class Violation
     public function toArray(): array
     {
         return [
-            'rule_id'     => $this->ruleId,
-            'title'       => $this->title,
+            'rule_id' => $this->ruleId,
+            'title' => $this->title,
             'description' => $this->description,
-            'severity'    => $this->severity->value,
-            'route'       => $this->route,
-            'context'     => $this->context,
+            'severity' => $this->severity->value,
+            'route' => $this->route,
+            'context' => $this->context,
         ];
     }
 }

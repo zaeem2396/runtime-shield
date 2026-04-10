@@ -64,7 +64,7 @@ final class FileUploadValidationRule implements RuleContract
 
     public function evaluate(SecurityRuntimeContext $context): array
     {
-        $route   = $context->route;
+        $route = $context->route;
         $request = $context->request;
 
         if ($route === null || $request === null) {
@@ -81,6 +81,7 @@ final class FileUploadValidationRule implements RuleContract
         foreach (self::UPLOAD_KEYWORDS as $keyword) {
             if (str_contains($lowerUri, $keyword)) {
                 $isUpload = true;
+
                 break;
             }
         }

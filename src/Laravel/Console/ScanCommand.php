@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Laravel\Console;
 
-use DateTimeImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
@@ -43,7 +42,7 @@ final class ScanCommand extends Command
         $this->line('');
         $this->line('<fg=cyan;options=bold> RuntimeShield Security Scan</>');
         $this->line('<fg=gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</>');
-        $this->line("  Scanning <options=bold>" . count($routes) . "</> route(s)…");
+        $this->line('  Scanning <options=bold>' . count($routes) . '</> route(s)…');
         $this->line('');
 
         $violations = $this->evaluateRoutes($routes);
@@ -66,7 +65,7 @@ final class ScanCommand extends Command
         }
 
         $criticalCount = count($violations->critical());
-        $highCount     = count($violations->high());
+        $highCount = count($violations->high());
 
         $this->line('');
         $this->line(sprintf(
@@ -93,9 +92,9 @@ final class ScanCommand extends Command
         $all = new ViolationCollection();
 
         foreach ($routes as $route) {
-            $context    = $this->buildContext($route);
+            $context = $this->buildContext($route);
             $violations = $this->ruleEngine->run($context);
-            $all        = $all->merge($violations);
+            $all = $all->merge($violations);
         }
 
         return $all;
@@ -120,6 +119,7 @@ final class ScanCommand extends Command
             foreach ($skipPrefixes as $prefix) {
                 if (str_starts_with($uri, $prefix)) {
                     $skip = true;
+
                     break;
                 }
             }
@@ -138,8 +138,8 @@ final class ScanCommand extends Command
      */
     private function buildContext(Route $route): SecurityRuntimeContext
     {
-        $methods    = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
-        $method     = $this->pickPrimaryMethod(array_values($methods));
+        $methods = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
+        $method = $this->pickPrimaryMethod(array_values($methods));
 
         /** @var list<string> $middleware */
         $middleware = array_values(
@@ -163,7 +163,7 @@ final class ScanCommand extends Command
             headers: [],
             query: [],
             bodySize: 0,
-            capturedAt: new DateTimeImmutable(),
+            capturedAt: new \DateTimeImmutable(),
         );
 
         return (new RuntimeContextBuilder())
@@ -210,7 +210,7 @@ final class ScanCommand extends Command
 
         foreach ($violations as $violation) {
             $severity = $violation->severity;
-            $label    = "<fg={$severity->color()}>{$severity->label()}</>";
+            $label = "<fg={$severity->color()}>{$severity->label()}</>";
 
             $rows[] = [
                 $violation->route !== '' ? $violation->route : '—',

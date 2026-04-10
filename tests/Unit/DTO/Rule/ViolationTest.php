@@ -11,18 +11,6 @@ use RuntimeShield\DTO\Rule\Violation;
 
 final class ViolationTest extends TestCase
 {
-    private function makeViolation(): Violation
-    {
-        return new Violation(
-            ruleId: 'missing-rate-limit',
-            title: 'Missing Rate Limit',
-            description: 'No throttle middleware on /api/users.',
-            severity: Severity::MEDIUM,
-            route: '/api/users',
-            context: ['middleware' => []],
-        );
-    }
-
     #[Test]
     public function it_stores_all_fields(): void
     {
@@ -77,5 +65,16 @@ final class ViolationTest extends TestCase
         $v = $this->makeViolation();
 
         $this->assertSame('missing-rate-limit', $v->ruleId);
+    }
+    private function makeViolation(): Violation
+    {
+        return new Violation(
+            ruleId: 'missing-rate-limit',
+            title: 'Missing Rate Limit',
+            description: 'No throttle middleware on /api/users.',
+            severity: Severity::MEDIUM,
+            route: '/api/users',
+            context: ['middleware' => []],
+        );
     }
 }

@@ -9,40 +9,10 @@ use PHPUnit\Framework\TestCase;
 use RuntimeShield\Contracts\Rule\RuleContract;
 use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\DTO\Rule\Severity;
-use RuntimeShield\DTO\Rule\Violation;
 use RuntimeShield\DTO\SecurityRuntimeContext;
 
 final class RuleRegistryTest extends TestCase
 {
-    private function makeRule(string $id = 'test-rule'): RuleContract
-    {
-        return new class ($id) implements RuleContract {
-            public function __construct(private readonly string $ruleId)
-            {
-            }
-
-            public function id(): string
-            {
-                return $this->ruleId;
-            }
-
-            public function title(): string
-            {
-                return 'Test Rule';
-            }
-
-            public function severity(): Severity
-            {
-                return Severity::INFO;
-            }
-
-            public function evaluate(SecurityRuntimeContext $context): array
-            {
-                return [];
-            }
-        };
-    }
-
     #[Test]
     public function it_starts_empty(): void
     {
@@ -77,7 +47,7 @@ final class RuleRegistryTest extends TestCase
     public function find_returns_rule_when_present(): void
     {
         $registry = new RuleRegistry();
-        $rule     = $this->makeRule('find-me');
+        $rule = $this->makeRule('find-me');
         $registry->register($rule);
 
         $this->assertSame($rule, $registry->find('find-me'));
@@ -89,5 +59,33 @@ final class RuleRegistryTest extends TestCase
         $registry = new RuleRegistry();
 
         $this->assertNull($registry->find('ghost'));
+    }
+    private function makeRule(string $id = 'test-rule'): RuleContract
+    {
+        return new class ($id) implements RuleContract {
+            public function __construct(private readonly string $ruleId)
+            {
+            }
+
+            public function id(): string
+            {
+                return $this->ruleId;
+            }
+
+            public function title(): string
+            {
+                return 'Test Rule';
+            }
+
+            public function severity(): Severity
+            {
+                return Severity::INFO;
+            }
+
+            public function evaluate(SecurityRuntimeContext $context): array
+            {
+                return [];
+            }
+        };
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Support\ServiceProvider;
 use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
+use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Contracts\SamplerContract;
 use RuntimeShield\Contracts\ShieldContract;
 use RuntimeShield\Contracts\Signal\AuthCollectorContract;
@@ -16,16 +17,10 @@ use RuntimeShield\Contracts\Signal\ResponseCapturerContract;
 use RuntimeShield\Contracts\Signal\RouteCollectorContract;
 use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
 use RuntimeShield\Contracts\Signal\SignalPipelineContract;
-use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
 use RuntimeShield\Core\ConfigRepository;
 use RuntimeShield\Core\Rule\RuleEngine;
 use RuntimeShield\Core\Rule\RuleRegistry;
-use RuntimeShield\Rules\FileUploadValidationRule;
-use RuntimeShield\Rules\MissingCsrfRule;
-use RuntimeShield\Rules\MissingRateLimitRule;
-use RuntimeShield\Rules\MissingValidationRule;
-use RuntimeShield\Rules\PublicRouteWithoutAuthRule;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Core\Sampling\SamplerFactory;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
@@ -38,6 +33,11 @@ use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;
 use RuntimeShield\Laravel\Signal\RouteSignalCollector;
 use RuntimeShield\Laravel\Signal\SignalPipeline;
+use RuntimeShield\Rules\FileUploadValidationRule;
+use RuntimeShield\Rules\MissingCsrfRule;
+use RuntimeShield\Rules\MissingRateLimitRule;
+use RuntimeShield\Rules\MissingValidationRule;
+use RuntimeShield\Rules\PublicRouteWithoutAuthRule;
 
 final class RuntimeShieldServiceProvider extends ServiceProvider
 {

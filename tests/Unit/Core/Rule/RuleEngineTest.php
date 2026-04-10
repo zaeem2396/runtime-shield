@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Core\Rule;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Contracts\Rule\RuleContract;
@@ -17,48 +16,6 @@ use RuntimeShield\DTO\SecurityRuntimeContext;
 
 final class RuleEngineTest extends TestCase
 {
-    private function emptyContext(): SecurityRuntimeContext
-    {
-        return (new RuntimeContextBuilder())->build();
-    }
-
-    private function makeRule(int $violationCount, string $id = 'stub-rule'): RuleContract
-    {
-        return new class ($violationCount, $id) implements RuleContract {
-            public function __construct(
-                private readonly int $count,
-                private readonly string $ruleId,
-            ) {
-            }
-
-            public function id(): string
-            {
-                return $this->ruleId;
-            }
-
-            public function title(): string
-            {
-                return 'Stub';
-            }
-
-            public function severity(): Severity
-            {
-                return Severity::INFO;
-            }
-
-            public function evaluate(SecurityRuntimeContext $context): array
-            {
-                $violations = [];
-
-                for ($i = 0; $i < $this->count; $i++) {
-                    $violations[] = new Violation($this->ruleId, 'Stub', 'desc', Severity::INFO);
-                }
-
-                return $violations;
-            }
-        };
-    }
-
     #[Test]
     public function it_returns_empty_collection_when_registry_is_empty(): void
     {
@@ -105,5 +62,46 @@ final class RuleEngineTest extends TestCase
         $result = (new RuleEngine($registry))->run($this->emptyContext());
 
         $this->assertSame(3, $result->count());
+    }
+    private function emptyContext(): SecurityRuntimeContext
+    {
+        return (new RuntimeContextBuilder())->build();
+    }
+
+    private function makeRule(int $violationCount, string $id = 'stub-rule'): RuleContract
+    {
+        return new class ($violationCount, $id) implements RuleContract {
+            public function __construct(
+                private readonly int $count,
+                private readonly string $ruleId,
+            ) {
+            }
+
+            public function id(): string
+            {
+                return $this->ruleId;
+            }
+
+            public function title(): string
+            {
+                return 'Stub';
+            }
+
+            public function severity(): Severity
+            {
+                return Severity::INFO;
+            }
+
+            public function evaluate(SecurityRuntimeContext $context): array
+            {
+                $violations = [];
+
+                for ($i = 0; $i < $this->count; $i++) {
+                    $violations[] = new Violation($this->ruleId, 'Stub', 'desc', Severity::INFO);
+                }
+
+                return $violations;
+            }
+        };
     }
 }

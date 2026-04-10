@@ -46,7 +46,7 @@ final class MissingValidationRule implements RuleContract
 
     public function evaluate(SecurityRuntimeContext $context): array
     {
-        $route   = $context->route;
+        $route = $context->route;
         $request = $context->request;
 
         if ($route === null || $request === null) {

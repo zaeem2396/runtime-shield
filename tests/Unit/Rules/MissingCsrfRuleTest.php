@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Rules;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Core\RuntimeContextBuilder;
@@ -17,19 +16,6 @@ use RuntimeShield\Rules\MissingCsrfRule;
 final class MissingCsrfRuleTest extends TestCase
 {
     private MissingCsrfRule $rule;
-
-    protected function setUp(): void
-    {
-        $this->rule = new MissingCsrfRule();
-    }
-
-    private function makeContext(string $method, array $middleware, string $uri = 'contact'): SecurityRuntimeContext
-    {
-        $route   = new RouteSignal('', $uri, 'Closure', '', $middleware, false);
-        $request = new RequestSignal($method, "http://localhost/{$uri}", "/{$uri}", '127.0.0.1', [], [], 0, new DateTimeImmutable());
-
-        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
-    }
 
     #[Test]
     public function it_has_correct_id_and_severity(): void
@@ -84,5 +70,18 @@ final class MissingCsrfRuleTest extends TestCase
         $context = (new RuntimeContextBuilder())->build();
 
         $this->assertCount(0, $this->rule->evaluate($context));
+    }
+
+    protected function setUp(): void
+    {
+        $this->rule = new MissingCsrfRule();
+    }
+
+    private function makeContext(string $method, array $middleware, string $uri = 'contact'): SecurityRuntimeContext
+    {
+        $route = new RouteSignal('', $uri, 'Closure', '', $middleware, false);
+        $request = new RequestSignal($method, "http://localhost/{$uri}", "/{$uri}", '127.0.0.1', [], [], 0, new \DateTimeImmutable());
+
+        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Rules;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Core\RuntimeContextBuilder;
@@ -17,19 +16,6 @@ use RuntimeShield\Rules\PublicRouteWithoutAuthRule;
 final class PublicRouteWithoutAuthRuleTest extends TestCase
 {
     private PublicRouteWithoutAuthRule $rule;
-
-    protected function setUp(): void
-    {
-        $this->rule = new PublicRouteWithoutAuthRule();
-    }
-
-    private function makeContext(array $middleware, string $method = 'GET'): SecurityRuntimeContext
-    {
-        $route = new RouteSignal('', 'dashboard', 'Closure', '', $middleware, false);
-        $request = new RequestSignal($method, 'http://localhost/dashboard', '/dashboard', '127.0.0.1', [], [], 0, new DateTimeImmutable());
-
-        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
-    }
 
     #[Test]
     public function it_has_correct_id_and_severity(): void
@@ -85,5 +71,18 @@ final class PublicRouteWithoutAuthRuleTest extends TestCase
         $violations = $this->rule->evaluate($this->makeContext([]));
 
         $this->assertStringContainsString('dashboard', $violations[0]->route);
+    }
+
+    protected function setUp(): void
+    {
+        $this->rule = new PublicRouteWithoutAuthRule();
+    }
+
+    private function makeContext(array $middleware, string $method = 'GET'): SecurityRuntimeContext
+    {
+        $route = new RouteSignal('', 'dashboard', 'Closure', '', $middleware, false);
+        $request = new RequestSignal($method, 'http://localhost/dashboard', '/dashboard', '127.0.0.1', [], [], 0, new \DateTimeImmutable());
+
+        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
     }
 }

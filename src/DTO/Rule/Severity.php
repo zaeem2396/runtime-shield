@@ -10,10 +10,10 @@ namespace RuntimeShield\DTO\Rule;
 enum Severity: string
 {
     case CRITICAL = 'critical';
-    case HIGH     = 'high';
-    case MEDIUM   = 'medium';
-    case LOW      = 'low';
-    case INFO     = 'info';
+    case HIGH = 'high';
+    case MEDIUM = 'medium';
+    case LOW = 'low';
+    case INFO = 'info';
 
     /** Human-readable uppercase label. */
     public function label(): string
@@ -26,10 +26,10 @@ enum Severity: string
     {
         return match ($this) {
             self::CRITICAL => 'red',
-            self::HIGH     => 'yellow',
-            self::MEDIUM   => 'cyan',
-            self::LOW      => 'blue',
-            self::INFO     => 'white',
+            self::HIGH => 'yellow',
+            self::MEDIUM => 'cyan',
+            self::LOW => 'blue',
+            self::INFO => 'white',
         };
     }
 
@@ -41,10 +41,10 @@ enum Severity: string
     {
         return match ($this) {
             self::CRITICAL => 0,
-            self::HIGH     => 1,
-            self::MEDIUM   => 2,
-            self::LOW      => 3,
-            self::INFO     => 4,
+            self::HIGH => 1,
+            self::MEDIUM => 2,
+            self::LOW => 3,
+            self::INFO => 4,
         };
     }
 }

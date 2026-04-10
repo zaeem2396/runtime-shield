@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Rules;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Core\RuntimeContextBuilder;
@@ -17,19 +16,6 @@ use RuntimeShield\Rules\FileUploadValidationRule;
 final class FileUploadValidationRuleTest extends TestCase
 {
     private FileUploadValidationRule $rule;
-
-    protected function setUp(): void
-    {
-        $this->rule = new FileUploadValidationRule();
-    }
-
-    private function makeContext(string $method, string $uri, array $middleware = []): SecurityRuntimeContext
-    {
-        $route   = new RouteSignal('', $uri, 'Closure', '', $middleware, false);
-        $request = new RequestSignal($method, "http://localhost/{$uri}", "/{$uri}", '127.0.0.1', [], [], 0, new DateTimeImmutable());
-
-        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
-    }
 
     #[Test]
     public function it_has_correct_id_and_severity(): void
@@ -93,5 +79,18 @@ final class FileUploadValidationRuleTest extends TestCase
         $violations = $this->rule->evaluate($this->makeContext('POST', 'media/upload'));
 
         $this->assertStringContainsString('media/upload', $violations[0]->route);
+    }
+
+    protected function setUp(): void
+    {
+        $this->rule = new FileUploadValidationRule();
+    }
+
+    private function makeContext(string $method, string $uri, array $middleware = []): SecurityRuntimeContext
+    {
+        $route = new RouteSignal('', $uri, 'Closure', '', $middleware, false);
+        $request = new RequestSignal($method, "http://localhost/{$uri}", "/{$uri}", '127.0.0.1', [], [], 0, new \DateTimeImmutable());
+
+        return (new RuntimeContextBuilder())->withRoute($route)->withRequest($request)->build();
     }
 }
