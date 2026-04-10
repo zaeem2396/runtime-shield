@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\DTO\Report;
 
-use DateTimeImmutable;
 use RuntimeShield\DTO\Rule\ViolationCollection;
 
 /**
@@ -18,7 +17,7 @@ final class SecurityReport
 {
     /** @param list<RouteProtection> $routeProtections */
     public function __construct(
-        public readonly DateTimeImmutable $scannedAt,
+        public readonly \DateTimeImmutable $scannedAt,
         public readonly int $routeCount,
         public readonly ViolationCollection $violations,
         public readonly array $routeProtections = [],
@@ -48,7 +47,7 @@ final class SecurityReport
             $this->score() >= 75 => 'B',
             $this->score() >= 60 => 'C',
             $this->score() >= 40 => 'D',
-            default              => 'F',
+            default => 'F',
         };
     }
 
@@ -74,17 +73,17 @@ final class SecurityReport
     public function toArray(): array
     {
         return [
-            'scanned_at'         => $this->scannedAt->format(\DateTimeInterface::ATOM),
-            'route_count'        => $this->routeCount,
-            'exposed_routes'     => $this->exposedRouteCount(),
-            'score'              => $this->score(),
-            'grade'              => $this->grade(),
-            'total_violations'   => $this->violations->count(),
-            'critical'           => count($this->violations->critical()),
-            'high'               => count($this->violations->high()),
-            'medium'             => count($this->violations->medium()),
-            'low'                => count($this->violations->low()),
-            'violations'         => array_map(
+            'scanned_at' => $this->scannedAt->format(\DateTimeInterface::ATOM),
+            'route_count' => $this->routeCount,
+            'exposed_routes' => $this->exposedRouteCount(),
+            'score' => $this->score(),
+            'grade' => $this->grade(),
+            'total_violations' => $this->violations->count(),
+            'critical' => count($this->violations->critical()),
+            'high' => count($this->violations->high()),
+            'medium' => count($this->violations->medium()),
+            'low' => count($this->violations->low()),
+            'violations' => array_map(
                 static fn ($v) => $v->toArray(),
                 $this->violations->sorted(),
             ),

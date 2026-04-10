@@ -21,6 +21,8 @@ use RuntimeShield\Support\CliRenderer;
  */
 final class RoutesCommand extends Command
 {
+    /** @var list<string> */
+    private const SKIP_PREFIXES = ['_ignition', '_telescope', 'horizon/', 'telescope/', 'debugbar/'];
     protected $signature = 'runtime-shield:routes
                             {--filter= : Filter rows: "exposed" shows only routes with missing protections}
                             {--method= : Show only routes matching this HTTP method (GET, POST, …)}
@@ -28,14 +30,81 @@ final class RoutesCommand extends Command
 
     protected $description = 'List all routes with their security protection coverage';
 
-    /** @var list<string> */
-    private const SKIP_PREFIXES = ['_ignition', '_telescope', 'horizon/', 'telescope/', 'debugbar/'];
-
     public function __construct(
         private readonly Router $router,
         private readonly RouteProtectionAnalyzer $analyzer,
     ) {
         parent::__construct();
+    }
+
+    public function handle(): int
+    {
+        $this->line('');
+        $this->line('<fg=cyan;options=bold> RuntimeShield Route Protection Inspector</>');
+        $this->line(CliRenderer::divider(56));
+
+        $protections = $this->buildProtections();
+
+        $filter = $this->option('filter');
+
+        if ($filter === 'exposed') {
+            $protections = array_values(
+                array_filter($protections, static fn (RouteProtection $p): bool => ! $p->isFullyProtected()),
+            );
+        }
+
+        $method = $this->option('method');
+
+        if (is_string($method) && $method !== '') {
+            $upper = strtoupper($method);
+            $protections = array_values(
+                array_filter($protections, static fn (RouteProtection $p): bool => $p->method === $upper),
+            );
+        }
+
+        if ($this->option('sort') === 'risk') {
+            usort($protections, static function (RouteProtection $a, RouteProtection $b): int {
+                $riskOrder = ['CRITICAL' => 0, 'HIGH RISK' => 1, 'MEDIUM RISK' => 2, 'LOW RISK' => 3, 'SAFE' => 4, 'INFO' => 5];
+
+                return ($riskOrder[$a->riskLabel()] ?? 9) <=> ($riskOrder[$b->riskLabel()] ?? 9);
+            });
+        }
+
+        if ($protections === []) {
+            $this->line('<fg=green>  ✔ All routes are fully protected.</>');
+            $this->line('');
+
+            return self::SUCCESS;
+        }
+
+        $rows = [];
+
+        foreach ($protections as $protection) {
+            $csrfLabel = $protection->hasCsrf ? CliRenderer::checkmark(true) : CliRenderer::checkmark(false);
+            $risk = CliRenderer::riskLabel($protection->riskLabel());
+
+            $rows[] = [
+                $protection->method,
+                $protection->uri,
+                $protection->name !== '' ? $protection->name : '—',
+                CliRenderer::checkmark($protection->hasAuth),
+                $csrfLabel,
+                CliRenderer::checkmark($protection->hasRateLimit),
+                $risk,
+            ];
+        }
+
+        $this->table(['Method', 'URI', 'Name', 'Auth', 'CSRF', 'Rate Limit', 'Status'], $rows);
+
+        $total = count($protections);
+        $exposed = count(array_filter($protections, static fn (RouteProtection $p): bool => ! $p->isFullyProtected()));
+        $safe = $total - $exposed;
+
+        $this->line('');
+        $this->line("  <options=bold>{$total}</> route(s) shown   <fg=green>{$safe} protected</>   <fg=red>{$exposed} exposed</>");
+        $this->line('');
+
+        return self::SUCCESS;
     }
 
     /**
@@ -46,12 +115,13 @@ final class RoutesCommand extends Command
         $protections = [];
 
         foreach ($this->router->getRoutes()->getRoutes() as $route) {
-            $uri  = $route->uri();
+            $uri = $route->uri();
             $skip = false;
 
             foreach (self::SKIP_PREFIXES as $prefix) {
                 if (str_starts_with($uri, $prefix)) {
                     $skip = true;
+
                     break;
                 }
             }
@@ -69,7 +139,7 @@ final class RoutesCommand extends Command
     private function buildProtection(Route $route): RouteProtection
     {
         $methods = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
-        $method  = $this->pickMethod(array_values($methods));
+        $method = $this->pickMethod(array_values($methods));
 
         /** @var list<string> $middleware */
         $middleware = array_values(
@@ -106,75 +176,5 @@ final class RoutesCommand extends Command
         }
 
         return $methods[0] ?? 'GET';
-    }
-
-    public function handle(): int
-    {
-        $this->line('');
-        $this->line('<fg=cyan;options=bold> RuntimeShield Route Protection Inspector</>');
-        $this->line(CliRenderer::divider(56));
-
-        $protections = $this->buildProtections();
-
-        $filter = $this->option('filter');
-
-        if ($filter === 'exposed') {
-            $protections = array_values(
-                array_filter($protections, static fn (RouteProtection $p): bool => ! $p->isFullyProtected()),
-            );
-        }
-
-        $method = $this->option('method');
-
-        if (is_string($method) && $method !== '') {
-            $upper       = strtoupper($method);
-            $protections = array_values(
-                array_filter($protections, static fn (RouteProtection $p): bool => $p->method === $upper),
-            );
-        }
-
-        if ($this->option('sort') === 'risk') {
-            usort($protections, static function (RouteProtection $a, RouteProtection $b): int {
-                $riskOrder = ['CRITICAL' => 0, 'HIGH RISK' => 1, 'MEDIUM RISK' => 2, 'LOW RISK' => 3, 'SAFE' => 4, 'INFO' => 5];
-
-                return ($riskOrder[$a->riskLabel()] ?? 9) <=> ($riskOrder[$b->riskLabel()] ?? 9);
-            });
-        }
-
-        if ($protections === []) {
-            $this->line('<fg=green>  ✔ All routes are fully protected.</>');
-            $this->line('');
-
-            return self::SUCCESS;
-        }
-
-        $rows = [];
-
-        foreach ($protections as $protection) {
-            $csrfLabel = $protection->hasCsrf ? CliRenderer::checkmark(true) : CliRenderer::checkmark(false);
-            $risk      = CliRenderer::riskLabel($protection->riskLabel());
-
-            $rows[] = [
-                $protection->method,
-                $protection->uri,
-                $protection->name !== '' ? $protection->name : '—',
-                CliRenderer::checkmark($protection->hasAuth),
-                $csrfLabel,
-                CliRenderer::checkmark($protection->hasRateLimit),
-                $risk,
-            ];
-        }
-
-        $this->table(['Method', 'URI', 'Name', 'Auth', 'CSRF', 'Rate Limit', 'Status'], $rows);
-
-        $total    = count($protections);
-        $exposed  = count(array_filter($protections, static fn (RouteProtection $p): bool => ! $p->isFullyProtected()));
-        $safe     = $total - $exposed;
-
-        $this->line('');
-        $this->line("  <options=bold>{$total}</> route(s) shown   <fg=green>{$safe} protected</>   <fg=red>{$exposed} exposed</>");
-        $this->line('');
-
-        return self::SUCCESS;
     }
 }

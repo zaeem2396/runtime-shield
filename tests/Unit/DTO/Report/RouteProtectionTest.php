@@ -13,23 +13,6 @@ use RuntimeShield\DTO\Rule\ViolationCollection;
 
 final class RouteProtectionTest extends TestCase
 {
-    private function makeProtection(
-        bool $hasAuth = true,
-        bool $hasCsrf = true,
-        bool $hasRateLimit = true,
-        ViolationCollection|null $violations = null,
-    ): RouteProtection {
-        return new RouteProtection(
-            method: 'GET',
-            uri: 'dashboard',
-            name: 'dashboard',
-            hasAuth: $hasAuth,
-            hasCsrf: $hasCsrf,
-            hasRateLimit: $hasRateLimit,
-            violations: $violations ?? new ViolationCollection(),
-        );
-    }
-
     #[Test]
     public function it_stores_all_fields(): void
     {
@@ -52,7 +35,7 @@ final class RouteProtectionTest extends TestCase
     #[Test]
     public function is_not_fully_protected_when_violations_exist(): void
     {
-        $violation  = new Violation('rule-id', 'Title', 'Desc', Severity::HIGH);
+        $violation = new Violation('rule-id', 'Title', 'Desc', Severity::HIGH);
         $collection = new ViolationCollection([$violation]);
 
         $this->assertFalse($this->makeProtection(violations: $collection)->isFullyProtected());
@@ -83,9 +66,25 @@ final class RouteProtectionTest extends TestCase
     public function highest_severity_returns_worst_severity(): void
     {
         $vHigh = new Violation('a', 'T', 'D', Severity::HIGH);
-        $vMed  = new Violation('b', 'T', 'D', Severity::MEDIUM);
-        $p     = $this->makeProtection(violations: new ViolationCollection([$vMed, $vHigh]));
+        $vMed = new Violation('b', 'T', 'D', Severity::MEDIUM);
+        $p = $this->makeProtection(violations: new ViolationCollection([$vMed, $vHigh]));
 
         $this->assertSame(Severity::HIGH, $p->highestSeverity());
+    }
+    private function makeProtection(
+        bool $hasAuth = true,
+        bool $hasCsrf = true,
+        bool $hasRateLimit = true,
+        ViolationCollection|null $violations = null,
+    ): RouteProtection {
+        return new RouteProtection(
+            method: 'GET',
+            uri: 'dashboard',
+            name: 'dashboard',
+            hasAuth: $hasAuth,
+            hasCsrf: $hasCsrf,
+            hasRateLimit: $hasRateLimit,
+            violations: $violations ?? new ViolationCollection(),
+        );
     }
 }

@@ -22,10 +22,10 @@ final class CliRenderer
     {
         return match ($severity) {
             Severity::CRITICAL => '🔴',
-            Severity::HIGH     => '🟡',
-            Severity::MEDIUM   => '🔵',
-            Severity::LOW      => '⚪',
-            Severity::INFO     => '💬',
+            Severity::HIGH => '🟡',
+            Severity::MEDIUM => '🔵',
+            Severity::LOW => '⚪',
+            Severity::INFO => '💬',
         };
     }
 
@@ -46,9 +46,9 @@ final class CliRenderer
     public static function gradeColor(string $grade): string
     {
         return match ($grade) {
-            'A'     => 'green',
-            'B'     => 'cyan',
-            'C'     => 'yellow',
+            'A' => 'green',
+            'B' => 'cyan',
+            'C' => 'yellow',
             'D', 'F' => 'red',
             default => 'white',
         };
@@ -68,12 +68,12 @@ final class CliRenderer
     public static function riskLabel(string $label): string
     {
         $color = match ($label) {
-            'CRITICAL'    => 'red',
-            'HIGH RISK'   => 'yellow',
+            'CRITICAL' => 'red',
+            'HIGH RISK' => 'yellow',
             'MEDIUM RISK' => 'cyan',
-            'LOW RISK'    => 'blue',
-            'SAFE'        => 'green',
-            default       => 'white',
+            'LOW RISK' => 'blue',
+            'SAFE' => 'green',
+            default => 'white',
         };
 
         return "<fg={$color};options=bold>{$label}</>";

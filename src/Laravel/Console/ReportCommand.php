@@ -8,7 +8,6 @@ use Illuminate\Console\Command;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
 use RuntimeShield\DTO\Report\SecurityReport;
 use RuntimeShield\DTO\Rule\Severity;
-use RuntimeShield\DTO\Rule\Violation;
 use RuntimeShield\Support\CliRenderer;
 
 /**
@@ -69,7 +68,7 @@ final class ReportCommand extends Command
         $this->renderSummary($report);
 
         $hasCritical = count($report->violations->critical()) > 0;
-        $hasHigh     = count($report->violations->high()) > 0;
+        $hasHigh = count($report->violations->high()) > 0;
 
         return ($hasCritical || $hasHigh) ? self::FAILURE : self::SUCCESS;
     }
@@ -90,7 +89,7 @@ final class ReportCommand extends Command
                 continue;
             }
 
-            $icon  = CliRenderer::severityIcon($severity);
+            $icon = CliRenderer::severityIcon($severity);
             $badge = CliRenderer::badge($severity);
             $count = count($items);
 
@@ -108,9 +107,9 @@ final class ReportCommand extends Command
 
     private function renderSummary(SecurityReport $report): void
     {
-        $score        = $report->score();
-        $grade        = $report->grade();
-        $gradeColor   = CliRenderer::gradeColor($grade);
+        $score = $report->score();
+        $grade = $report->grade();
+        $gradeColor = CliRenderer::gradeColor($grade);
         $exposedCount = $report->exposedRouteCount();
 
         $this->line(CliRenderer::divider(52));

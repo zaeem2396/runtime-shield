@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\DTO\Report;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\DTO\Report\SecurityReport;
@@ -14,20 +13,6 @@ use RuntimeShield\DTO\Rule\ViolationCollection;
 
 final class SecurityReportTest extends TestCase
 {
-    private function violation(Severity $severity): Violation
-    {
-        return new Violation('rule', 'Title', 'Desc', $severity);
-    }
-
-    private function makeReport(ViolationCollection $violations): SecurityReport
-    {
-        return new SecurityReport(
-            scannedAt: new DateTimeImmutable(),
-            routeCount: 10,
-            violations: $violations,
-        );
-    }
-
     #[Test]
     public function score_is_100_with_no_violations(): void
     {
@@ -58,7 +43,7 @@ final class SecurityReportTest extends TestCase
     public function score_never_goes_below_zero(): void
     {
         $violations = array_fill(0, 10, $this->violation(Severity::CRITICAL));
-        $report     = $this->makeReport(new ViolationCollection($violations));
+        $report = $this->makeReport(new ViolationCollection($violations));
 
         $this->assertSame(0, $report->score());
         $this->assertSame('F', $report->grade());
@@ -68,7 +53,7 @@ final class SecurityReportTest extends TestCase
     public function grade_reflects_score_thresholds(): void
     {
         $withViolations = static fn (int $n, Severity $s): SecurityReport => new SecurityReport(
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             10,
             new ViolationCollection(array_fill(0, $n, new Violation('r', 'T', 'D', $s))),
         );
@@ -104,5 +89,18 @@ final class SecurityReportTest extends TestCase
         $this->assertSame(1, $arr['critical']);
         $this->assertSame(1, $arr['high']);
         $this->assertSame(0, $arr['medium']);
+    }
+    private function violation(Severity $severity): Violation
+    {
+        return new Violation('rule', 'Title', 'Desc', $severity);
+    }
+
+    private function makeReport(ViolationCollection $violations): SecurityReport
+    {
+        return new SecurityReport(
+            scannedAt: new \DateTimeImmutable(),
+            routeCount: 10,
+            violations: $violations,
+        );
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Core\Report;
 
-use DateTimeImmutable;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
@@ -23,6 +22,8 @@ use RuntimeShield\DTO\Signal\RouteSignal;
  */
 final class ReportBuilder implements ReportBuilderContract
 {
+    /** @var list<string> */
+    private const SKIP_PREFIXES = ['_ignition', '_telescope', 'horizon/', 'telescope/', 'debugbar/'];
     public function __construct(
         private readonly Router $router,
         private readonly RuleEngineContract $ruleEngine,
@@ -30,24 +31,21 @@ final class ReportBuilder implements ReportBuilderContract
     ) {
     }
 
-    /** @var list<string> */
-    private const SKIP_PREFIXES = ['_ignition', '_telescope', 'horizon/', 'telescope/', 'debugbar/'];
-
     public function build(): SecurityReport
     {
-        $routes     = $this->collectRoutes();
-        $all        = new ViolationCollection();
+        $routes = $this->collectRoutes();
+        $all = new ViolationCollection();
         $protections = [];
 
         foreach ($routes as $route) {
-            $context    = $this->buildContext($route);
+            $context = $this->buildContext($route);
             $violations = $this->ruleEngine->run($context);
-            $all        = $all->merge($violations);
+            $all = $all->merge($violations);
 
             $routeSignal = $context->route;
 
             if ($routeSignal !== null) {
-                $method      = $context->request?->method ?? 'GET';
+                $method = $context->request?->method ?? 'GET';
                 $protections[] = new RouteProtection(
                     method: $method,
                     uri: $routeSignal->uri,
@@ -61,7 +59,7 @@ final class ReportBuilder implements ReportBuilderContract
         }
 
         return new SecurityReport(
-            scannedAt: new DateTimeImmutable(),
+            scannedAt: new \DateTimeImmutable(),
             routeCount: count($routes),
             violations: $all,
             routeProtections: $protections,
@@ -76,12 +74,13 @@ final class ReportBuilder implements ReportBuilderContract
         $routes = [];
 
         foreach ($this->router->getRoutes()->getRoutes() as $route) {
-            $uri  = $route->uri();
+            $uri = $route->uri();
             $skip = false;
 
             foreach (self::SKIP_PREFIXES as $prefix) {
                 if (str_starts_with($uri, $prefix)) {
                     $skip = true;
+
                     break;
                 }
             }
@@ -97,7 +96,7 @@ final class ReportBuilder implements ReportBuilderContract
     private function buildContext(Route $route): \RuntimeShield\DTO\SecurityRuntimeContext
     {
         $methods = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
-        $method  = $this->pickMethod(array_values($methods));
+        $method = $this->pickMethod(array_values($methods));
 
         /** @var list<string> $middleware */
         $middleware = array_values(

@@ -13,16 +13,6 @@ final class RouteProtectionAnalyzerTest extends TestCase
 {
     private RouteProtectionAnalyzer $analyzer;
 
-    protected function setUp(): void
-    {
-        $this->analyzer = new RouteProtectionAnalyzer();
-    }
-
-    private function makeRoute(string $uri, array $middleware): RouteSignal
-    {
-        return new RouteSignal('', $uri, 'Closure', '', $middleware, false);
-    }
-
     #[Test]
     public function has_auth_returns_true_for_auth_middleware(): void
     {
@@ -89,5 +79,15 @@ final class RouteProtectionAnalyzerTest extends TestCase
         $route = $this->makeRoute('api/login', ['auth']);
 
         $this->assertFalse($this->analyzer->hasRateLimit($route));
+    }
+
+    protected function setUp(): void
+    {
+        $this->analyzer = new RouteProtectionAnalyzer();
+    }
+
+    private function makeRoute(string $uri, array $middleware): RouteSignal
+    {
+        return new RouteSignal('', $uri, 'Closure', '', $middleware, false);
     }
 }

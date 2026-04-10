@@ -13,16 +13,6 @@ final class RouteProtectionAnalyzerApiTest extends TestCase
 {
     private RouteProtectionAnalyzer $analyzer;
 
-    protected function setUp(): void
-    {
-        $this->analyzer = new RouteProtectionAnalyzer();
-    }
-
-    private function makeRoute(string $uri, array $middleware): RouteSignal
-    {
-        return new RouteSignal('', $uri, 'Closure', '', $middleware, false);
-    }
-
     #[Test]
     public function csrf_not_required_for_uri_starting_with_api(): void
     {
@@ -62,5 +52,15 @@ final class RouteProtectionAnalyzerApiTest extends TestCase
 
         $this->assertFalse($this->analyzer->hasAuth($route));
         $this->assertFalse($this->analyzer->hasRateLimit($route));
+    }
+
+    protected function setUp(): void
+    {
+        $this->analyzer = new RouteProtectionAnalyzer();
+    }
+
+    private function makeRoute(string $uri, array $middleware): RouteSignal
+    {
+        return new RouteSignal('', $uri, 'Closure', '', $middleware, false);
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\DTO\Report;
 
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\DTO\Report\SecurityReport;
@@ -14,17 +13,6 @@ use RuntimeShield\DTO\Rule\ViolationCollection;
 
 final class SecurityReportGradeEdgeCaseTest extends TestCase
 {
-    private function reportWith(Severity $severity, int $count): SecurityReport
-    {
-        $violations = array_fill(0, $count, new Violation('r', 'T', 'D', $severity));
-
-        return new SecurityReport(
-            scannedAt: new DateTimeImmutable(),
-            routeCount: 10,
-            violations: new ViolationCollection($violations),
-        );
-    }
-
     #[Test]
     public function two_medium_violations_give_score_of_90(): void
     {
@@ -53,5 +41,15 @@ final class SecurityReportGradeEdgeCaseTest extends TestCase
     public function b_grade_for_score_in_75_to_89_range(): void
     {
         $this->assertSame('B', $this->reportWith(Severity::MEDIUM, 5)->grade());
+    }
+    private function reportWith(Severity $severity, int $count): SecurityReport
+    {
+        $violations = array_fill(0, $count, new Violation('r', 'T', 'D', $severity));
+
+        return new SecurityReport(
+            scannedAt: new \DateTimeImmutable(),
+            routeCount: 10,
+            violations: new ViolationCollection($violations),
+        );
     }
 }

@@ -28,7 +28,7 @@ final class ReportBuilderTest extends TestCase
         $engine->method('run')->willReturn(new ViolationCollection());
 
         $builder = new ReportBuilder($router, $engine, new RouteProtectionAnalyzer());
-        $report  = $builder->build();
+        $report = $builder->build();
 
         $this->assertInstanceOf(SecurityReport::class, $report);
         $this->assertSame(0, $report->routeCount);
@@ -50,7 +50,7 @@ final class ReportBuilderTest extends TestCase
 
         $before = new \DateTimeImmutable();
         $report = (new ReportBuilder($router, $engine, new RouteProtectionAnalyzer()))->build();
-        $after  = new \DateTimeImmutable();
+        $after = new \DateTimeImmutable();
 
         $this->assertGreaterThanOrEqual($before->getTimestamp(), $report->scannedAt->getTimestamp());
         $this->assertLessThanOrEqual($after->getTimestamp(), $report->scannedAt->getTimestamp());

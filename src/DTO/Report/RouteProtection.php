@@ -61,10 +61,10 @@ final class RouteProtection
 
         return match ($severity) {
             Severity::CRITICAL => 'CRITICAL',
-            Severity::HIGH     => 'HIGH RISK',
-            Severity::MEDIUM   => 'MEDIUM RISK',
-            Severity::LOW      => 'LOW RISK',
-            Severity::INFO     => 'INFO',
+            Severity::HIGH => 'HIGH RISK',
+            Severity::MEDIUM => 'MEDIUM RISK',
+            Severity::LOW => 'LOW RISK',
+            Severity::INFO => 'INFO',
         };
     }
 }

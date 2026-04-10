@@ -13,19 +13,6 @@ use RuntimeShield\DTO\Rule\ViolationCollection;
 
 final class RouteProtectionRiskLabelTest extends TestCase
 {
-    private function protectionWith(Severity $severity): RouteProtection
-    {
-        return new RouteProtection(
-            method: 'GET',
-            uri: 'test',
-            name: '',
-            hasAuth: false,
-            hasCsrf: false,
-            hasRateLimit: false,
-            violations: new ViolationCollection([new Violation('r', 'T', 'D', $severity)]),
-        );
-    }
-
     #[Test]
     public function high_violation_gives_high_risk_label(): void
     {
@@ -67,5 +54,17 @@ final class RouteProtectionRiskLabelTest extends TestCase
         );
 
         $this->assertSame(2, $protection->violationCount());
+    }
+    private function protectionWith(Severity $severity): RouteProtection
+    {
+        return new RouteProtection(
+            method: 'GET',
+            uri: 'test',
+            name: '',
+            hasAuth: false,
+            hasCsrf: false,
+            hasRateLimit: false,
+            violations: new ViolationCollection([new Violation('r', 'T', 'D', $severity)]),
+        );
     }
 }
