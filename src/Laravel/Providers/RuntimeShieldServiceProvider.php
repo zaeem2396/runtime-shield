@@ -32,6 +32,7 @@ use RuntimeShield\Core\Signal\InMemoryContextStore;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\Engine\RuntimeShieldEngine;
 use RuntimeShield\Laravel\Console\InstallCommand;
+use RuntimeShield\Laravel\Console\ScanCommand;
 use RuntimeShield\Laravel\Signal\AuthSignalCollector;
 use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;
@@ -105,6 +106,10 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             return $registry;
         });
 
+        $this->app->singleton(RuleEngineContract::class, static fn ($app): RuleEngine => new RuleEngine(
+            $app->make(RuleRegistry::class),
+        ));
+
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
             $app->make(RuleEngineContract::class),
@@ -123,6 +128,7 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
         $this->commands([
             InstallCommand::class,
+            ScanCommand::class,
         ]);
     }
 }
