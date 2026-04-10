@@ -21,4 +21,15 @@ final class RuleRegistry
     {
         $this->rules[] = $rule;
     }
+
+    /** @return list<RuleContract> */
+    public function all(): array
+    {
+        return $this->rules;
+    }
+
+    public function count(): int
+    {
+        return count($this->rules);
+    }
 }
