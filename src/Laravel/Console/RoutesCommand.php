@@ -22,7 +22,8 @@ use RuntimeShield\Support\CliRenderer;
 final class RoutesCommand extends Command
 {
     protected $signature = 'runtime-shield:routes
-                            {--filter= : Filter rows: "exposed" shows only routes with missing protections}';
+                            {--filter= : Filter rows: "exposed" shows only routes with missing protections}
+                            {--method= : Show only routes matching this HTTP method (GET, POST, …)}';
 
     protected $description = 'List all routes with their security protection coverage';
 
@@ -119,6 +120,15 @@ final class RoutesCommand extends Command
         if ($filter === 'exposed') {
             $protections = array_values(
                 array_filter($protections, static fn (RouteProtection $p): bool => ! $p->isFullyProtected()),
+            );
+        }
+
+        $method = $this->option('method');
+
+        if (is_string($method) && $method !== '') {
+            $upper       = strtoupper($method);
+            $protections = array_values(
+                array_filter($protections, static fn (RouteProtection $p): bool => $p->method === $upper),
             );
         }
 
