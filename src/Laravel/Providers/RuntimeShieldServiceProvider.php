@@ -74,6 +74,8 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             $app->make(AuthFactory::class),
         ));
 
+        $this->app->singleton(RuntimeContextStoreContract::class, static fn (): InMemoryContextStore => new InMemoryContextStore());
+
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
         ));
