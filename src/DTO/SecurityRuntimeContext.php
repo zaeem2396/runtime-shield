@@ -28,4 +28,24 @@ final class SecurityRuntimeContext
         public readonly AuthSignal|null $auth = null,
     ) {
     }
+
+    public function hasRequest(): bool
+    {
+        return $this->request !== null;
+    }
+
+    public function hasResponse(): bool
+    {
+        return $this->response !== null;
+    }
+
+    public function hasRoute(): bool
+    {
+        return $this->route !== null;
+    }
+
+    public function hasAuth(): bool
+    {
+        return $this->auth !== null;
+    }
 }
