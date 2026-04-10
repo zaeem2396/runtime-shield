@@ -22,6 +22,14 @@ final class RuleEngine implements RuleEngineContract
 
     public function run(SecurityRuntimeContext $context): ViolationCollection
     {
-        return new ViolationCollection();
+        $violations = [];
+
+        foreach ($this->registry->all() as $rule) {
+            foreach ($rule->evaluate($context) as $violation) {
+                $violations[] = $violation;
+            }
+        }
+
+        return new ViolationCollection($violations);
     }
 }
