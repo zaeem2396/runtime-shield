@@ -42,10 +42,20 @@ final class ReportCommand extends Command
         $this->line("  Generated: <fg=gray>{$report->scannedAt->format('Y-m-d H:i:s')}</>");
         $this->line('');
 
+        $json = (string) json_encode($report->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
         if ($this->option('format') === 'json') {
-            $this->line((string) json_encode($report->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            $this->line($json);
 
             return self::SUCCESS;
+        }
+
+        $savePath = $this->option('save');
+
+        if (is_string($savePath) && $savePath !== '') {
+            file_put_contents($savePath, $json);
+            $this->line("  <fg=green>✔ Report saved to {$savePath}</>");
+            $this->line('');
         }
 
         if ($report->violations->isEmpty()) {
