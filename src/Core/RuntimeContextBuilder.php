@@ -75,9 +75,26 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 
     public function withProcessingTimeMs(float $ms): static
     {
-        $clone                  = clone $this;
+        $clone                   = clone $this;
         $clone->processingTimeMs = $ms;
 
         return $clone;
+    }
+
+    /**
+     * Produce the immutable SecurityRuntimeContext.
+     * If no requestId was set, a cryptographically random hex string is generated.
+     */
+    public function build(): SecurityRuntimeContext
+    {
+        return new SecurityRuntimeContext(
+            requestId:       $this->requestId ?? bin2hex(random_bytes(8)),
+            createdAt:       new DateTimeImmutable(),
+            processingTimeMs: $this->processingTimeMs,
+            request:         $this->request,
+            response:        $this->response,
+            route:           $this->route,
+            auth:            $this->auth,
+        );
     }
 }
