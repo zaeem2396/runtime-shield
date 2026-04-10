@@ -8,7 +8,10 @@ use DateTimeImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
+use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Core\RuntimeContextBuilder;
+use RuntimeShield\DTO\Rule\Violation;
+use RuntimeShield\DTO\Rule\ViolationCollection;
 use RuntimeShield\DTO\SecurityRuntimeContext;
 use RuntimeShield\DTO\Signal\RequestSignal;
 use RuntimeShield\DTO\Signal\RouteSignal;
@@ -28,8 +31,27 @@ final class ScanCommand extends Command
 
     public function __construct(
         private readonly Router $router,
+        private readonly RuleEngineContract $ruleEngine,
     ) {
         parent::__construct();
+    }
+
+    /**
+     * Scan all routes and return a merged ViolationCollection.
+     *
+     * @param list<Route> $routes
+     */
+    private function evaluateRoutes(array $routes): ViolationCollection
+    {
+        $all = new ViolationCollection();
+
+        foreach ($routes as $route) {
+            $context    = $this->buildContext($route);
+            $violations = $this->ruleEngine->run($context);
+            $all        = $all->merge($violations);
+        }
+
+        return $all;
     }
 
     /**
