@@ -42,4 +42,28 @@ final class ViolationCollection
             array_filter($this->violations, static fn (Violation $v): bool => $v->severity === $severity),
         );
     }
+
+    /** @return list<Violation> */
+    public function critical(): array
+    {
+        return $this->bySeverity(Severity::CRITICAL);
+    }
+
+    /** @return list<Violation> */
+    public function high(): array
+    {
+        return $this->bySeverity(Severity::HIGH);
+    }
+
+    /** @return list<Violation> */
+    public function medium(): array
+    {
+        return $this->bySeverity(Severity::MEDIUM);
+    }
+
+    /** @return list<Violation> */
+    public function low(): array
+    {
+        return $this->bySeverity(Severity::LOW);
+    }
 }
