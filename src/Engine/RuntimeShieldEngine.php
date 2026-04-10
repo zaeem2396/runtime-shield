@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RuntimeShield\Engine;
 
 use RuntimeShield\Contracts\EngineContract;
+use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Core\RuntimeShieldManager;
 
 /**
@@ -21,6 +22,7 @@ final class RuntimeShieldEngine implements EngineContract
 
     public function __construct(
         private readonly RuntimeShieldManager $manager,
+        private readonly RuleEngineContract $ruleEngine,
     ) {
     }
 
