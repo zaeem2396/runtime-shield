@@ -22,6 +22,7 @@ final class SecurityRuntimeContext
     public function __construct(
         public readonly string $requestId,
         public readonly DateTimeImmutable $createdAt,
+        public readonly float $processingTimeMs = 0.0,
         public readonly RequestSignal|null $request = null,
         public readonly ResponseSignal|null $response = null,
         public readonly RouteSignal|null $route = null,
@@ -47,5 +48,14 @@ final class SecurityRuntimeContext
     public function hasAuth(): bool
     {
         return $this->auth !== null;
+    }
+
+    /** Returns true only when all four signals have been captured. */
+    public function isComplete(): bool
+    {
+        return $this->request !== null
+            && $this->response !== null
+            && $this->route !== null
+            && $this->auth !== null;
     }
 }
