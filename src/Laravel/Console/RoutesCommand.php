@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Laravel\Console;
 
-use DateTimeImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
-use RuntimeShield\Core\RuntimeContextBuilder;
 use RuntimeShield\DTO\Report\RouteProtection;
 use RuntimeShield\DTO\Rule\ViolationCollection;
-use RuntimeShield\DTO\Signal\RequestSignal;
 use RuntimeShield\DTO\Signal\RouteSignal;
+use RuntimeShield\Support\CliRenderer;
 
 /**
  * Artisan command that lists all registered routes alongside their
@@ -106,5 +104,58 @@ final class RoutesCommand extends Command
         }
 
         return $methods[0] ?? 'GET';
+    }
+
+    public function handle(): int
+    {
+        $this->line('');
+        $this->line('<fg=cyan;options=bold> RuntimeShield Route Protection Inspector</>');
+        $this->line(CliRenderer::divider(56));
+
+        $protections = $this->buildProtections();
+
+        $filter = $this->option('filter');
+
+        if ($filter === 'exposed') {
+            $protections = array_values(
+                array_filter($protections, static fn (RouteProtection $p): bool => ! $p->isFullyProtected()),
+            );
+        }
+
+        if ($protections === []) {
+            $this->line('<fg=green>  ✔ All routes are fully protected.</>');
+            $this->line('');
+
+            return self::SUCCESS;
+        }
+
+        $rows = [];
+
+        foreach ($protections as $protection) {
+            $csrfLabel = $protection->hasCsrf ? CliRenderer::checkmark(true) : CliRenderer::checkmark(false);
+            $risk      = CliRenderer::riskLabel($protection->riskLabel());
+
+            $rows[] = [
+                $protection->method,
+                $protection->uri,
+                $protection->name !== '' ? $protection->name : '—',
+                CliRenderer::checkmark($protection->hasAuth),
+                $csrfLabel,
+                CliRenderer::checkmark($protection->hasRateLimit),
+                $risk,
+            ];
+        }
+
+        $this->table(['Method', 'URI', 'Name', 'Auth', 'CSRF', 'Rate Limit', 'Status'], $rows);
+
+        $total    = count($protections);
+        $exposed  = count(array_filter($protections, static fn (RouteProtection $p): bool => ! $p->isFullyProtected()));
+        $safe     = $total - $exposed;
+
+        $this->line('');
+        $this->line("  <options=bold>{$total}</> route(s) shown   <fg=green>{$safe} protected</>   <fg=red>{$exposed} exposed</>");
+        $this->line('');
+
+        return self::SUCCESS;
     }
 }
