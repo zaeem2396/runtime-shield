@@ -140,4 +140,27 @@ final class ScanCommand extends Command
 
         return $methods[0] ?? 'GET';
     }
+
+    /**
+     * Render the violation table, grouped and sorted by severity (worst first).
+     *
+     * @param list<Violation> $violations
+     */
+    private function renderTable(array $violations): void
+    {
+        $rows = [];
+
+        foreach ($violations as $violation) {
+            $severity = $violation->severity;
+            $label    = "<fg={$severity->color()}>{$severity->label()}</>";
+
+            $rows[] = [
+                $violation->route !== '' ? $violation->route : '—',
+                $violation->title,
+                $label,
+            ];
+        }
+
+        $this->table(['Route / URI', 'Rule', 'Severity'], $rows);
+    }
 }
