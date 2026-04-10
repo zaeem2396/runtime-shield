@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RuntimeShield\DTO;
 
 use DateTimeImmutable;
+use RuntimeShield\DTO\Signal\RequestSignal;
 
 /**
  * Immutable, fully assembled security context for a single request lifecycle.
@@ -18,6 +19,7 @@ final class SecurityRuntimeContext
     public function __construct(
         public readonly string $requestId,
         public readonly DateTimeImmutable $createdAt,
+        public readonly RequestSignal|null $request = null,
     ) {
     }
 }
