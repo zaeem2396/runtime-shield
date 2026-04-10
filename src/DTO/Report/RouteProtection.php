@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace RuntimeShield\DTO\Report;
 
 use RuntimeShield\DTO\Rule\Severity;
+use RuntimeShield\DTO\Rule\ViolationCollection;
 
 /**
  * Immutable snapshot of a single route's security protection coverage.
@@ -22,6 +23,23 @@ final class RouteProtection
         public readonly bool $hasAuth,
         public readonly bool $hasCsrf,
         public readonly bool $hasRateLimit,
+        public readonly ViolationCollection $violations,
     ) {
+    }
+
+    public function violationCount(): int
+    {
+        return $this->violations->count();
+    }
+
+    public function highestSeverity(): Severity|null
+    {
+        if ($this->violations->isEmpty()) {
+            return null;
+        }
+
+        $sorted = $this->violations->sorted();
+
+        return $sorted[0]->severity;
     }
 }
