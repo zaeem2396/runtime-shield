@@ -108,14 +108,16 @@ final class ReportCommand extends Command
 
     private function renderSummary(SecurityReport $report): void
     {
-        $score      = $report->score();
-        $grade      = $report->grade();
-        $gradeColor = CliRenderer::gradeColor($grade);
+        $score        = $report->score();
+        $grade        = $report->grade();
+        $gradeColor   = CliRenderer::gradeColor($grade);
+        $exposedCount = $report->exposedRouteCount();
 
         $this->line(CliRenderer::divider(52));
-        $this->line("  Security Score: <fg={$gradeColor};options=bold>{$score}/100</>  Grade: <fg={$gradeColor};options=bold>{$grade}</>");
+        $this->line("  Security Score: <fg={$gradeColor};options=bold>{$score}/100</>   Grade: <fg={$gradeColor};options=bold>{$grade}</>");
+        $this->line("  Routes: <options=bold>{$report->routeCount}</>  Exposed: <fg=red>{$exposedCount}</>");
         $this->line(sprintf(
-            '  <options=bold>%d</> violation(s)  (<fg=red>%d critical</> · <fg=yellow>%d high</> · <fg=cyan>%d medium</> · <fg=blue>%d low</>)',
+            '  Violations: <options=bold>%d</>  (<fg=red>%d critical</> · <fg=yellow>%d high</> · <fg=cyan>%d medium</> · <fg=blue>%d low</>)',
             $report->violations->count(),
             count($report->violations->critical()),
             count($report->violations->high()),
