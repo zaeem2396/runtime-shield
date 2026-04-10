@@ -23,10 +23,20 @@ final class RuntimeContextBuilder implements RuntimeContextBuilderContract
 {
     private RequestSignal|null $request = null;
 
+    private ResponseSignal|null $response = null;
+
     public function withRequest(RequestSignal $signal): static
     {
         $clone          = clone $this;
         $clone->request = $signal;
+
+        return $clone;
+    }
+
+    public function withResponse(ResponseSignal $signal): static
+    {
+        $clone           = clone $this;
+        $clone->response = $signal;
 
         return $clone;
     }
