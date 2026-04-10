@@ -26,7 +26,12 @@ use RuntimeShield\Core\Sampling\SamplerFactory;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\Engine\RuntimeShieldEngine;
+use RuntimeShield\Contracts\Report\ReportBuilderContract;
+use RuntimeShield\Core\Report\ReportBuilder;
+use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
 use RuntimeShield\Laravel\Console\InstallCommand;
+use RuntimeShield\Laravel\Console\ReportCommand;
+use RuntimeShield\Laravel\Console\RoutesCommand;
 use RuntimeShield\Laravel\Console\ScanCommand;
 use RuntimeShield\Laravel\Signal\AuthSignalCollector;
 use RuntimeShield\Laravel\Signal\RequestCapturer;
@@ -114,6 +119,8 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             $app->make(RuntimeShieldManager::class),
             $app->make(RuleEngineContract::class),
         ));
+
+        $this->app->singleton(RouteProtectionAnalyzer::class, static fn (): RouteProtectionAnalyzer => new RouteProtectionAnalyzer());
     }
 
     public function boot(): void
