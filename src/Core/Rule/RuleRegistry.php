@@ -32,4 +32,26 @@ final class RuleRegistry
     {
         return count($this->rules);
     }
+
+    public function has(string $id): bool
+    {
+        foreach ($this->rules as $rule) {
+            if ($rule->id() === $id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function find(string $id): RuleContract|null
+    {
+        foreach ($this->rules as $rule) {
+            if ($rule->id() === $id) {
+                return $rule;
+            }
+        }
+
+        return null;
+    }
 }
