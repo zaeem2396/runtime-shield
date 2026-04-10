@@ -23,7 +23,8 @@ final class RoutesCommand extends Command
 {
     protected $signature = 'runtime-shield:routes
                             {--filter= : Filter rows: "exposed" shows only routes with missing protections}
-                            {--method= : Show only routes matching this HTTP method (GET, POST, …)}';
+                            {--method= : Show only routes matching this HTTP method (GET, POST, …)}
+                            {--sort=uri : Sort column: "uri" (default) or "risk"}';
 
     protected $description = 'List all routes with their security protection coverage';
 
@@ -130,6 +131,14 @@ final class RoutesCommand extends Command
             $protections = array_values(
                 array_filter($protections, static fn (RouteProtection $p): bool => $p->method === $upper),
             );
+        }
+
+        if ($this->option('sort') === 'risk') {
+            usort($protections, static function (RouteProtection $a, RouteProtection $b): int {
+                $riskOrder = ['CRITICAL' => 0, 'HIGH RISK' => 1, 'MEDIUM RISK' => 2, 'LOW RISK' => 3, 'SAFE' => 4, 'INFO' => 5];
+
+                return ($riskOrder[$a->riskLabel()] ?? 9) <=> ($riskOrder[$b->riskLabel()] ?? 9);
+            });
         }
 
         if ($protections === []) {
