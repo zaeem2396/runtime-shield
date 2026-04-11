@@ -369,9 +369,51 @@ Configurable per env
 
 ---
 
+# 🔔 v0.8.0 — Alerting &amp; Notifications &nbsp;🔴 Planned
+
+## STEP 29 — Webhook Dispatcher &nbsp;🔴 Planned
+
+```
+Dispatch HTTP webhook on critical violations
+Configurable URL, method, and payload
+```
+
+---
+
+## STEP 30 — Alert Throttling &nbsp;🔴 Planned
+
+```
+Prevent alert floods
+Cooldown period per rule / channel
+```
+
+---
+
+## STEP 31 — Mail Notifications &nbsp;🔴 Planned
+
+```
+Send email on CRITICAL or HIGH violations
+Configurable recipients and severity threshold
+```
+
+---
+
+## STEP 32 — Alert Channels &nbsp;🔴 Planned
+
+```
+Configurable alert channels:
+log, mail, webhook, Slack
+```
+
+---
+
+✅ `git tag v0.8.0`
+
+---
+
 # 🔌 v0.9.0 — Extensibility &nbsp;🔴 Planned
 
-## STEP 29 — Custom Rule API &nbsp;🔴 Planned
+## STEP 33 — Custom Rule API &nbsp;🔴 Planned
 
 ```
 Allow user-defined rules
@@ -379,7 +421,7 @@ Allow user-defined rules
 
 ---
 
-## STEP 30 — Custom Signal Collectors &nbsp;🔴 Planned
+## STEP 34 — Custom Signal Collectors &nbsp;🔴 Planned
 
 ```
 Allow adding custom signals
@@ -387,7 +429,7 @@ Allow adding custom signals
 
 ---
 
-## STEP 31 — Plugin System &nbsp;🔴 Planned
+## STEP 35 — Plugin System &nbsp;🔴 Planned
 
 ```
 Register external plugins
@@ -395,7 +437,7 @@ Register external plugins
 
 ---
 
-## STEP 32 — Event Hooks &nbsp;🔴 Planned
+## STEP 36 — Event Hooks &nbsp;🔴 Planned
 
 ```
 Emit events:
@@ -410,7 +452,7 @@ beforeScan, afterScan, violationDetected
 
 # 🤖 v1.0.0 — AI Advisory &nbsp;🔴 Planned
 
-## STEP 33 — AI Explanation Layer &nbsp;🔴 Planned
+## STEP 37 — AI Explanation Layer &nbsp;🔴 Planned
 
 ```
 Explain violations in human-readable format
@@ -418,7 +460,7 @@ Explain violations in human-readable format
 
 ---
 
-## STEP 34 — Severity Classification &nbsp;🔴 Planned
+## STEP 38 — Severity Classification &nbsp;🔴 Planned
 
 ```
 AI-assisted severity scoring
@@ -426,7 +468,7 @@ AI-assisted severity scoring
 
 ---
 
-## STEP 35 — Confidence Score &nbsp;🔴 Planned
+## STEP 39 — Confidence Score &nbsp;🔴 Planned
 
 ```
 Assign confidence level per issue
@@ -434,7 +476,7 @@ Assign confidence level per issue
 
 ---
 
-## STEP 36 — AI Config &nbsp;🔴 Planned
+## STEP 40 — AI Config &nbsp;🔴 Planned
 
 ```
 Enable/disable AI
@@ -449,7 +491,7 @@ Support multiple providers
 
 # 📈 v1.1.0 — Advanced Detection &nbsp;🔴 Planned
 
-## STEP 37 — Error Exposure Detection &nbsp;🔴 Planned
+## STEP 41 — Error Exposure Detection &nbsp;🔴 Planned
 
 ```
 Detect stack trace leaks
@@ -457,7 +499,7 @@ Detect stack trace leaks
 
 ---
 
-## STEP 38 — Brute Force Detection &nbsp;🔴 Planned
+## STEP 42 — Brute Force Detection &nbsp;🔴 Planned
 
 ```
 Detect repeated 401 patterns
@@ -465,7 +507,7 @@ Detect repeated 401 patterns
 
 ---
 
-## STEP 39 — Security Headers &nbsp;🔴 Planned
+## STEP 43 — Security Headers &nbsp;🔴 Planned
 
 ```
 Check:
@@ -474,7 +516,7 @@ CSP, HSTS, X-Frame-Options
 
 ---
 
-## STEP 40 — Response Anomalies &nbsp;🔴 Planned
+## STEP 44 — Response Anomalies &nbsp;🔴 Planned
 
 ```
 Detect abnormal responses
@@ -488,7 +530,7 @@ Detect abnormal responses
 
 # 🖥️ v1.2.0 — Developer Experience &nbsp;🔴 Planned
 
-## STEP 41 — Debug Dashboard &nbsp;🔴 Planned
+## STEP 45 — Debug Dashboard &nbsp;🔴 Planned
 
 ```
 Optional UI:
@@ -497,7 +539,7 @@ visualize signals + issues
 
 ---
 
-## STEP 42 — JSON Export &nbsp;🔴 Planned
+## STEP 46 — JSON Export &nbsp;🔴 Planned
 
 ```
 Export reports in JSON
@@ -505,7 +547,7 @@ Export reports in JSON
 
 ---
 
-## STEP 43 — CI Integration &nbsp;🔴 Planned
+## STEP 47 — CI Integration &nbsp;🔴 Planned
 
 ```
 Fail CI if score < threshold
