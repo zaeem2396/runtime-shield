@@ -121,4 +121,65 @@ return [
         'timeout_ms' => 100,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Alerting & Notifications (v0.8.0+)
+    |--------------------------------------------------------------------------
+    |
+    | Controls when and how RuntimeShield sends alerts when violations are
+    | detected during a real HTTP request (i.e. via the middleware, not CLI).
+    |
+    | enabled        — master switch; false = no alerts, no rule evaluation
+    | min_severity   — only violations at this severity or higher trigger alerts
+    |                  values: critical | high | medium | low | info
+    | throttle_seconds — cooldown per rule; 0 = no throttling
+    | async          — dispatch AlertDispatchJob to the queue instead of
+    |                  blocking the terminate() lifecycle
+    |
+    | Channels:
+    |   log.enabled       — write a structured log entry (always safe to enable)
+    |   log.channel       — Laravel log channel name (e.g. "stack", "slack")
+    |   webhook.enabled   — POST JSON payload to webhook.url
+    |   webhook.url       — target URL (leave empty to disable)
+    |   webhook.method    — HTTP method (default POST)
+    |   webhook.headers   — extra HTTP headers for every webhook request
+    |   slack.enabled     — send a formatted message to a Slack Incoming Webhook
+    |   slack.url         — Slack webhook URL (leave empty to disable)
+    |   mail.enabled      — send a plain-text email
+    |   mail.recipients   — list of recipient addresses
+    |   mail.from         — sender address (falls back to MAIL_FROM_ADDRESS)
+    |
+    */
+    'alerts' => [
+        'enabled'          => (bool) env('RUNTIME_SHIELD_ALERTS_ENABLED', false),
+        'min_severity'     => env('RUNTIME_SHIELD_ALERT_MIN_SEVERITY', 'high'),
+        'throttle_seconds' => (int) env('RUNTIME_SHIELD_ALERT_THROTTLE', 300),
+        'async'            => (bool) env('RUNTIME_SHIELD_ALERTS_ASYNC', false),
+
+        'channels' => [
+            'log' => [
+                'enabled' => (bool) env('RUNTIME_SHIELD_ALERT_LOG', true),
+                'channel' => env('RUNTIME_SHIELD_LOG_CHANNEL', 'stack'),
+            ],
+
+            'webhook' => [
+                'enabled' => (bool) env('RUNTIME_SHIELD_ALERT_WEBHOOK', false),
+                'url'     => env('RUNTIME_SHIELD_WEBHOOK_URL', ''),
+                'method'  => env('RUNTIME_SHIELD_WEBHOOK_METHOD', 'POST'),
+                'headers' => [],
+            ],
+
+            'slack' => [
+                'enabled' => (bool) env('RUNTIME_SHIELD_ALERT_SLACK', false),
+                'url'     => env('RUNTIME_SHIELD_SLACK_WEBHOOK_URL', ''),
+            ],
+
+            'mail' => [
+                'enabled'    => (bool) env('RUNTIME_SHIELD_ALERT_MAIL', false),
+                'recipients' => [],
+                'from'       => env('MAIL_FROM_ADDRESS', ''),
+            ],
+        ],
+    ],
+
 ];
