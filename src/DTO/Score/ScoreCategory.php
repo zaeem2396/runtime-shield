@@ -28,6 +28,21 @@ enum ScoreCategory: string
         };
     }
 
+    /**
+     * Default percentage weight this category contributes to the overall score.
+     * The five defaults sum to 100.
+     */
+    public function defaultWeight(): int
+    {
+        return match ($this) {
+            self::AUTH        => 30,
+            self::CSRF        => 25,
+            self::RATE_LIMIT  => 20,
+            self::VALIDATION  => 15,
+            self::FILE_UPLOAD => 10,
+        };
+    }
+
     /** One-line description of what the category evaluates. */
     public function description(): string
     {
