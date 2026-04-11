@@ -99,12 +99,12 @@ final class CliRenderer
     public static function progressBar(int $score, int $width = 20): string
     {
         $filled = (int) round(max(0, min(100, $score)) / 100 * $width);
-        $empty  = $width - $filled;
+        $empty = $width - $filled;
 
         $color = match (true) {
             $score >= 75 => 'green',
             $score >= 50 => 'yellow',
-            default      => 'red',
+            default => 'red',
         };
 
         return sprintf(
@@ -123,7 +123,7 @@ final class CliRenderer
         return match (true) {
             $score >= 75 => 'green',
             $score >= 50 => 'yellow',
-            default      => 'red',
+            default => 'red',
         };
     }
 }

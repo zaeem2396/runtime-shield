@@ -69,7 +69,7 @@ final class ScanCommand extends Command
         }
 
         $criticalCount = count($violations->critical());
-        $highCount     = count($violations->high());
+        $highCount = count($violations->high());
 
         $this->line('');
         $this->line(sprintf(

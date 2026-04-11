@@ -12,11 +12,6 @@ final class RuleCategoryMapRulesForTest extends TestCase
 {
     private RuleCategoryMap $map;
 
-    protected function setUp(): void
-    {
-        $this->map = new RuleCategoryMap();
-    }
-
     public function test_rules_for_auth_returns_auth_rule(): void
     {
         $rules = $this->map->rulesFor(ScoreCategory::AUTH);
@@ -57,5 +52,10 @@ final class RuleCategoryMapRulesForTest extends TestCase
         }
 
         $this->assertSame(count($this->map->allMappings()), $total);
+    }
+
+    protected function setUp(): void
+    {
+        $this->map = new RuleCategoryMap();
     }
 }

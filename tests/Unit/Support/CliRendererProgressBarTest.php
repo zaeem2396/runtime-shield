@@ -49,28 +49,28 @@ final class CliRendererProgressBarTest extends TestCase
     public function test_progress_bar_default_width_is_20_characters(): void
     {
         // Strip ANSI tags and count visual chars (█ + ░)
-        $bar     = CliRenderer::progressBar(50);
+        $bar = CliRenderer::progressBar(50);
         $cleaned = preg_replace('/<[^>]+>/', '', $bar) ?? '';
         $this->assertSame(20, mb_strlen($cleaned));
     }
 
     public function test_progress_bar_custom_width_is_respected(): void
     {
-        $bar     = CliRenderer::progressBar(50, 10);
+        $bar = CliRenderer::progressBar(50, 10);
         $cleaned = preg_replace('/<[^>]+>/', '', $bar) ?? '';
         $this->assertSame(10, mb_strlen($cleaned));
     }
 
     public function test_progress_bar_clamps_score_above_100(): void
     {
-        $bar     = CliRenderer::progressBar(150);
+        $bar = CliRenderer::progressBar(150);
         $cleaned = preg_replace('/<[^>]+>/', '', $bar) ?? '';
         $this->assertSame(20, mb_strlen($cleaned));
     }
 
     public function test_progress_bar_clamps_score_below_0(): void
     {
-        $bar     = CliRenderer::progressBar(-10);
+        $bar = CliRenderer::progressBar(-10);
         $cleaned = preg_replace('/<[^>]+>/', '', $bar) ?? '';
         $this->assertSame(20, mb_strlen($cleaned));
     }

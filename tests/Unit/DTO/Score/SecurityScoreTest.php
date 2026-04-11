@@ -11,23 +11,6 @@ use RuntimeShield\DTO\Score\SecurityScore;
 
 final class SecurityScoreTest extends TestCase
 {
-    /**
-     * @param array<string, CategoryScore> $categories
-     */
-    private function make(
-        int $overall = 85,
-        string $grade = 'B',
-        array $categories = [],
-        int $totalViolations = 0,
-    ): SecurityScore {
-        return new SecurityScore($overall, $grade, $categories, $totalViolations);
-    }
-
-    private function makeCategory(ScoreCategory $category, int $score, int $violations = 0): CategoryScore
-    {
-        return new CategoryScore($category, $score, 100, $violations, $category->defaultWeight());
-    }
-
     public function test_basic_properties_are_stored(): void
     {
         $score = $this->make(72, 'C', [], 5);
@@ -58,12 +41,12 @@ final class SecurityScoreTest extends TestCase
     public function test_passed_categories_returns_categories_with_score_ge_75(): void
     {
         $categories = [
-            ScoreCategory::AUTH->value       => $this->makeCategory(ScoreCategory::AUTH, 80),
-            ScoreCategory::CSRF->value       => $this->makeCategory(ScoreCategory::CSRF, 70),
+            ScoreCategory::AUTH->value => $this->makeCategory(ScoreCategory::AUTH, 80),
+            ScoreCategory::CSRF->value => $this->makeCategory(ScoreCategory::CSRF, 70),
             ScoreCategory::RATE_LIMIT->value => $this->makeCategory(ScoreCategory::RATE_LIMIT, 75),
         ];
 
-        $score  = $this->make(categories: $categories);
+        $score = $this->make(categories: $categories);
         $passed = $score->passedCategories();
 
         $this->assertCount(2, $passed);
@@ -76,7 +59,7 @@ final class SecurityScoreTest extends TestCase
             ScoreCategory::CSRF->value => $this->makeCategory(ScoreCategory::CSRF, 90),
         ];
 
-        $score  = $this->make(categories: $categories);
+        $score = $this->make(categories: $categories);
         $failed = $score->failedCategories();
 
         $this->assertCount(1, $failed);
@@ -108,13 +91,13 @@ final class SecurityScoreTest extends TestCase
     public function test_highest_risk_returns_category_with_lowest_score(): void
     {
         $categories = [
-            ScoreCategory::AUTH->value       => $this->makeCategory(ScoreCategory::AUTH, 90),
-            ScoreCategory::CSRF->value       => $this->makeCategory(ScoreCategory::CSRF, 30),
+            ScoreCategory::AUTH->value => $this->makeCategory(ScoreCategory::AUTH, 90),
+            ScoreCategory::CSRF->value => $this->makeCategory(ScoreCategory::CSRF, 30),
             ScoreCategory::RATE_LIMIT->value => $this->makeCategory(ScoreCategory::RATE_LIMIT, 60),
         ];
 
         $score = $this->make(categories: $categories);
-        $risk  = $score->highestRisk();
+        $risk = $score->highestRisk();
 
         $this->assertNotNull($risk);
         $this->assertSame(ScoreCategory::CSRF, $risk->category);
@@ -144,5 +127,21 @@ final class SecurityScoreTest extends TestCase
         $arr = $this->make(categories: $categories)->toArray();
 
         $this->assertCount(1, $arr['categories']);
+    }
+    /**
+     * @param array<string, CategoryScore> $categories
+     */
+    private function make(
+        int $overall = 85,
+        string $grade = 'B',
+        array $categories = [],
+        int $totalViolations = 0,
+    ): SecurityScore {
+        return new SecurityScore($overall, $grade, $categories, $totalViolations);
+    }
+
+    private function makeCategory(ScoreCategory $category, int $score, int $violations = 0): CategoryScore
+    {
+        return new CategoryScore($category, $score, 100, $violations, $category->defaultWeight());
     }
 }

@@ -13,11 +13,6 @@ final class ScoreEngineDeductionTest extends TestCase
 {
     private ScoreEngine $engine;
 
-    protected function setUp(): void
-    {
-        $this->engine = new ScoreEngine(new RuleCategoryMap());
-    }
-
     public function test_deduction_for_critical_is_20(): void
     {
         $this->assertSame(20, $this->engine->deductionFor(Severity::CRITICAL));
@@ -41,5 +36,10 @@ final class ScoreEngineDeductionTest extends TestCase
     public function test_deduction_for_info_is_0(): void
     {
         $this->assertSame(0, $this->engine->deductionFor(Severity::INFO));
+    }
+
+    protected function setUp(): void
+    {
+        $this->engine = new ScoreEngine(new RuleCategoryMap());
     }
 }

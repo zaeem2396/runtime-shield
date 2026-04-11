@@ -17,10 +17,10 @@ final class RuleCategoryMap implements RuleCategoryMapContract
 {
     /** @var array<string, ScoreCategory> */
     private const MAP = [
-        'public-route-without-auth'    => ScoreCategory::AUTH,
-        'missing-csrf-protection'      => ScoreCategory::CSRF,
-        'missing-rate-limit'           => ScoreCategory::RATE_LIMIT,
-        'missing-validation'           => ScoreCategory::VALIDATION,
+        'public-route-without-auth' => ScoreCategory::AUTH,
+        'missing-csrf-protection' => ScoreCategory::CSRF,
+        'missing-rate-limit' => ScoreCategory::RATE_LIMIT,
+        'missing-validation' => ScoreCategory::VALIDATION,
         'file-upload-without-validation' => ScoreCategory::FILE_UPLOAD,
     ];
 

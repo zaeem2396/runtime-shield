@@ -13,22 +13,6 @@ use RuntimeShield\DTO\Rule\ViolationCollection;
 
 final class ScoreEngineWeightedTest extends TestCase
 {
-    private function engine(int $auth, int $csrf, int $rl, int $val, int $fu): ScoreEngine
-    {
-        return new ScoreEngine(new RuleCategoryMap(), [
-            'auth'        => $auth,
-            'csrf'        => $csrf,
-            'rate_limit'  => $rl,
-            'validation'  => $val,
-            'file_upload' => $fu,
-        ]);
-    }
-
-    private function violation(string $ruleId, Severity $severity): Violation
-    {
-        return new Violation($ruleId, 'T', 'D', $severity);
-    }
-
     public function test_equal_weights_produce_simple_average(): void
     {
         // All weights equal (20 each) → simple average of category scores
@@ -111,8 +95,23 @@ final class ScoreEngineWeightedTest extends TestCase
     public function test_categories_count_equals_number_of_score_categories(): void
     {
         $engine = new ScoreEngine(new RuleCategoryMap());
-        $score  = $engine->calculate(new ViolationCollection());
+        $score = $engine->calculate(new ViolationCollection());
 
         $this->assertCount(5, $score->categories);
+    }
+    private function engine(int $auth, int $csrf, int $rl, int $val, int $fu): ScoreEngine
+    {
+        return new ScoreEngine(new RuleCategoryMap(), [
+            'auth' => $auth,
+            'csrf' => $csrf,
+            'rate_limit' => $rl,
+            'validation' => $val,
+            'file_upload' => $fu,
+        ]);
+    }
+
+    private function violation(string $ruleId, Severity $severity): Violation
+    {
+        return new Violation($ruleId, 'T', 'D', $severity);
     }
 }

@@ -41,9 +41,9 @@ final class ScoreCommand extends Command
 
     public function handle(): int
     {
-        $routes     = $this->collectRoutes();
+        $routes = $this->collectRoutes();
         $violations = $this->evaluateRoutes($routes);
-        $score      = $this->scoreEngine->calculate($violations);
+        $score = $this->scoreEngine->calculate($violations);
 
         if ($this->option('format') === 'json') {
             $this->renderJson($score);
@@ -74,9 +74,9 @@ final class ScoreCommand extends Command
         $all = new ViolationCollection();
 
         foreach ($routes as $route) {
-            $context    = $this->buildContext($route);
+            $context = $this->buildContext($route);
             $violations = $this->ruleEngine->run($context);
-            $all        = $all->merge($violations);
+            $all = $all->merge($violations);
         }
 
         return $all;
@@ -90,10 +90,10 @@ final class ScoreCommand extends Command
     private function collectRoutes(): array
     {
         $skipPrefixes = ['_ignition', '_telescope', 'horizon/', 'telescope/', 'debugbar/'];
-        $routes       = [];
+        $routes = [];
 
         foreach ($this->router->getRoutes()->getRoutes() as $route) {
-            $uri  = $route->uri();
+            $uri = $route->uri();
             $skip = false;
 
             foreach ($skipPrefixes as $prefix) {
@@ -116,7 +116,7 @@ final class ScoreCommand extends Command
     private function buildContext(Route $route): SecurityRuntimeContext
     {
         $methods = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
-        $method  = $this->pickPrimaryMethod(array_values($methods));
+        $method = $this->pickPrimaryMethod(array_values($methods));
 
         /** @var list<string> $middleware */
         $middleware = array_values(
@@ -223,7 +223,7 @@ final class ScoreCommand extends Command
     private function buildCategoryRow(CategoryScore $cs): array
     {
         $scoreColor = CliRenderer::scoreColor($cs->score);
-        $bar        = CliRenderer::progressBar($cs->score);
+        $bar = CliRenderer::progressBar($cs->score);
 
         return [
             $cs->category->label(),

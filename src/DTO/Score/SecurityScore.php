@@ -115,10 +115,10 @@ final class SecurityScore
     public function toArray(): array
     {
         return [
-            'overall'          => $this->overall,
-            'grade'            => $this->grade,
+            'overall' => $this->overall,
+            'grade' => $this->grade,
             'total_violations' => $this->totalViolations,
-            'categories'       => array_map(
+            'categories' => array_map(
                 static fn (CategoryScore $cs): array => $cs->toArray(),
                 array_values($this->categories),
             ),

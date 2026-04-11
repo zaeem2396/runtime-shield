@@ -55,14 +55,14 @@ final class CategoryScore
     public function toArray(): array
     {
         return [
-            'category'        => $this->category->value,
-            'label'           => $this->category->label(),
-            'score'           => $this->score,
-            'max_score'       => $this->maxScore,
-            'percentage'      => round($this->percentage(), 1),
-            'weight'          => $this->weight,
+            'category' => $this->category->value,
+            'label' => $this->category->label(),
+            'score' => $this->score,
+            'max_score' => $this->maxScore,
+            'percentage' => round($this->percentage(), 1),
+            'weight' => $this->weight,
             'violation_count' => $this->violationCount,
-            'passing'         => $this->isPassing(),
+            'passing' => $this->isPassing(),
         ];
     }
 }

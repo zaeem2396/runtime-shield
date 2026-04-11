@@ -14,15 +14,10 @@ use RuntimeShield\DTO\Score\ScoreCategory;
 
 final class ScoreEngineConfigWeightTest extends TestCase
 {
-    private function violation(string $ruleId, Severity $severity): Violation
-    {
-        return new Violation($ruleId, 'T', 'D', $severity);
-    }
-
     public function test_default_weights_match_score_category_defaults(): void
     {
         $engine = new ScoreEngine(new RuleCategoryMap());
-        $score  = $engine->calculate(new ViolationCollection());
+        $score = $engine->calculate(new ViolationCollection());
 
         foreach ($score->categories as $cs) {
             $this->assertSame(
@@ -37,7 +32,7 @@ final class ScoreEngineConfigWeightTest extends TestCase
     {
         // Override only AUTH weight; others should fall back to defaultWeight()
         $engine = new ScoreEngine(new RuleCategoryMap(), ['auth' => 50]);
-        $score  = $engine->calculate(new ViolationCollection());
+        $score = $engine->calculate(new ViolationCollection());
 
         $auth = $score->categoryScore(ScoreCategory::AUTH);
         $csrf = $score->categoryScore(ScoreCategory::CSRF);
@@ -60,7 +55,7 @@ final class ScoreEngineConfigWeightTest extends TestCase
         ]);
 
         $score = $engine->calculate($violations);
-        $auth  = $score->categoryScore(ScoreCategory::AUTH);
+        $auth = $score->categoryScore(ScoreCategory::AUTH);
 
         $this->assertNotNull($auth);
         $this->assertSame(3, $auth->violationCount);
@@ -82,5 +77,9 @@ final class ScoreEngineConfigWeightTest extends TestCase
             $this->assertSame(100, $cs->score, "{$category->value} should be unaffected");
             $this->assertSame(0, $cs->violationCount);
         }
+    }
+    private function violation(string $ruleId, Severity $severity): Violation
+    {
+        return new Violation($ruleId, 'T', 'D', $severity);
     }
 }

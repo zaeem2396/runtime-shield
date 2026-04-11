@@ -17,25 +17,6 @@ use RuntimeShield\DTO\Rule\ViolationCollection;
  */
 final class ScoreEngineGradeTest extends TestCase
 {
-    /**
-     * Engine with equal weights so overall ≈ simple average of all category scores.
-     */
-    private function equalWeightEngine(): ScoreEngine
-    {
-        return new ScoreEngine(new RuleCategoryMap(), [
-            'auth'        => 20,
-            'csrf'        => 20,
-            'rate_limit'  => 20,
-            'validation'  => 20,
-            'file_upload' => 20,
-        ]);
-    }
-
-    private function violation(string $ruleId, Severity $severity): Violation
-    {
-        return new Violation($ruleId, 'T', 'D', $severity);
-    }
-
     public function test_grade_a_at_exactly_90(): void
     {
         // AUTH = 50 (5 * -10 HIGH), rest = 100
@@ -138,6 +119,24 @@ final class ScoreEngineGradeTest extends TestCase
 
         $this->assertSame(40, $score->overall);
         $this->assertSame('D', $score->grade);
+    }
+    /**
+     * Engine with equal weights so overall ≈ simple average of all category scores.
+     */
+    private function equalWeightEngine(): ScoreEngine
+    {
+        return new ScoreEngine(new RuleCategoryMap(), [
+            'auth' => 20,
+            'csrf' => 20,
+            'rate_limit' => 20,
+            'validation' => 20,
+            'file_upload' => 20,
+        ]);
+    }
+
+    private function violation(string $ruleId, Severity $severity): Violation
+    {
+        return new Violation($ruleId, 'T', 'D', $severity);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

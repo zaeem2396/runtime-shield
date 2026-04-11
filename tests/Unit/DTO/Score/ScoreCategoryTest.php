@@ -60,10 +60,10 @@ final class ScoreCategoryTest extends TestCase
     public static function categoryLabelProvider(): array
     {
         return [
-            'auth'        => [ScoreCategory::AUTH, 'Auth'],
-            'csrf'        => [ScoreCategory::CSRF, 'CSRF'],
-            'rate_limit'  => [ScoreCategory::RATE_LIMIT, 'Rate'],
-            'validation'  => [ScoreCategory::VALIDATION, 'Validation'],
+            'auth' => [ScoreCategory::AUTH, 'Auth'],
+            'csrf' => [ScoreCategory::CSRF, 'CSRF'],
+            'rate_limit' => [ScoreCategory::RATE_LIMIT, 'Rate'],
+            'validation' => [ScoreCategory::VALIDATION, 'Validation'],
             'file_upload' => [ScoreCategory::FILE_UPLOAD, 'File'],
         ];
     }

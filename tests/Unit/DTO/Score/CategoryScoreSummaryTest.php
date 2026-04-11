@@ -10,11 +10,6 @@ use RuntimeShield\DTO\Score\ScoreCategory;
 
 final class CategoryScoreSummaryTest extends TestCase
 {
-    private function make(int $score): CategoryScore
-    {
-        return new CategoryScore(ScoreCategory::AUTH, $score, 100, 0, 30);
-    }
-
     public function test_summary_contains_label(): void
     {
         $cs = $this->make(80);
@@ -37,5 +32,9 @@ final class CategoryScoreSummaryTest extends TestCase
     {
         $cs = $this->make(74);
         $this->assertStringContainsString('failing', $cs->summary());
+    }
+    private function make(int $score): CategoryScore
+    {
+        return new CategoryScore(ScoreCategory::AUTH, $score, 100, 0, 30);
     }
 }

@@ -11,20 +11,15 @@ use RuntimeShield\DTO\Score\SecurityScore;
 
 final class SecurityScoreSortedByRiskTest extends TestCase
 {
-    private function makeCategory(ScoreCategory $category, int $score): CategoryScore
-    {
-        return new CategoryScore($category, $score, 100, 0, $category->defaultWeight());
-    }
-
     public function test_sorted_by_risk_returns_ascending_scores(): void
     {
         $categories = [
-            ScoreCategory::AUTH->value       => $this->makeCategory(ScoreCategory::AUTH, 90),
-            ScoreCategory::CSRF->value       => $this->makeCategory(ScoreCategory::CSRF, 40),
+            ScoreCategory::AUTH->value => $this->makeCategory(ScoreCategory::AUTH, 90),
+            ScoreCategory::CSRF->value => $this->makeCategory(ScoreCategory::CSRF, 40),
             ScoreCategory::RATE_LIMIT->value => $this->makeCategory(ScoreCategory::RATE_LIMIT, 70),
         ];
 
-        $score  = new SecurityScore(70, 'C', $categories, 3);
+        $score = new SecurityScore(70, 'C', $categories, 3);
         $sorted = $score->sortedByRisk();
 
         $this->assertSame(40, $sorted[0]->score);
@@ -40,7 +35,7 @@ final class SecurityScoreSortedByRiskTest extends TestCase
             $categories[$category->value] = $this->makeCategory($category, ($i + 1) * 20);
         }
 
-        $score  = new SecurityScore(60, 'C', $categories, 0);
+        $score = new SecurityScore(60, 'C', $categories, 0);
         $sorted = $score->sortedByRisk();
 
         $this->assertCount(5, $sorted);
@@ -48,7 +43,7 @@ final class SecurityScoreSortedByRiskTest extends TestCase
 
     public function test_sorted_by_risk_empty_when_no_categories(): void
     {
-        $score  = new SecurityScore(100, 'A', [], 0);
+        $score = new SecurityScore(100, 'A', [], 0);
         $sorted = $score->sortedByRisk();
 
         $this->assertEmpty($sorted);
@@ -57,13 +52,17 @@ final class SecurityScoreSortedByRiskTest extends TestCase
     public function test_first_element_is_highest_risk(): void
     {
         $categories = [
-            ScoreCategory::AUTH->value  => $this->makeCategory(ScoreCategory::AUTH, 10),
-            ScoreCategory::CSRF->value  => $this->makeCategory(ScoreCategory::CSRF, 80),
+            ScoreCategory::AUTH->value => $this->makeCategory(ScoreCategory::AUTH, 10),
+            ScoreCategory::CSRF->value => $this->makeCategory(ScoreCategory::CSRF, 80),
         ];
 
-        $score  = new SecurityScore(45, 'D', $categories, 5);
+        $score = new SecurityScore(45, 'D', $categories, 5);
         $sorted = $score->sortedByRisk();
 
         $this->assertSame(ScoreCategory::AUTH, $sorted[0]->category);
+    }
+    private function makeCategory(ScoreCategory $category, int $score): CategoryScore
+    {
+        return new CategoryScore($category, $score, 100, 0, $category->defaultWeight());
     }
 }

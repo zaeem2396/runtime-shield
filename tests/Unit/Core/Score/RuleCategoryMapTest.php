@@ -12,11 +12,6 @@ final class RuleCategoryMapTest extends TestCase
 {
     private RuleCategoryMap $map;
 
-    protected function setUp(): void
-    {
-        $this->map = new RuleCategoryMap();
-    }
-
     public function test_public_route_without_auth_maps_to_auth(): void
     {
         $this->assertSame(ScoreCategory::AUTH, $this->map->categoryFor('public-route-without-auth'));
@@ -80,5 +75,10 @@ final class RuleCategoryMapTest extends TestCase
         );
 
         $this->assertCount(5, $categories);
+    }
+
+    protected function setUp(): void
+    {
+        $this->map = new RuleCategoryMap();
     }
 }

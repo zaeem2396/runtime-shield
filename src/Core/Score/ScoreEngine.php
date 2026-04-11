@@ -25,10 +25,10 @@ final class ScoreEngine implements ScoreEngineContract
     /** Point deduction per severity level within a category. */
     private const DEDUCTIONS = [
         'CRITICAL' => 20,
-        'HIGH'     => 10,
-        'MEDIUM'   =>  5,
-        'LOW'      =>  2,
-        'INFO'     =>  0,
+        'HIGH' => 10,
+        'MEDIUM' => 5,
+        'LOW' => 2,
+        'INFO' => 0,
     ];
 
     /**
@@ -42,9 +42,9 @@ final class ScoreEngine implements ScoreEngineContract
 
     public function calculate(ViolationCollection $violations): SecurityScore
     {
-        $grouped        = $this->groupByCategory($violations);
+        $grouped = $this->groupByCategory($violations);
         $categoryScores = $this->buildCategoryScores($grouped);
-        $overall        = $this->weightedOverall($categoryScores);
+        $overall = $this->weightedOverall($categoryScores);
 
         return new SecurityScore(
             overall: $overall,
@@ -62,11 +62,11 @@ final class ScoreEngine implements ScoreEngineContract
     public function summarise(SecurityScore $score): array
     {
         return [
-            'overall'   => $score->overall,
-            'grade'     => $score->grade,
-            'passed'    => count($score->passedCategories()),
-            'failed'    => count($score->failedCategories()),
-            'total'     => count($score->categories),
+            'overall' => $score->overall,
+            'grade' => $score->grade,
+            'passed' => count($score->passedCategories()),
+            'failed' => count($score->failedCategories()),
+            'total' => count($score->categories),
         ];
     }
 
@@ -75,7 +75,7 @@ final class ScoreEngine implements ScoreEngineContract
      */
     public function deductionFor(Severity $severity): int
     {
-        return self::DEDUCTIONS[$severity->name] ?? 0;
+        return self::DEDUCTIONS[$severity->name];
     }
 
     /**
@@ -101,7 +101,8 @@ final class ScoreEngine implements ScoreEngineContract
     /**
      * Build a CategoryScore for every ScoreCategory, even those with zero violations.
      *
-     * @param  array<string, list<Violation>> $grouped
+     * @param array<string, list<Violation>> $grouped
+     *
      * @return array<string, CategoryScore>
      */
     private function buildCategoryScores(array $grouped): array
@@ -110,8 +111,8 @@ final class ScoreEngine implements ScoreEngineContract
 
         foreach (ScoreCategory::cases() as $category) {
             $categoryViolations = $grouped[$category->value] ?? [];
-            $score              = $this->categoryScore($categoryViolations);
-            $weight             = $this->weights[$category->value] ?? $category->defaultWeight();
+            $score = $this->categoryScore($categoryViolations);
+            $weight = $this->weights[$category->value] ?? $category->defaultWeight();
 
             $scores[$category->value] = new CategoryScore(
                 category: $category,
@@ -135,7 +136,7 @@ final class ScoreEngine implements ScoreEngineContract
         $score = 100;
 
         foreach ($violations as $violation) {
-            $score -= self::DEDUCTIONS[$violation->severity->name] ?? 0;
+            $score -= self::DEDUCTIONS[$violation->severity->name];
         }
 
         return max(0, $score);
@@ -148,8 +149,8 @@ final class ScoreEngine implements ScoreEngineContract
      */
     private function weightedOverall(array $categoryScores): int
     {
-        $totalWeight  = 0;
-        $weightedSum  = 0.0;
+        $totalWeight = 0;
+        $weightedSum = 0.0;
 
         foreach ($categoryScores as $cs) {
             $totalWeight += $cs->weight;
@@ -171,7 +172,7 @@ final class ScoreEngine implements ScoreEngineContract
             $score >= 75 => 'B',
             $score >= 60 => 'C',
             $score >= 40 => 'D',
-            default      => 'F',
+            default => 'F',
         };
     }
 }

@@ -41,7 +41,7 @@ final class ReportCommand extends Command
         $this->line(CliRenderer::divider(52));
 
         $report = $this->builder->build();
-        $score  = $this->scoreEngine->calculate($report->violations);
+        $score = $this->scoreEngine->calculate($report->violations);
 
         $this->line("  Scanning <options=bold>{$report->routeCount}</> route(s)…");
         $this->line("  Generated: <fg=gray>{$report->scannedAt->format('Y-m-d H:i:s')}</>");
@@ -116,8 +116,8 @@ final class ReportCommand extends Command
 
     private function renderSummary(SecurityReport $report, SecurityScore $score): void
     {
-        $gradeColor   = CliRenderer::gradeColor($score->grade);
-        $scoreColor   = CliRenderer::scoreColor($score->overall);
+        $gradeColor = CliRenderer::gradeColor($score->grade);
+        $scoreColor = CliRenderer::scoreColor($score->overall);
         $exposedCount = $report->exposedRouteCount();
 
         $this->line(CliRenderer::divider(52));

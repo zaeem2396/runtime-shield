@@ -10,21 +10,6 @@ use RuntimeShield\DTO\Score\ScoreCategory;
 
 final class CategoryScoreTest extends TestCase
 {
-    private function make(
-        int $score,
-        int $maxScore = 100,
-        int $violationCount = 0,
-        int $weight = 20,
-    ): CategoryScore {
-        return new CategoryScore(
-            category: ScoreCategory::AUTH,
-            score: $score,
-            maxScore: $maxScore,
-            violationCount: $violationCount,
-            weight: $weight,
-        );
-    }
-
     public function test_percentage_returns_100_when_score_equals_max(): void
     {
         $this->assertSame(100.0, $this->make(100, 100)->percentage());
@@ -77,7 +62,7 @@ final class CategoryScoreTest extends TestCase
 
     public function test_to_array_values_are_correct(): void
     {
-        $cs  = $this->make(80, 100, 2, 30);
+        $cs = $this->make(80, 100, 2, 30);
         $arr = $cs->toArray();
 
         $this->assertSame('auth', $arr['category']);
@@ -87,5 +72,19 @@ final class CategoryScoreTest extends TestCase
         $this->assertSame(30, $arr['weight']);
         $this->assertSame(2, $arr['violation_count']);
         $this->assertTrue($arr['passing']);
+    }
+    private function make(
+        int $score,
+        int $maxScore = 100,
+        int $violationCount = 0,
+        int $weight = 20,
+    ): CategoryScore {
+        return new CategoryScore(
+            category: ScoreCategory::AUTH,
+            score: $score,
+            maxScore: $maxScore,
+            violationCount: $violationCount,
+            weight: $weight,
+        );
     }
 }

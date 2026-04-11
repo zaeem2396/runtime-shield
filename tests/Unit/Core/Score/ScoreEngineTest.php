@@ -16,27 +16,6 @@ final class ScoreEngineTest extends TestCase
 {
     private ScoreEngine $engine;
 
-    protected function setUp(): void
-    {
-        $this->engine = new ScoreEngine(new RuleCategoryMap());
-    }
-
-    private function violation(string $ruleId, Severity $severity): Violation
-    {
-        return new Violation($ruleId, 'Test', 'Desc', $severity);
-    }
-
-    private function collection(Violation ...$violations): ViolationCollection
-    {
-        $col = new ViolationCollection();
-
-        foreach ($violations as $v) {
-            $col = new ViolationCollection(array_merge($col->all(), [$v]));
-        }
-
-        return $col;
-    }
-
     // ── Empty violations ─────────────────────────────────────────────────────
 
     public function test_empty_violations_produces_overall_100(): void
@@ -74,7 +53,7 @@ final class ScoreEngineTest extends TestCase
     public function test_single_critical_auth_violation_deducts_20_from_auth(): void
     {
         $violations = $this->collection($this->violation('public-route-without-auth', Severity::CRITICAL));
-        $score      = $this->engine->calculate($violations);
+        $score = $this->engine->calculate($violations);
 
         $auth = $score->categoryScore(ScoreCategory::AUTH);
         $this->assertNotNull($auth);
@@ -84,7 +63,7 @@ final class ScoreEngineTest extends TestCase
     public function test_single_high_csrf_violation_deducts_10_from_csrf(): void
     {
         $violations = $this->collection($this->violation('missing-csrf-protection', Severity::HIGH));
-        $score      = $this->engine->calculate($violations);
+        $score = $this->engine->calculate($violations);
 
         $csrf = $score->categoryScore(ScoreCategory::CSRF);
         $this->assertNotNull($csrf);
@@ -94,7 +73,7 @@ final class ScoreEngineTest extends TestCase
     public function test_single_medium_rate_limit_violation_deducts_5(): void
     {
         $violations = $this->collection($this->violation('missing-rate-limit', Severity::MEDIUM));
-        $score      = $this->engine->calculate($violations);
+        $score = $this->engine->calculate($violations);
 
         $rl = $score->categoryScore(ScoreCategory::RATE_LIMIT);
         $this->assertNotNull($rl);
@@ -104,7 +83,7 @@ final class ScoreEngineTest extends TestCase
     public function test_single_low_validation_violation_deducts_2(): void
     {
         $violations = $this->collection($this->violation('missing-validation', Severity::LOW));
-        $score      = $this->engine->calculate($violations);
+        $score = $this->engine->calculate($violations);
 
         $v = $score->categoryScore(ScoreCategory::VALIDATION);
         $this->assertNotNull($v);
@@ -114,7 +93,7 @@ final class ScoreEngineTest extends TestCase
     public function test_info_violation_deducts_nothing(): void
     {
         $violations = $this->collection($this->violation('missing-validation', Severity::INFO));
-        $score      = $this->engine->calculate($violations);
+        $score = $this->engine->calculate($violations);
 
         $v = $score->categoryScore(ScoreCategory::VALIDATION);
         $this->assertNotNull($v);
@@ -135,7 +114,7 @@ final class ScoreEngineTest extends TestCase
         );
 
         $score = $this->engine->calculate($violations);
-        $auth  = $score->categoryScore(ScoreCategory::AUTH);
+        $auth = $score->categoryScore(ScoreCategory::AUTH);
         $this->assertNotNull($auth);
         $this->assertSame(0, $auth->score);
     }
@@ -166,7 +145,7 @@ final class ScoreEngineTest extends TestCase
         $v = new Violation('unknown-custom-rule', 'Test', 'Desc', Severity::HIGH);
 
         $violations = $this->collection($v);
-        $score      = $this->engine->calculate($violations);
+        $score = $this->engine->calculate($violations);
 
         foreach ($score->categories as $cs) {
             $this->assertSame(100, $cs->score, "Category {$cs->category->value} should be unaffected");
@@ -180,7 +159,7 @@ final class ScoreEngineTest extends TestCase
         // AUTH only — score 80 (1 CRITICAL = -20), all others 100
         // weighted: (80*30 + 100*25 + 100*20 + 100*15 + 100*10) / 100 = 94
         $violations = $this->collection($this->violation('public-route-without-auth', Severity::CRITICAL));
-        $score      = $this->engine->calculate($violations);
+        $score = $this->engine->calculate($violations);
 
         $this->assertSame('A', $score->grade);
     }
@@ -188,10 +167,10 @@ final class ScoreEngineTest extends TestCase
     public function test_grade_f_when_all_categories_score_zero(): void
     {
         $engine = new ScoreEngine(new RuleCategoryMap(), [
-            'auth'        => 20,
-            'csrf'        => 20,
-            'rate_limit'  => 20,
-            'validation'  => 20,
+            'auth' => 20,
+            'csrf' => 20,
+            'rate_limit' => 20,
+            'validation' => 20,
             'file_upload' => 20,
         ]);
 
@@ -213,7 +192,7 @@ final class ScoreEngineTest extends TestCase
 
     public function test_summarise_returns_expected_keys(): void
     {
-        $score   = $this->engine->calculate(new ViolationCollection());
+        $score = $this->engine->calculate(new ViolationCollection());
         $summary = $this->engine->summarise($score);
 
         $this->assertArrayHasKey('overall', $summary);
@@ -225,11 +204,32 @@ final class ScoreEngineTest extends TestCase
 
     public function test_summarise_all_passed_when_no_violations(): void
     {
-        $score   = $this->engine->calculate(new ViolationCollection());
+        $score = $this->engine->calculate(new ViolationCollection());
         $summary = $this->engine->summarise($score);
 
         $this->assertSame(5, $summary['passed']);
         $this->assertSame(0, $summary['failed']);
+    }
+
+    protected function setUp(): void
+    {
+        $this->engine = new ScoreEngine(new RuleCategoryMap());
+    }
+
+    private function violation(string $ruleId, Severity $severity): Violation
+    {
+        return new Violation($ruleId, 'Test', 'Desc', $severity);
+    }
+
+    private function collection(Violation ...$violations): ViolationCollection
+    {
+        $col = new ViolationCollection();
+
+        foreach ($violations as $v) {
+            $col = new ViolationCollection(array_merge($col->all(), [$v]));
+        }
+
+        return $col;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
