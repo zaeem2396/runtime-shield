@@ -57,6 +57,23 @@ final class SecurityScore
     }
 
     /**
+     * The CategoryScore with the lowest score (highest risk area).
+     * Returns null when there are no categories.
+     */
+    public function highestRisk(): CategoryScore|null
+    {
+        $lowest = null;
+
+        foreach ($this->categories as $cs) {
+            if ($lowest === null || $cs->score < $lowest->score) {
+                $lowest = $cs;
+            }
+        }
+
+        return $lowest;
+    }
+
+    /**
      * Whether any category has a score of 0 — indicates a completely unprotected area.
      */
     public function hasCriticalFailures(): bool
