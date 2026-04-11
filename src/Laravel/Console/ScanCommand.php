@@ -8,12 +8,14 @@ use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
+use RuntimeShield\Contracts\Score\ScoreEngineContract;
 use RuntimeShield\Core\RuntimeContextBuilder;
 use RuntimeShield\DTO\Rule\Violation;
 use RuntimeShield\DTO\Rule\ViolationCollection;
 use RuntimeShield\DTO\SecurityRuntimeContext;
 use RuntimeShield\DTO\Signal\RequestSignal;
 use RuntimeShield\DTO\Signal\RouteSignal;
+use RuntimeShield\Support\CliRenderer;
 
 /**
  * Artisan command that scans all registered routes for security issues
@@ -24,13 +26,15 @@ use RuntimeShield\DTO\Signal\RouteSignal;
 final class ScanCommand extends Command
 {
     protected $signature = 'runtime-shield:scan
-                            {--format=table : Output format (table|json)}';
+                            {--format=table : Output format (table|json)}
+                            {--score : Show the weighted security score after scanning}';
 
     protected $description = 'Scan all registered routes for security violations';
 
     public function __construct(
         private readonly Router $router,
         private readonly RuleEngineContract $ruleEngine,
+        private readonly ScoreEngineContract $scoreEngine,
     ) {
         parent::__construct();
     }
@@ -65,7 +69,7 @@ final class ScanCommand extends Command
         }
 
         $criticalCount = count($violations->critical());
-        $highCount = count($violations->high());
+        $highCount     = count($violations->high());
 
         $this->line('');
         $this->line(sprintf(
@@ -77,6 +81,22 @@ final class ScanCommand extends Command
             count($violations->medium()),
             count($violations->low()),
         ));
+
+        if ($this->option('score')) {
+            $score = $this->scoreEngine->calculate($violations);
+            $color = CliRenderer::scoreColor($score->overall);
+            $gradeColor = CliRenderer::gradeColor($score->grade);
+
+            $this->line('');
+            $this->line(sprintf(
+                '  Security Score: <fg=%s;options=bold>%d/100</>   Grade: <fg=%s;options=bold>%s</>',
+                $color,
+                $score->overall,
+                $gradeColor,
+                $score->grade,
+            ));
+        }
+
         $this->line('');
 
         return ($criticalCount > 0 || $highCount > 0) ? self::FAILURE : self::SUCCESS;
