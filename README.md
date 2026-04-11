@@ -48,11 +48,26 @@ Add `RuntimeShieldMiddleware` to your HTTP middleware stack.
 
 ```php
 use RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
 
-->withMiddleware(function (Middleware $middleware) {
-    $middleware->append(RuntimeShieldMiddleware::class);
-})
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware): void {
+        // Add RuntimeShield alongside any existing middleware you have
+        $middleware->append(RuntimeShieldMiddleware::class);
+    })
+    ->withExceptions(function (Exceptions $exceptions): void {
+        //
+    })->create();
 ```
+
+> If you already have a `->withMiddleware()` callback with other middleware (e.g. `$middleware->alias([...])`), simply add `$middleware->append(RuntimeShieldMiddleware::class)` **inside the same callback** — do not create a second one.
 
 **Laravel 10** (`app/Http/Kernel.php`):
 
