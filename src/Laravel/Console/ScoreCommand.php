@@ -207,7 +207,7 @@ final class ScoreCommand extends Command
 
         $rows = [];
 
-        foreach ($score->categories as $cs) {
+        foreach ($score->sortedByRisk() as $cs) {
             $rows[] = $this->buildCategoryRow($cs);
         }
 
