@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.6.0] — 2026-04-11 — Security Score
+
+### Overview
+
+Introduces a full-featured **Security Score Engine** that transforms raw
+violations into a weighted, category-driven score (0–100) with a letter grade
+(A–F). Every security concern is attributed to one of five categories —
+Authentication, CSRF Protection, Rate Limiting, Input Validation, and File
+Upload Safety — each carrying a configurable weight. A new `runtime-shield:score`
+Artisan command displays the score, a Unicode progress-bar breakdown per category,
+and the highest-risk area. The existing `runtime-shield:report` command is
+enhanced with the same per-category breakdown, and `runtime-shield:scan` gains
+an optional `--score` flag for a quick score glance after scanning.
+
+---
+
+### Added
+
+#### DTO — `RuntimeShield\DTO\Score`
+
+- `ScoreCategory` enum — five scoring categories (`AUTH`, `CSRF`, `RATE_LIMIT`, `VALIDATION`, `FILE_UPLOAD`)
+  - `label(): string` — human-readable display name
+  - `description(): string` — one-line description of the category
+  - `defaultWeight(): int` — default percentage weight (AUTH=30, CSRF=25, RATE\_LIMIT=20, VALIDATION=15, FILE\_UPLOAD=10; sum=100)
+- `CategoryScore` — immutable per-category score record
+  - Properties: `category`, `score`, `maxScore`, `violationCount`, `weight`
+  - `percentage(): float` — score as 0–100 percentage
+  - `isPassing(): bool` — true when score ≥ 75
+  - `summary(): string` — human-readable label with pass/fail status
+  - `toArray(): array` — JSON-serialisable representation
+- `SecurityScore` — immutable aggregate score
+  - Properties: `overall`, `grade`, `categories`, `totalViolations`
+  - `categoryScore(ScoreCategory): CategoryScore|null` — per-category lookup
+  - `passedCategories(): list<CategoryScore>` — categories with score ≥ 75
+  - `failedCategories(): list<CategoryScore>` — categories with score < 75
+  - `highestRisk(): CategoryScore|null` — category with the lowest score
+  - `hasCriticalFailures(): bool` — true if any category scores 0
+  - `sortedByRisk(): list<CategoryScore>` — ascending score order
+  - `formatted(): string` — score as `"XX/100"` string
+  - `toArray(): array` — JSON-serialisable representation
+
+#### Contracts — `RuntimeShield\Contracts\Score`
+
+- `ScoreEngineContract` — `calculate(ViolationCollection): SecurityScore` and `summarise(SecurityScore): array`
+- `RuleCategoryMapContract` — `categoryFor(string): ScoreCategory|null`, `allMappings(): array`, `rulesFor(ScoreCategory): list<string>`
+
+#### Core — `RuntimeShield\Core\Score`
+
+- `RuleCategoryMap` — maps all five built-in rule IDs to their `ScoreCategory`
+  - `rulesFor(ScoreCategory): list<string>` — reverse lookup: rule IDs per category
+- `ScoreEngine` — implements `ScoreEngineContract`
+  - Groups violations by category via `RuleCategoryMapContract`
+  - Per-category deductions: CRITICAL=−20, HIGH=−10, MEDIUM=−5, LOW=−2, INFO=0; floor at 0
+  - Calculates weighted overall score; configurable weights via constructor or config
+  - Assigns letter grade: A ≥ 90, B ≥ 75, C ≥ 60, D ≥ 40, F < 40
+  - `summarise(SecurityScore): array` — compact summary for JSON embedding
+
+#### Support — `RuntimeShield\Support\CliRenderer`
+
+- `progressBar(int $score, int $width = 20): string` — Unicode block-character bar coloured by score
+- `scoreColor(int $score): string` — green ≥ 75, yellow ≥ 50, red < 50
+
+#### Artisan Commands
+
+- `runtime-shield:score` — calculates and displays a weighted security score
+  - Header panel: overall score, grade, total violations
+  - Category breakdown table sorted by risk (lowest score first)
+  - Highest-risk area callout with description
+  - Failed-categories warning list
+  - `--format=json` for machine-readable output
+
+#### Configuration
+
+- `runtime_shield.scoring.weights` — per-category integer weights (configurable; defaults mirror `ScoreCategory::defaultWeight()`)
+- `runtime_shield.scoring.thresholds.pass` (75) and `runtime_shield.scoring.thresholds.warning` (50)
+
+---
+
+### Changed
+
+- `runtime-shield:report` — summary panel now uses `ScoreEngine` for a per-category breakdown table; JSON output includes `security_score` key
+- `runtime-shield:scan` — gained an optional `--score` flag to display the weighted score after scanning
+
+---
+
+### Tests
+
+- 79 new tests (328 total); new test classes: `ScoreCategoryTest`, `CategoryScoreTest`, `CategoryScoreSummaryTest`, `SecurityScoreTest`, `SecurityScoreEdgeCaseTest`, `SecurityScoreFormattedTest`, `SecurityScoreSortedByRiskTest`, `RuleCategoryMapTest`, `RuleCategoryMapRulesForTest`, `ScoreEngineTest`, `ScoreEngineWeightedTest`, `ScoreEngineGradeTest`, `ScoreEngineConfigWeightTest`, `CliRendererProgressBarTest`
+
+---
+
 ## [v0.5.0] — 2026-04-10 — CLI Experience (Viral Layer)
 
 ### Overview
