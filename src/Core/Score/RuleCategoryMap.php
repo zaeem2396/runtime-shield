@@ -36,4 +36,22 @@ final class RuleCategoryMap implements RuleCategoryMapContract
     {
         return self::MAP;
     }
+
+    /**
+     * All rule IDs that map to the given category.
+     *
+     * @return list<string>
+     */
+    public function rulesFor(ScoreCategory $category): array
+    {
+        $ruleIds = [];
+
+        foreach (self::MAP as $ruleId => $mappedCategory) {
+            if ($mappedCategory === $category) {
+                $ruleIds[] = $ruleId;
+            }
+        }
+
+        return $ruleIds;
+    }
 }
