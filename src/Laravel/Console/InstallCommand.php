@@ -30,8 +30,13 @@ final class InstallCommand extends Command
         $this->line('');
         $this->line('Next steps:');
         $this->line('  1. Review <comment>config/runtime_shield.php</comment>');
-        $this->line('  2. Add <comment>RuntimeShieldMiddleware</comment> to your HTTP kernel');
-        $this->line('  3. Run <comment>php artisan runtime-shield:install</comment> again to update');
+        $this->line('  2. Add <comment>RuntimeShieldMiddleware</comment> to <comment>bootstrap/app.php</comment> (Laravel 11/12/13):');
+        $this->line('');
+        $this->line('     <comment>->withMiddleware(function (Middleware $middleware): void {</comment>');
+        $this->line('         <comment>$middleware->append(\RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware::class);</comment>');
+        $this->line('     <comment>})</comment>');
+        $this->line('');
+        $this->line('     For Laravel 10, add it to the <comment>$middleware</comment> array in <comment>app/Http/Kernel.php</comment>.');
         $this->line('');
         $this->info('RuntimeShield installed successfully.');
 
