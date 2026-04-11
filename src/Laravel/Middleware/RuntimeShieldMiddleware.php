@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace RuntimeShield\Laravel\Middleware;
 
 use Illuminate\Http\Request;
+use RuntimeShield\Contracts\Alert\AlertDispatcherContract;
 use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Core\Performance\MetricsStore;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\DTO\Performance\MiddlewareMetrics;
+use RuntimeShield\Laravel\Jobs\AlertDispatchJob;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -18,6 +20,10 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Zero-overhead path: when the shield is disabled the entire body of
  * handle() reduces to a single $next($request) call.
+ *
+ * When alerts are enabled, terminate() also evaluates rules and dispatches
+ * an AlertDispatcherContract after the HTTP response has been sent, so the
+ * client never waits for alert delivery.
  */
 final class RuntimeShieldMiddleware
 {
@@ -30,6 +36,9 @@ final class RuntimeShieldMiddleware
         private readonly EngineContract $engine,
         private readonly SignalPipelineContract $pipeline,
         private readonly MetricsStore $metricsStore,
+        private readonly AlertDispatcherContract $alertDispatcher,
+        private readonly bool $alertsEnabled,
+        private readonly bool $alertsAsync,
     ) {
     }
 
@@ -62,12 +71,28 @@ final class RuntimeShieldMiddleware
         $processingMs = (microtime(true) * 1000.0) - $this->startTimeMs;
         $memoryDeltaKb = (int) round((memory_get_usage() - $this->memoryBefore) / 1024);
         $wasSampled = $context !== null;
+        $rulesEvaluated = 0;
+
+        if ($context !== null && $this->alertsEnabled) {
+            $violations = $this->engine->evaluate($context);
+            $rulesEvaluated = $violations->count();
+
+            if (! $violations->isEmpty()) {
+                $route = $context->route?->name ?? $context->route?->uri ?? '';
+
+                if ($this->alertsAsync) {
+                    AlertDispatchJob::dispatch($violations, $route);
+                } else {
+                    $this->alertDispatcher->dispatch($violations, $route);
+                }
+            }
+        }
 
         $this->metricsStore->push(new MiddlewareMetrics(
             processingMs: max(0.0, $processingMs),
             memoryDeltaKb: $memoryDeltaKb,
             wasSampled: $wasSampled,
-            rulesEvaluated: 0,
+            rulesEvaluated: $rulesEvaluated,
             capturedAt: new \DateTimeImmutable(),
         ));
     }

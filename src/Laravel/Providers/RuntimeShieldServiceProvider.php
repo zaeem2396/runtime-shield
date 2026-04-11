@@ -162,6 +162,21 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             $app->make(RuleEngineContract::class),
         ));
 
+        $this->app->singleton(\RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware::class, static function ($app): \RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware {
+            $alertsEnabled = (bool) $app['config']->get('runtime_shield.alerts.enabled', false);
+            $alertsAsync = (bool) $app['config']->get('runtime_shield.alerts.async', false);
+
+            return new \RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware(
+                $app->make(RuntimeShieldManager::class),
+                $app->make(EngineContract::class),
+                $app->make(SignalPipelineContract::class),
+                $app->make(MetricsStore::class),
+                $app->make(AlertDispatcherContract::class),
+                $alertsEnabled,
+                $alertsAsync,
+            );
+        });
+
         $this->app->singleton(RouteProtectionAnalyzer::class, static fn (): RouteProtectionAnalyzer => new RouteProtectionAnalyzer());
 
         $this->app->singleton(ReportBuilderContract::class, static fn ($app): ReportBuilder => new ReportBuilder(
