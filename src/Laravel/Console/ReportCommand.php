@@ -6,8 +6,11 @@ namespace RuntimeShield\Laravel\Console;
 
 use Illuminate\Console\Command;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
+use RuntimeShield\Contracts\Score\ScoreEngineContract;
 use RuntimeShield\DTO\Report\SecurityReport;
 use RuntimeShield\DTO\Rule\Severity;
+use RuntimeShield\DTO\Score\CategoryScore;
+use RuntimeShield\DTO\Score\SecurityScore;
 use RuntimeShield\Support\CliRenderer;
 
 /**
@@ -24,8 +27,10 @@ final class ReportCommand extends Command
 
     protected $description = 'Generate a full security report for all registered routes';
 
-    public function __construct(private readonly ReportBuilderContract $builder)
-    {
+    public function __construct(
+        private readonly ReportBuilderContract $builder,
+        private readonly ScoreEngineContract $scoreEngine,
+    ) {
         parent::__construct();
     }
 
@@ -36,12 +41,16 @@ final class ReportCommand extends Command
         $this->line(CliRenderer::divider(52));
 
         $report = $this->builder->build();
+        $score = $this->scoreEngine->calculate($report->violations);
 
         $this->line("  Scanning <options=bold>{$report->routeCount}</> route(s)…");
         $this->line("  Generated: <fg=gray>{$report->scannedAt->format('Y-m-d H:i:s')}</>");
         $this->line('');
 
-        $json = (string) json_encode($report->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $json = (string) json_encode(
+            array_merge($report->toArray(), ['security_score' => $score->toArray()]),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+        );
 
         if ($this->option('format') === 'json') {
             $this->line($json);
@@ -59,13 +68,13 @@ final class ReportCommand extends Command
 
         if ($report->violations->isEmpty()) {
             $this->line('<fg=green>  ✔ No security violations detected.</>');
-            $this->renderSummary($report);
+            $this->renderSummary($report, $score);
 
             return self::SUCCESS;
         }
 
         $this->renderViolationGroups($report);
-        $this->renderSummary($report);
+        $this->renderSummary($report, $score);
 
         $hasCritical = count($report->violations->critical()) > 0;
         $hasHigh = count($report->violations->high()) > 0;
@@ -105,15 +114,20 @@ final class ReportCommand extends Command
         }
     }
 
-    private function renderSummary(SecurityReport $report): void
+    private function renderSummary(SecurityReport $report, SecurityScore $score): void
     {
-        $score = $report->score();
-        $grade = $report->grade();
-        $gradeColor = CliRenderer::gradeColor($grade);
+        $gradeColor = CliRenderer::gradeColor($score->grade);
+        $scoreColor = CliRenderer::scoreColor($score->overall);
         $exposedCount = $report->exposedRouteCount();
 
         $this->line(CliRenderer::divider(52));
-        $this->line("  Security Score: <fg={$gradeColor};options=bold>{$score}/100</>   Grade: <fg={$gradeColor};options=bold>{$grade}</>");
+        $this->line(sprintf(
+            '  Security Score: <fg=%s;options=bold>%d/100</>   Grade: <fg=%s;options=bold>%s</>',
+            $scoreColor,
+            $score->overall,
+            $gradeColor,
+            $score->grade,
+        ));
         $this->line("  Routes: <options=bold>{$report->routeCount}</>  Exposed: <fg=red>{$exposedCount}</>");
         $this->line(sprintf(
             '  Violations: <options=bold>%d</>  (<fg=red>%d critical</> · <fg=yellow>%d high</> · <fg=cyan>%d medium</> · <fg=blue>%d low</>)',
@@ -123,7 +137,40 @@ final class ReportCommand extends Command
             count($report->violations->medium()),
             count($report->violations->low()),
         ));
+
+        $this->line('');
+        $this->renderScoreBreakdown($score);
+
         $this->line(CliRenderer::divider(52));
         $this->line('');
+    }
+
+    private function renderScoreBreakdown(SecurityScore $score): void
+    {
+        $this->line('  <options=bold>Score Breakdown by Category:</>');
+        $this->line('');
+
+        $rows = [];
+
+        foreach ($score->categories as $cs) {
+            $rows[] = $this->buildBreakdownRow($cs);
+        }
+
+        $this->table(['Category', 'Score', 'Coverage', 'Violations'], $rows);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function buildBreakdownRow(CategoryScore $cs): array
+    {
+        $color = CliRenderer::scoreColor($cs->score);
+
+        return [
+            $cs->category->label(),
+            sprintf('<fg=%s;options=bold>%d/100</>', $color, $cs->score),
+            CliRenderer::progressBar($cs->score),
+            (string) $cs->violationCount,
+        ];
     }
 }

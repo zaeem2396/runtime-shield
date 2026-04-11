@@ -1,0 +1,127 @@
+<?php
+
+declare(strict_types=1);
+
+namespace RuntimeShield\DTO\Score;
+
+/**
+ * Immutable aggregate security score produced by the ScoreEngine.
+ *
+ * Carries the weighted overall score (0–100), a letter grade, a per-category
+ * breakdown, and the total number of violations that influenced the score.
+ */
+final class SecurityScore
+{
+    /**
+     * @param array<string, CategoryScore> $categories Keyed by ScoreCategory::value
+     */
+    public function __construct(
+        public readonly int $overall,
+        public readonly string $grade,
+        public readonly array $categories,
+        public readonly int $totalViolations,
+    ) {
+    }
+
+    /**
+     * Look up the CategoryScore for a specific category.
+     * Returns null when the category is not present (e.g. engine ran with partial categories).
+     */
+    public function categoryScore(ScoreCategory $category): CategoryScore|null
+    {
+        return $this->categories[$category->value] ?? null;
+    }
+
+    /**
+     * Categories whose score is >= 75 (passing threshold).
+     *
+     * @return list<CategoryScore>
+     */
+    public function passedCategories(): array
+    {
+        return array_values(
+            array_filter($this->categories, static fn (CategoryScore $cs): bool => $cs->isPassing()),
+        );
+    }
+
+    /**
+     * Categories whose score is < 75 (failing threshold).
+     *
+     * @return list<CategoryScore>
+     */
+    public function failedCategories(): array
+    {
+        return array_values(
+            array_filter($this->categories, static fn (CategoryScore $cs): bool => ! $cs->isPassing()),
+        );
+    }
+
+    /**
+     * All CategoryScores sorted from lowest score (highest risk) to highest.
+     *
+     * @return list<CategoryScore>
+     */
+    public function sortedByRisk(): array
+    {
+        $categories = array_values($this->categories);
+
+        usort($categories, static fn (CategoryScore $a, CategoryScore $b): int => $a->score <=> $b->score);
+
+        return $categories;
+    }
+
+    /**
+     * Overall score formatted as a fraction string, e.g. "78/100".
+     */
+    public function formatted(): string
+    {
+        return "{$this->overall}/100";
+    }
+
+    /**
+     * The CategoryScore with the lowest score (highest risk area).
+     * Returns null when there are no categories.
+     */
+    public function highestRisk(): CategoryScore|null
+    {
+        $lowest = null;
+
+        foreach ($this->categories as $cs) {
+            if ($lowest === null || $cs->score < $lowest->score) {
+                $lowest = $cs;
+            }
+        }
+
+        return $lowest;
+    }
+
+    /**
+     * Whether any category has a score of 0 — indicates a completely unprotected area.
+     */
+    public function hasCriticalFailures(): bool
+    {
+        foreach ($this->categories as $cs) {
+            if ($cs->score === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'overall' => $this->overall,
+            'grade' => $this->grade,
+            'total_violations' => $this->totalViolations,
+            'categories' => array_map(
+                static fn (CategoryScore $cs): array => $cs->toArray(),
+                array_values($this->categories),
+            ),
+        ];
+    }
+}

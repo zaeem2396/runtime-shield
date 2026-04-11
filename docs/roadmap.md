@@ -290,9 +290,9 @@ List routes + protections
 
 ---
 
-# 📊 v0.6.0 — Security Score &nbsp;🔴 Planned
+# 📊 v0.6.0 — Security Score &nbsp;🟢 Completed
 
-## STEP 21 — Score Engine &nbsp;🔴 Planned
+## STEP 21 — Score Engine &nbsp;🟢 Completed
 
 ```
 Calculate score based on violations
@@ -300,7 +300,7 @@ Calculate score based on violations
 
 ---
 
-## STEP 22 — Category Scoring &nbsp;🔴 Planned
+## STEP 22 — Category Scoring &nbsp;🟢 Completed
 
 ```
 Break score into:
@@ -309,7 +309,7 @@ auth, validation, csrf, etc.
 
 ---
 
-## STEP 23 — CLI Score Output &nbsp;🔴 Planned
+## STEP 23 — CLI Score Output &nbsp;🟢 Completed
 
 ```
 Display:
@@ -318,7 +318,7 @@ Security Score: 78/100
 
 ---
 
-## STEP 24 — Score Breakdown &nbsp;🔴 Planned
+## STEP 24 — Score Breakdown &nbsp;🟢 Completed
 
 ```
 Show category-wise breakdown
