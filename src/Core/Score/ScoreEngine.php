@@ -71,6 +71,14 @@ final class ScoreEngine implements ScoreEngineContract
     }
 
     /**
+     * Calculate the point deduction for a single violation.
+     */
+    public function deductionFor(Severity $severity): int
+    {
+        return self::DEDUCTIONS[$severity->name] ?? 0;
+    }
+
+    /**
      * Group violations by their resolved ScoreCategory.
      *
      * @return array<string, list<Violation>>
