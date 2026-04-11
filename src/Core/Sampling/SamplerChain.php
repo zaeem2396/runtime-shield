@@ -62,4 +62,10 @@ final class SamplerChain implements SamplerContract
     {
         return $this->samplers;
     }
+
+    /** Whether the chain contains no samplers (always samples when empty). */
+    public function isEmpty(): bool
+    {
+        return $this->samplers === [];
+    }
 }
