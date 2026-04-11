@@ -330,9 +330,9 @@ Show category-wise breakdown
 
 ---
 
-# ⚡ v0.7.0 — Performance &nbsp;🔴 Planned
+# ⚡ v0.7.0 — Performance &nbsp;🟢 Completed
 
-## STEP 25 — Middleware Optimization &nbsp;🔴 Planned
+## STEP 25 — Middleware Optimization &nbsp;🟢 Completed
 
 ```
 Reduce overhead
@@ -341,7 +341,7 @@ Avoid unnecessary allocations
 
 ---
 
-## STEP 26 — Async Processing &nbsp;🔴 Planned
+## STEP 26 — Async Processing &nbsp;🟢 Completed
 
 ```
 Queue-based rule evaluation
@@ -349,7 +349,7 @@ Queue-based rule evaluation
 
 ---
 
-## STEP 27 — Batch Rule Execution &nbsp;🔴 Planned
+## STEP 27 — Batch Rule Execution &nbsp;🟢 Completed
 
 ```
 Execute rules in batches
@@ -357,7 +357,7 @@ Execute rules in batches
 
 ---
 
-## STEP 28 — Dynamic Sampling &nbsp;🔴 Planned
+## STEP 28 — Dynamic Sampling &nbsp;🟢 Completed
 
 ```
 Configurable per env
