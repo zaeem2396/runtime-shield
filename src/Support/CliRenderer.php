@@ -86,4 +86,44 @@ final class CliRenderer
     {
         return $value ? '<fg=green>✔</>' : '<fg=red>✘</>';
     }
+
+    /**
+     * Text-based progress bar using Unicode block characters.
+     *
+     * Colour is automatically chosen based on the score value:
+     *   >= 75 → green, >= 50 → yellow, < 50 → red
+     *
+     * @param int $score 0–100
+     * @param int $width Total bar character width (default 20)
+     */
+    public static function progressBar(int $score, int $width = 20): string
+    {
+        $filled = (int) round(max(0, min(100, $score)) / 100 * $width);
+        $empty  = $width - $filled;
+
+        $color = match (true) {
+            $score >= 75 => 'green',
+            $score >= 50 => 'yellow',
+            default      => 'red',
+        };
+
+        return sprintf(
+            '<fg=%s>%s</><fg=gray>%s</>',
+            $color,
+            str_repeat('█', $filled),
+            str_repeat('░', $empty),
+        );
+    }
+
+    /**
+     * Score colour based on a 0–100 integer score.
+     */
+    public static function scoreColor(int $score): string
+    {
+        return match (true) {
+            $score >= 75 => 'green',
+            $score >= 50 => 'yellow',
+            default      => 'red',
+        };
+    }
 }
