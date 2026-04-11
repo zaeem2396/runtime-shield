@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Support\ServiceProvider;
 use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
+use RuntimeShield\Contracts\Report\ReportBuilderContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Contracts\SamplerContract;
 use RuntimeShield\Contracts\ShieldContract;
@@ -19,6 +20,8 @@ use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
 use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
 use RuntimeShield\Core\ConfigRepository;
+use RuntimeShield\Core\Report\ReportBuilder;
+use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
 use RuntimeShield\Core\Rule\RuleEngine;
 use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\RuntimeShieldManager;
@@ -27,6 +30,8 @@ use RuntimeShield\Core\Signal\InMemoryContextStore;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\Engine\RuntimeShieldEngine;
 use RuntimeShield\Laravel\Console\InstallCommand;
+use RuntimeShield\Laravel\Console\ReportCommand;
+use RuntimeShield\Laravel\Console\RoutesCommand;
 use RuntimeShield\Laravel\Console\ScanCommand;
 use RuntimeShield\Laravel\Signal\AuthSignalCollector;
 use RuntimeShield\Laravel\Signal\RequestCapturer;
@@ -114,6 +119,14 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             $app->make(RuntimeShieldManager::class),
             $app->make(RuleEngineContract::class),
         ));
+
+        $this->app->singleton(RouteProtectionAnalyzer::class, static fn (): RouteProtectionAnalyzer => new RouteProtectionAnalyzer());
+
+        $this->app->singleton(ReportBuilderContract::class, static fn ($app): ReportBuilder => new ReportBuilder(
+            $app->make(\Illuminate\Routing\Router::class),
+            $app->make(RuleEngineContract::class),
+            $app->make(RouteProtectionAnalyzer::class),
+        ));
     }
 
     public function boot(): void
@@ -129,6 +142,8 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         $this->commands([
             InstallCommand::class,
             ScanCommand::class,
+            ReportCommand::class,
+            RoutesCommand::class,
         ]);
     }
 }
