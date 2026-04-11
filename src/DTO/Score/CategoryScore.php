@@ -40,6 +40,16 @@ final class CategoryScore
     }
 
     /**
+     * Human-readable summary string, e.g. "Authentication: 80/100 (passing)".
+     */
+    public function summary(): string
+    {
+        $status = $this->isPassing() ? 'passing' : 'failing';
+
+        return sprintf('%s: %d/100 (%s)', $this->category->label(), $this->score, $status);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array
