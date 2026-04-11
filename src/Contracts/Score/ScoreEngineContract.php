@@ -19,4 +19,11 @@ interface ScoreEngineContract
      * Calculate a detailed SecurityScore from the given violations.
      */
     public function calculate(ViolationCollection $violations): SecurityScore;
+
+    /**
+     * Return a compact summary array from a SecurityScore — useful for JSON embedding.
+     *
+     * @return array<string, mixed>
+     */
+    public function summarise(SecurityScore $score): array;
 }
