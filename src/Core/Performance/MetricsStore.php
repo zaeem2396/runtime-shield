@@ -98,6 +98,14 @@ final class MetricsStore
         return $sampled / count($this->records);
     }
 
+    /**
+     * Most recent MiddlewareMetrics record, or null when empty.
+     */
+    public function last(): MiddlewareMetrics|null
+    {
+        return $this->records === [] ? null : $this->records[count($this->records) - 1];
+    }
+
     public function flush(): void
     {
         $this->records = [];
