@@ -57,6 +57,20 @@ final class SecurityScore
     }
 
     /**
+     * Whether any category has a score of 0 — indicates a completely unprotected area.
+     */
+    public function hasCriticalFailures(): bool
+    {
+        foreach ($this->categories as $cs) {
+            if ($cs->score === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array
