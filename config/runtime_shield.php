@@ -25,8 +25,39 @@ return [
     | processed. 1.0 = every request (default), 0.5 = 50%, 0.0 = disabled.
     | Useful for high-traffic production environments to reduce overhead.
     |
+    | Per-environment overrides can be set under sampling.env_rates below.
+    | When env_rates is populated the global sampling_rate acts as a fallback
+    | for environments not listed.
+    |
     */
     'sampling_rate' => (float) env('RUNTIME_SHIELD_SAMPLING_RATE', 1.0),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dynamic Sampling
+    |--------------------------------------------------------------------------
+    |
+    | Override the sampling rate per application environment (APP_ENV).
+    | Set env_rates to an empty array [] to disable per-env overrides and
+    | fall back to the global sampling_rate above.
+    |
+    | Example:
+    |   'env_rates' => [
+    |       'production' => 0.5,   // sample half of production traffic
+    |       'staging'    => 0.8,
+    |       'testing'    => 0.0,   // never sample in tests (zero overhead)
+    |       'local'      => 1.0,   // always sample locally
+    |   ],
+    |
+    */
+    'sampling' => [
+        'env_rates' => [
+            // 'production' => 0.5,
+            // 'staging'    => 0.8,
+            // 'testing'    => 0.0,
+            // 'local'      => 1.0,
+        ],
+    ],
 
     /*
     |--------------------------------------------------------------------------

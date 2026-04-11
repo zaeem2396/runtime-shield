@@ -9,7 +9,7 @@
 
 > Runtime security analysis and observation for PHP 8.2+ applications — with first-class Laravel 10 / 11 / 12 / 13 support.
 
-RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, evaluates configurable security rules, and produces a weighted **Security Score** (0–100) with per-category breakdown — with zero overhead when disabled.
+RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, evaluates configurable security rules in **batches with timeout protection**, dispatches evaluation **asynchronously** to the queue when needed, samples traffic **per environment**, and produces a weighted **Security Score** (0–100) with per-category breakdown — with absolute zero overhead when disabled.
 
 ---
 
@@ -465,6 +465,94 @@ Each category starts at 100 and is floored at 0. The overall score is the weight
 
 ---
 
+## Performance (v0.7.0+)
+
+### Async Rule Evaluation
+
+Move rule evaluation off the HTTP critical path by enabling queue-based processing:
+
+```php
+// config/runtime_shield.php
+'performance' => [
+    'async'      => true,   // dispatch EvaluationJob to queue
+    'batch_size' => 50,     // rules per batch
+    'timeout_ms' => 100,    // abort evaluation after 100 ms
+],
+```
+
+When `async = true`, `runtime-shield:scan` and request-time evaluation dispatch
+a `RuntimeShield\Laravel\Jobs\EvaluationJob` to your default queue. The HTTP
+response is returned immediately.
+
+### Batch Rule Execution
+
+Rules are always processed in batches of `batch_size`. Set `timeout_ms > 0` to
+abort evaluation if the cumulative batch time exceeds the budget:
+
+```php
+'performance' => [
+    'batch_size' => 10,   // evaluate 10 rules per chunk
+    'timeout_ms' => 50,   // hard stop after 50 ms
+],
+```
+
+### Dynamic Sampling per Environment
+
+Override the global `sampling_rate` per `APP_ENV`:
+
+```php
+// config/runtime_shield.php
+'sampling' => [
+    'env_rates' => [
+        'production' => 0.5,   // sample 50% of production requests
+        'staging'    => 0.8,
+        'testing'    => 0.0,   // zero overhead in tests
+        'local'      => 1.0,   // always sample locally
+    ],
+],
+```
+
+Check the active sampler at any time:
+
+```bash
+php artisan runtime-shield:sampling
+```
+
+### Benchmark Command
+
+Measure rule evaluation time across all routes:
+
+```bash
+php artisan runtime-shield:bench
+php artisan runtime-shield:bench --iterations=5   # average over 5 passes
+php artisan runtime-shield:bench --format=json    # machine-readable
+```
+
+```
+ RuntimeShield Benchmark
+────────────────────────────────────────────────────
+  Routes: 12   Iterations per route: 1
+
+ ─────────────────────────────────────────────────────────────────────────
+  Method  Route                 Avg         Min         Max       Violations
+ ─────────────────────────────────────────────────────────────────────────
+  GET     api/users             0.012 ms    0.011 ms    0.014 ms  1
+  POST    api/users             0.015 ms    0.013 ms    0.018 ms  3
+  ...
+ ─────────────────────────────────────────────────────────────────────────
+  Routes: 12   Avg: 0.013 ms   Max: 0.018 ms   Violations: 24
+ ─────────────────────────────────────────────────────────────────────────
+```
+
+### Zero-Overhead Disabled Path
+
+When `runtime_shield.enabled = false`, the `SignalPipelineContract` resolves
+to `NullSignalPipeline` — a no-op implementation that returns immediately with
+zero allocations. Combined with the middleware's early-exit guard, there is
+literally nothing executed on the hot path.
+
+---
+
 ## Artisan Commands
 
 | Command | Description |
@@ -475,6 +563,8 @@ Each category starts at 100 and is floored at 0. The overall score is the weight
 | `runtime-shield:report` | Full security report with per-category score breakdown |
 | `runtime-shield:routes` | Route protection inspector (auth · CSRF · rate-limit) |
 | `runtime-shield:score` | Weighted security score with category breakdown (v0.6.0+) |
+| `runtime-shield:bench` | Benchmark rule evaluation time per route (v0.7.0+) |
+| `runtime-shield:sampling` | Display active sampler type and effective rate (v0.7.0+) |
 
 ---
 
