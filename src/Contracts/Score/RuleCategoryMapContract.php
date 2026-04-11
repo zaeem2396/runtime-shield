@@ -25,4 +25,11 @@ interface RuleCategoryMapContract
      * @return array<string, ScoreCategory>
      */
     public function allMappings(): array;
+
+    /**
+     * Return all rule IDs that belong to the given category.
+     *
+     * @return list<string>
+     */
+    public function rulesFor(ScoreCategory $category): array;
 }
