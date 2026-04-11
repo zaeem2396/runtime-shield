@@ -23,6 +23,13 @@
             "RuntimeShield\\Tests\\": "tests/"
         }
     },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "RuntimeShield\\Laravel\\Providers\\RuntimeShieldServiceProvider"
+            ]
+        }
+    },
     "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {
