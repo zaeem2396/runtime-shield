@@ -57,6 +57,14 @@ final class PerformanceTimer
     }
 
     /**
+     * Whether the timer has never been started (both start and stop are 0).
+     */
+    public function isZero(): bool
+    {
+        return $this->startNs === 0;
+    }
+
+    /**
      * Reset the timer to its initial state.
      */
     public function reset(): void
