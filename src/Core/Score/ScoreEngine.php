@@ -42,11 +42,9 @@ final class ScoreEngine implements ScoreEngineContract
 
     public function calculate(ViolationCollection $violations): SecurityScore
     {
-        $grouped = $this->groupByCategory($violations);
-
+        $grouped        = $this->groupByCategory($violations);
         $categoryScores = $this->buildCategoryScores($grouped);
-
-        $overall = $this->weightedOverall($categoryScores);
+        $overall        = $this->weightedOverall($categoryScores);
 
         return new SecurityScore(
             overall: $overall,
@@ -54,6 +52,22 @@ final class ScoreEngine implements ScoreEngineContract
             categories: $categoryScores,
             totalViolations: $violations->count(),
         );
+    }
+
+    /**
+     * Returns a summary array suitable for embedding in CLI/JSON output.
+     *
+     * @return array<string, mixed>
+     */
+    public function summarise(SecurityScore $score): array
+    {
+        return [
+            'overall'   => $score->overall,
+            'grade'     => $score->grade,
+            'passed'    => count($score->passedCategories()),
+            'failed'    => count($score->failedCategories()),
+            'total'     => count($score->categories),
+        ];
     }
 
     /**
