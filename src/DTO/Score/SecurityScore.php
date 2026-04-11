@@ -57,6 +57,14 @@ final class SecurityScore
     }
 
     /**
+     * Overall score formatted as a fraction string, e.g. "78/100".
+     */
+    public function formatted(): string
+    {
+        return "{$this->overall}/100";
+    }
+
+    /**
      * The CategoryScore with the lowest score (highest risk area).
      * Returns null when there are no categories.
      */
