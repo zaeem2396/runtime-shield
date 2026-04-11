@@ -57,6 +57,20 @@ final class SecurityScore
     }
 
     /**
+     * All CategoryScores sorted from lowest score (highest risk) to highest.
+     *
+     * @return list<CategoryScore>
+     */
+    public function sortedByRisk(): array
+    {
+        $categories = array_values($this->categories);
+
+        usort($categories, static fn (CategoryScore $a, CategoryScore $b): int => $a->score <=> $b->score);
+
+        return $categories;
+    }
+
+    /**
      * Overall score formatted as a fraction string, e.g. "78/100".
      */
     public function formatted(): string
