@@ -365,14 +365,116 @@ php artisan runtime-shield:routes
 
 ---
 
+## Security Score Command (v0.6.0+)
+
+`runtime-shield:score` calculates a weighted security score (0–100) with a
+per-category breakdown, letter grade, and a Unicode progress-bar table.
+
+```bash
+php artisan runtime-shield:score
+```
+
+```
+ RuntimeShield Security Score
+──────────────────────────────────────────────────
+
+  Security Score:  72 / 100
+  Grade:           C
+  Total Violations: 5
+
+  Category Breakdown:
+
+ ─────────────────────────────────────────────────────────────────────────
+  Category             Score      Coverage              Weight  Violations
+ ─────────────────────────────────────────────────────────────────────────
+  Authentication       40 / 100   ████████░░░░░░░░░░░░  30%     3
+  CSRF Protection      80 / 100   ████████████████░░░░  25%     1
+  Rate Limiting        90 / 100   ██████████████████░░  20%     1
+  Input Validation    100 / 100   ████████████████████  15%     0
+  File Upload Safety  100 / 100   ████████████████████  10%     0
+ ─────────────────────────────────────────────────────────────────────────
+
+  Highest risk area: Authentication — score 40/100
+  → Routes protected by authentication middleware
+
+  ✘ Categories below the passing threshold (75):
+    · Authentication — score 40/100 (3 violation(s))
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `--format=json` | Output the full score as JSON |
+
+### Score as part of `runtime-shield:report`
+
+The report command now includes the same per-category breakdown in its summary panel:
+
+```bash
+php artisan runtime-shield:report
+```
+
+### Quick score in scan
+
+Add `--score` to any scan to see the weighted score at a glance:
+
+```bash
+php artisan runtime-shield:scan --score
+```
+
+---
+
+## Security Score Weights
+
+The five categories and their default weights are:
+
+| Category | Key | Default Weight |
+|----------|-----|----------------|
+| Authentication | `auth` | 30% |
+| CSRF Protection | `csrf` | 25% |
+| Rate Limiting | `rate_limit` | 20% |
+| Input Validation | `validation` | 15% |
+| File Upload Safety | `file_upload` | 10% |
+
+Override in `config/runtime_shield.php`:
+
+```php
+'scoring' => [
+    'weights' => [
+        'auth'        => 40,  // heavier auth focus
+        'csrf'        => 20,
+        'rate_limit'  => 20,
+        'validation'  => 10,
+        'file_upload' => 10,
+    ],
+],
+```
+
+### Score deductions per severity
+
+| Severity | Points deducted per violation |
+|----------|-------------------------------|
+| CRITICAL | −20 |
+| HIGH | −10 |
+| MEDIUM | −5 |
+| LOW | −2 |
+| INFO | 0 |
+
+Each category starts at 100 and is floored at 0. The overall score is the weighted average across all five categories.
+
+---
+
 ## Artisan Commands
 
 | Command | Description |
 |---------|-------------|
 | `runtime-shield:install` | Publish the configuration file |
 | `runtime-shield:scan` | Scan all routes for security violations (table/JSON) |
-| `runtime-shield:report` | Full security report with score and grade |
+| `runtime-shield:scan --score` | Scan and display the weighted security score |
+| `runtime-shield:report` | Full security report with per-category score breakdown |
 | `runtime-shield:routes` | Route protection inspector (auth · CSRF · rate-limit) |
+| `runtime-shield:score` | Weighted security score with category breakdown (v0.6.0+) |
 
 ---
 
