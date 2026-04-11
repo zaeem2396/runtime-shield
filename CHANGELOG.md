@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.7.0] — 2026-04-11 — Performance
+
+### Overview
+
+Focuses on reducing middleware overhead and giving teams fine-grained control
+over the evaluation pipeline. Key additions: a `NullSignalPipeline` that
+delivers absolute zero overhead when the shield is disabled; a `BatchedRuleEngine`
+that processes rules in configurable chunks and aborts evaluation after a
+configurable `timeout_ms`; an `AsyncRuleEngine` that dispatches rule evaluation
+to the Laravel queue; and dynamic per-environment sampling rates via
+`EnvironmentSampler` and `SamplerChain`. Two new Artisan commands —
+`runtime-shield:bench` and `runtime-shield:sampling` — expose timing stats
+and sampling configuration at a glance.
+
+---
+
+### Added
+
+#### DTO — `RuntimeShield\DTO\Performance`
+
+- `MiddlewareMetrics` — immutable snapshot of middleware overhead per request
+  - Properties: `processingMs`, `memoryDeltaKb`, `wasSampled`, `rulesEvaluated`, `capturedAt`
+  - `isWithinBudget(float $budgetMs = 5.0): bool` — check against a time budget
+  - `formattedMs(): string` — human-readable processing time
+  - `toArray(): array` — JSON-serialisable representation
+
+#### Core — `RuntimeShield\Core\Performance`
+
+- `PerformanceTimer` — hrtime-based nanosecond precision timer
+  - `start()`, `stop()`, `isRunning(): bool`, `elapsedMs(): float`
+  - `lap(): float` — mid-run elapsed time without stopping
+  - `reset(): void` — restore to initial state
+  - `static measure(callable): array{result, elapsed_ms}` — time any callable
+- `NullSignalPipeline` — zero-allocation no-op `SignalPipelineContract` for disabled shield
+- `AsyncRuleEngine` — `RuleEngineContract` decorator; dispatches `EvaluationJob` when `async=true`
+- `BatchedRuleEngine` — `RuleEngineContract` implementation; splits rules into batches of `batch_size` and aborts after `timeout_ms`
+- `MetricsStore` — in-memory ring buffer (capacity: 100) of `MiddlewareMetrics`
+  - `averageMs()`, `maxMs()`, `minMs()`, `samplingRate()`, `toArray()`
+
+#### Core — `RuntimeShield\Core\Sampling`
+
+- `EnvironmentSampler` — selects sampling rate per `APP_ENV`; falls back to the global rate for unlisted environments
+  - `resolvedEnvironment(): string`, `isEnvironmentConfigured(): bool`
+- `SamplerChain` — chains multiple `SamplerContracts` with AND logic; effective rate is product of all rates
+  - `count(): int`, `samplers(): list`, `isEmpty(): bool`
+- `SamplerFactory::fromConfig(array $config, string $env)` — builds the correct sampler from the full config array, including env-rate overrides
+
+#### Jobs — `RuntimeShield\Laravel\Jobs`
+
+- `EvaluationJob` — `ShouldQueue` job that runs `RuleEngineContract::run()` asynchronously on a queue worker
+
+#### Artisan Commands
+
+- `runtime-shield:bench` — benchmarks rule evaluation across all routes
+  - Per-route avg/min/max timing table, colour-coded by latency
+  - `--iterations=N` — repeat evaluation N times per route for averaged results
+  - `--format=json` — machine-readable output
+- `runtime-shield:sampling` — displays the active sampler type, environment config, and effective rate
+
+#### Configuration
+
+- `sampling.env_rates` — per-environment sampling rate map (commented examples for `production`, `staging`, `testing`, `local`)
+
+---
+
+### Changed
+
+- `RuntimeShieldMiddleware` — now injects `MetricsStore` and records `MiddlewareMetrics` in `terminate()`
+- `ServiceProvider` — uses `SamplerFactory::fromConfig()` instead of `fromRate()` so env-rate overrides take effect automatically; `SignalPipelineContract` resolves to `NullSignalPipeline` when shield is disabled; `RuleEngineContract` resolves to `BatchedRuleEngine` wrapped in `AsyncRuleEngine`
+
+---
+
+### Tests
+
+72 new tests — **433 total** (up from 361 in v0.6.0)
+
+New test classes: `PerformanceTimerTest`, `PerformanceTimerEdgeCaseTest`, `NullSignalPipelineTest`, `BatchedRuleEngineTest`, `AsyncRuleEngineTest`, `MetricsStoreTest`, `MiddlewareMetricsTest`, `EnvironmentSamplerTest`, `SamplerChainTest`, `SamplerFactoryFromConfigTest`
+
+---
+
 ## [v0.6.0] — 2026-04-11 — Security Score
 
 ### Overview
