@@ -46,6 +46,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Security Score Weights
+    |--------------------------------------------------------------------------
+    |
+    | Each category's percentage contribution to the overall security score.
+    | Values must be integers; they are normalised so they don't have to sum
+    | to exactly 100, but keeping them at 100 makes reasoning easier.
+    |
+    | Thresholds determine the CLI display colour and pass/fail status:
+    |   pass    — score >= this value is shown in green (B or above)
+    |   warning — score >= this value is shown in yellow (between pass & warning)
+    |   fail    — score below warning is shown in red
+    |
+    */
+    'scoring' => [
+        'weights' => [
+            'auth'        => 30,
+            'csrf'        => 25,
+            'rate_limit'  => 20,
+            'validation'  => 15,
+            'file_upload' => 10,
+        ],
+        'thresholds' => [
+            'pass'    => 75,
+            'warning' => 50,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Performance
     |--------------------------------------------------------------------------
     |
