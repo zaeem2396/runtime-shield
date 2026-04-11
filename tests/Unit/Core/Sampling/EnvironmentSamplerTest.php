@@ -11,15 +11,6 @@ use RuntimeShield\Core\Sampling\NeverSampler;
 
 final class EnvironmentSamplerTest extends TestCase
 {
-    private function make(string $env, float $rate): EnvironmentSampler
-    {
-        return new EnvironmentSampler(
-            rates: ['production' => 0.5, 'local' => 1.0, 'testing' => 0.0],
-            currentEnv: $env,
-            fallback: $rate >= 1.0 ? new AlwaysSampler() : new NeverSampler(),
-        );
-    }
-
     public function test_local_env_always_samples(): void
     {
         $sampler = $this->make('local', 1.0);
@@ -84,5 +75,13 @@ final class EnvironmentSamplerTest extends TestCase
     {
         $sampler = $this->make('local', 1.0);
         $this->assertTrue($sampler->shouldSample());
+    }
+    private function make(string $env, float $rate): EnvironmentSampler
+    {
+        return new EnvironmentSampler(
+            rates: ['production' => 0.5, 'local' => 1.0, 'testing' => 0.0],
+            currentEnv: $env,
+            fallback: $rate >= 1.0 ? new AlwaysSampler() : new NeverSampler(),
+        );
     }
 }

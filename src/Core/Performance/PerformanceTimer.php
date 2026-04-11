@@ -23,14 +23,14 @@ final class PerformanceTimer
     public function start(): void
     {
         $this->startNs = hrtime(true);
-        $this->stopNs  = 0;
+        $this->stopNs = 0;
         $this->running = true;
     }
 
     /** Stop the timer and record the elapsed time. */
     public function stop(): void
     {
-        $this->stopNs  = hrtime(true);
+        $this->stopNs = hrtime(true);
         $this->running = false;
     }
 
@@ -70,7 +70,7 @@ final class PerformanceTimer
     public function reset(): void
     {
         $this->startNs = 0;
-        $this->stopNs  = 0;
+        $this->stopNs = 0;
         $this->running = false;
     }
 
@@ -87,7 +87,9 @@ final class PerformanceTimer
      * Execute a callable, time it, and return both the result and elapsed ms.
      *
      * @template T
-     * @param  callable(): T      $fn
+     *
+     * @param callable(): T $fn
+     *
      * @return array{result: T, elapsed_ms: float}
      */
     public static function measure(callable $fn): array
@@ -98,7 +100,7 @@ final class PerformanceTimer
         $timer->stop();
 
         return [
-            'result'     => $result,
+            'result' => $result,
             'elapsed_ms' => $timer->elapsedMs(),
         ];
     }

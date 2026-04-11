@@ -120,10 +120,10 @@ final class MetricsStore
     public function toArray(): array
     {
         return [
-            'count'         => $this->count(),
-            'avg_ms'        => round($this->averageMs(), 4),
-            'max_ms'        => round($this->maxMs(), 4),
-            'min_ms'        => round($this->minMs(), 4),
+            'count' => $this->count(),
+            'avg_ms' => round($this->averageMs(), 4),
+            'max_ms' => round($this->maxMs(), 4),
+            'min_ms' => round($this->minMs(), 4),
             'sampling_rate' => round($this->samplingRate(), 4),
         ];
     }

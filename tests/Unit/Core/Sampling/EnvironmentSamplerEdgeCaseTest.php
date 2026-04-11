@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use RuntimeShield\Core\Sampling\AlwaysSampler;
 use RuntimeShield\Core\Sampling\EnvironmentSampler;
 use RuntimeShield\Core\Sampling\NeverSampler;
-use RuntimeShield\Core\Sampling\PercentageSampler;
 
 final class EnvironmentSamplerEdgeCaseTest extends TestCase
 {

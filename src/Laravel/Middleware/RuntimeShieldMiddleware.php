@@ -39,7 +39,7 @@ final class RuntimeShieldMiddleware
             return $next($request);
         }
 
-        $this->startTimeMs  = microtime(true) * 1000.0;
+        $this->startTimeMs = microtime(true) * 1000.0;
         $this->memoryBefore = memory_get_usage();
         $this->engine->boot();
         $this->pipeline->collectRequest($request);
@@ -59,9 +59,9 @@ final class RuntimeShieldMiddleware
 
         $context = $this->pipeline->assemble($response, $this->startTimeMs);
 
-        $processingMs   = (microtime(true) * 1000.0) - $this->startTimeMs;
-        $memoryDeltaKb  = (int) round((memory_get_usage() - $this->memoryBefore) / 1024);
-        $wasSampled     = $context !== null;
+        $processingMs = (microtime(true) * 1000.0) - $this->startTimeMs;
+        $memoryDeltaKb = (int) round((memory_get_usage() - $this->memoryBefore) / 1024);
+        $wasSampled = $context !== null;
 
         $this->metricsStore->push(new MiddlewareMetrics(
             processingMs: max(0.0, $processingMs),

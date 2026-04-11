@@ -35,7 +35,7 @@ final class SamplerFactoryFromConfigTest extends TestCase
     {
         $config = [
             'sampling_rate' => 1.0,
-            'sampling'      => ['env_rates' => ['production' => 0.5, 'local' => 1.0]],
+            'sampling' => ['env_rates' => ['production' => 0.5, 'local' => 1.0]],
         ];
 
         $sampler = SamplerFactory::fromConfig($config, 'production');
@@ -46,7 +46,7 @@ final class SamplerFactoryFromConfigTest extends TestCase
     {
         $config = [
             'sampling_rate' => 1.0,
-            'sampling'      => ['env_rates' => ['production' => 0.0, 'local' => 1.0]],
+            'sampling' => ['env_rates' => ['production' => 0.0, 'local' => 1.0]],
         ];
 
         $sampler = SamplerFactory::fromConfig($config, 'production');
@@ -57,7 +57,7 @@ final class SamplerFactoryFromConfigTest extends TestCase
     {
         $config = [
             'sampling_rate' => 1.0,
-            'sampling'      => ['env_rates' => ['local' => 1.0]],
+            'sampling' => ['env_rates' => ['local' => 1.0]],
         ];
 
         $sampler = SamplerFactory::fromConfig($config, 'staging');

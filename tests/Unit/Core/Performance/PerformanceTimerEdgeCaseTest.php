@@ -13,14 +13,15 @@ final class PerformanceTimerEdgeCaseTest extends TestCase
     {
         $timer = new PerformanceTimer();
         $timer->start();
-        usleep(500);
+        usleep(2000); // 2 ms
+        $timer->stop();
         $first = $timer->elapsedMs();
 
-        $timer->start(); // restart
+        $timer->start(); // restart immediately — accumulated time resets
         $second = $timer->elapsedMs();
 
-        // After restart, elapsed should be much less
-        $this->assertLessThan($first, $second + 1.0);
+        // Right after restart elapsed should be well below the first measurement
+        $this->assertLessThan($first, $second + 0.5);
     }
 
     public function test_stop_freezes_elapsed(): void
@@ -43,9 +44,7 @@ final class PerformanceTimerEdgeCaseTest extends TestCase
 
     public function test_measure_works_with_void_callable(): void
     {
-        $measured = PerformanceTimer::measure(static function (): null {
-            return null;
-        });
+        $measured = PerformanceTimer::measure(static fn (): null => null);
 
         $this->assertNull($measured['result']);
         $this->assertGreaterThanOrEqual(0.0, $measured['elapsed_ms']);

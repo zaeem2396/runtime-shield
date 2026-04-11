@@ -39,7 +39,7 @@ final class SamplingCommand extends Command
 
         $this->renderSamplerInfo($this->sampler, 0);
 
-        $rate      = $this->sampler->rate();
+        $rate = $this->sampler->rate();
         $rateColor = CliRenderer::scoreColor((int) ($rate * 100));
 
         $this->line('');
@@ -75,9 +75,9 @@ final class SamplingCommand extends Command
             $sampler instanceof SamplerChain => $this->renderChain($sampler, $depth),
             $sampler instanceof EnvironmentSampler => $this->renderEnvironmentSampler($sampler, $depth),
             $sampler instanceof AlwaysSampler => $this->line("{$indent}Type: <fg=green>AlwaysSampler</> — processes every request"),
-            $sampler instanceof NeverSampler  => $this->line("{$indent}Type: <fg=red>NeverSampler</> — skips every request"),
+            $sampler instanceof NeverSampler => $this->line("{$indent}Type: <fg=red>NeverSampler</> — skips every request"),
             $sampler instanceof PercentageSampler => $this->line(
-                "{$indent}Type: <fg=yellow>PercentageSampler</> — rate <options=bold>" . round($sampler->rate() * 100, 1) . "%</>",
+                "{$indent}Type: <fg=yellow>PercentageSampler</> — rate <options=bold>" . round($sampler->rate() * 100, 1) . '%</>',
             ),
             default => $this->line("{$indent}Type: " . $sampler::class),
         };
@@ -89,20 +89,20 @@ final class SamplingCommand extends Command
         $this->line("{$indent}Type: <fg=cyan>SamplerChain</> — AND logic ({$chain->count()} sampler(s))");
 
         foreach ($chain->samplers() as $i => $s) {
-            $this->line("{$indent}  [" . ($i + 1) . "]");
+            $this->line("{$indent}  [" . ($i + 1) . ']');
             $this->renderSamplerInfo($s, $depth + 2);
         }
     }
 
     private function renderEnvironmentSampler(EnvironmentSampler $sampler, int $depth): void
     {
-        $indent  = str_repeat('  ', $depth + 1);
-        $env     = $sampler->resolvedEnvironment();
+        $indent = str_repeat('  ', $depth + 1);
+        $env = $sampler->resolvedEnvironment();
         $configured = $sampler->isEnvironmentConfigured() ? '<fg=green>yes</>' : '<fg=yellow>no (using fallback)</>';
 
         $this->line("{$indent}Type: <fg=magenta>EnvironmentSampler</>");
         $this->line("{$indent}  Environment: <options=bold>{$env}</>");
         $this->line("{$indent}  Explicitly configured: {$configured}");
-        $this->line("{$indent}  Resolved rate: <options=bold>" . round($sampler->rate() * 100, 1) . "%</>");
+        $this->line("{$indent}  Resolved rate: <options=bold>" . round($sampler->rate() * 100, 1) . '%</>');
     }
 }

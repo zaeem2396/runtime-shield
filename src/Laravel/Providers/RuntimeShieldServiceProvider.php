@@ -28,7 +28,6 @@ use RuntimeShield\Core\Performance\MetricsStore;
 use RuntimeShield\Core\Performance\NullSignalPipeline;
 use RuntimeShield\Core\Report\ReportBuilder;
 use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
-use RuntimeShield\Core\Rule\RuleEngine;
 use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Core\Sampling\SamplerFactory;
@@ -131,10 +130,10 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(RuleEngineContract::class, static function ($app): RuleEngineContract {
-            $registry  = $app->make(RuleRegistry::class);
+            $registry = $app->make(RuleRegistry::class);
             $batchSize = (int) $app['config']->get('runtime_shield.performance.batch_size', 50);
             $timeoutMs = (int) $app['config']->get('runtime_shield.performance.timeout_ms', 100);
-            $async     = (bool) $app['config']->get('runtime_shield.performance.async', false);
+            $async = (bool) $app['config']->get('runtime_shield.performance.async', false);
 
             $baseEngine = new BatchedRuleEngine($registry, $batchSize, $timeoutMs);
 

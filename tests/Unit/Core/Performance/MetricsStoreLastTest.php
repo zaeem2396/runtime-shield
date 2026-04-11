@@ -10,11 +10,6 @@ use RuntimeShield\DTO\Performance\MiddlewareMetrics;
 
 final class MetricsStoreLastTest extends TestCase
 {
-    private function make(float $ms): MiddlewareMetrics
-    {
-        return new MiddlewareMetrics($ms, 0, true, 0, new \DateTimeImmutable());
-    }
-
     public function test_last_returns_null_when_empty(): void
     {
         $this->assertNull((new MetricsStore())->last());
@@ -38,5 +33,9 @@ final class MetricsStoreLastTest extends TestCase
         $store->push($this->make(1.0));
         $store->flush();
         $this->assertNull($store->last());
+    }
+    private function make(float $ms): MiddlewareMetrics
+    {
+        return new MiddlewareMetrics($ms, 0, true, 0, new \DateTimeImmutable());
     }
 }

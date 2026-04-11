@@ -16,60 +16,6 @@ use RuntimeShield\DTO\Signal\RequestSignal;
 
 final class BatchedRuleEngineTest extends TestCase
 {
-    private function makeContext(): SecurityRuntimeContext
-    {
-        $signal = new RequestSignal(
-            method: 'GET',
-            url: 'http://localhost/',
-            path: '/',
-            ip: '127.0.0.1',
-            headers: [],
-            query: [],
-            bodySize: 0,
-            capturedAt: new \DateTimeImmutable(),
-        );
-
-        return (new RuntimeContextBuilder())->withRequest($signal)->build();
-    }
-
-    private function makeRule(string $id, int $violationCount = 1): RuleContract
-    {
-        return new class($id, $violationCount) implements RuleContract {
-            public function __construct(
-                private readonly string $ruleId,
-                private readonly int $count,
-            ) {
-            }
-
-            public function id(): string
-            {
-                return $this->ruleId;
-            }
-
-            public function title(): string
-            {
-                return 'Test';
-            }
-
-            public function severity(): Severity
-            {
-                return Severity::LOW;
-            }
-
-            /**
-             * @return list<Violation>
-             */
-            public function evaluate(SecurityRuntimeContext $context): array
-            {
-                return array_fill(
-                    0,
-                    $this->count,
-                    new Violation($this->ruleId, 'Test', 'Desc', Severity::LOW),
-                );
-            }
-        };
-    }
-
     public function test_empty_registry_returns_empty_collection(): void
     {
         $engine = new BatchedRuleEngine(new RuleRegistry(), 10, 100);
@@ -138,5 +84,58 @@ final class BatchedRuleEngineTest extends TestCase
         $result = $engine->run($this->makeContext());
 
         $this->assertSame(4, $result->count());
+    }
+    private function makeContext(): SecurityRuntimeContext
+    {
+        $signal = new RequestSignal(
+            method: 'GET',
+            url: 'http://localhost/',
+            path: '/',
+            ip: '127.0.0.1',
+            headers: [],
+            query: [],
+            bodySize: 0,
+            capturedAt: new \DateTimeImmutable(),
+        );
+
+        return (new RuntimeContextBuilder())->withRequest($signal)->build();
+    }
+
+    private function makeRule(string $id, int $violationCount = 1): RuleContract
+    {
+        return new class ($id, $violationCount) implements RuleContract {
+            public function __construct(
+                private readonly string $ruleId,
+                private readonly int $count,
+            ) {
+            }
+
+            public function id(): string
+            {
+                return $this->ruleId;
+            }
+
+            public function title(): string
+            {
+                return 'Test';
+            }
+
+            public function severity(): Severity
+            {
+                return Severity::LOW;
+            }
+
+            /**
+             * @return list<Violation>
+             */
+            public function evaluate(SecurityRuntimeContext $context): array
+            {
+                return array_fill(
+                    0,
+                    $this->count,
+                    new Violation($this->ruleId, 'Test', 'Desc', Severity::LOW),
+                );
+            }
+        };
     }
 }

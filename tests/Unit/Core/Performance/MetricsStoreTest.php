@@ -10,11 +10,6 @@ use RuntimeShield\DTO\Performance\MiddlewareMetrics;
 
 final class MetricsStoreTest extends TestCase
 {
-    private function makeMetrics(float $processingMs, bool $wasSampled = true): MiddlewareMetrics
-    {
-        return new MiddlewareMetrics($processingMs, 0, $wasSampled, 0, new \DateTimeImmutable());
-    }
-
     public function test_empty_store_count_is_zero(): void
     {
         $store = new MetricsStore();
@@ -127,5 +122,9 @@ final class MetricsStoreTest extends TestCase
         $this->assertArrayHasKey('max_ms', $arr);
         $this->assertArrayHasKey('min_ms', $arr);
         $this->assertArrayHasKey('sampling_rate', $arr);
+    }
+    private function makeMetrics(float $processingMs, bool $wasSampled = true): MiddlewareMetrics
+    {
+        return new MiddlewareMetrics($processingMs, 0, $wasSampled, 0, new \DateTimeImmutable());
     }
 }

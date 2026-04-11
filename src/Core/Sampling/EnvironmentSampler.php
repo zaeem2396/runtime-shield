@@ -22,16 +22,16 @@ final class EnvironmentSampler implements SamplerContract
     private readonly SamplerContract $resolved;
 
     /**
-     * @param array<string, float> $rates      Map of env name → sampling rate (0.0–1.0)
-     * @param string               $currentEnv Current value of APP_ENV
-     * @param SamplerContract      $fallback    Sampler to use when $currentEnv is not in $rates
+     * @param array<string, float> $rates Map of env name → sampling rate (0.0–1.0)
+     * @param string $currentEnv Current value of APP_ENV
+     * @param SamplerContract $fallback Sampler to use when $currentEnv is not in $rates
      */
     public function __construct(
         private readonly array $rates,
         private readonly string $currentEnv,
-        private readonly SamplerContract $fallback,
+        SamplerContract $fallback,
     ) {
-        $rate           = $rates[$currentEnv] ?? null;
+        $rate = $rates[$currentEnv] ?? null;
         $this->resolved = $rate !== null ? SamplerFactory::fromRate($rate) : $fallback;
     }
 

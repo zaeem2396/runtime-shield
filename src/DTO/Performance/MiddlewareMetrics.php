@@ -51,11 +51,11 @@ final class MiddlewareMetrics
     public function toArray(): array
     {
         return [
-            'processing_ms'   => round($this->processingMs, 4),
+            'processing_ms' => round($this->processingMs, 4),
             'memory_delta_kb' => $this->memoryDeltaKb,
-            'was_sampled'     => $this->wasSampled,
+            'was_sampled' => $this->wasSampled,
             'rules_evaluated' => $this->rulesEvaluated,
-            'captured_at'     => $this->capturedAt->format(\DateTimeInterface::ATOM),
+            'captured_at' => $this->capturedAt->format(\DateTimeInterface::ATOM),
         ];
     }
 }

@@ -36,11 +36,11 @@ final class BatchedRuleEngine implements RuleEngineContract
             return new ViolationCollection();
         }
 
-        $rules      = $this->registry->all();
-        $batches    = array_chunk($rules, max(1, $this->batchSize));
+        $rules = $this->registry->all();
+        $batches = array_chunk($rules, max(1, $this->batchSize));
         $violations = [];
-        $startNs    = hrtime(true);
-        $limitNs    = $this->timeoutMs * 1_000_000;
+        $startNs = hrtime(true);
+        $limitNs = $this->timeoutMs * 1_000_000;
 
         foreach ($batches as $batch) {
             if ($this->timeoutMs > 0 && (hrtime(true) - $startNs) >= $limitNs) {
@@ -48,7 +48,6 @@ final class BatchedRuleEngine implements RuleEngineContract
             }
 
             foreach ($batch as $rule) {
-                /** @var RuleContract $rule */
                 foreach ($rule->evaluate($context) as $violation) {
                     $violations[] = $violation;
                 }

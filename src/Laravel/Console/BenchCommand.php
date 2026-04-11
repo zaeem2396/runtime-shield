@@ -38,13 +38,13 @@ final class BenchCommand extends Command
 
     public function handle(): int
     {
-        $routes     = $this->collectRoutes();
+        $routes = $this->collectRoutes();
         $iterations = max(1, (int) $this->option('iterations'));
 
         $this->line('');
         $this->line('<fg=cyan;options=bold> RuntimeShield Benchmark</>');
         $this->line(CliRenderer::divider(52));
-        $this->line("  Routes: <options=bold>" . count($routes) . "</>   Iterations per route: <options=bold>{$iterations}</>");
+        $this->line('  Routes: <options=bold>' . count($routes) . "</>   Iterations per route: <options=bold>{$iterations}</>");
         $this->line('');
 
         $results = $this->runBenchmark($routes, $iterations);
@@ -64,8 +64,8 @@ final class BenchCommand extends Command
     // ── Benchmark logic ───────────────────────────────────────────────────
 
     /**
-     * @param  list<Route> $routes
-     * @param  int         $iterations
+     * @param list<Route> $routes
+     *
      * @return list<array{uri: string, method: string, avg_ms: float, min_ms: float, max_ms: float, violations: int}>
      */
     private function runBenchmark(array $routes, int $iterations): array
@@ -73,25 +73,25 @@ final class BenchCommand extends Command
         $results = [];
 
         foreach ($routes as $route) {
-            $context   = $this->buildContext($route);
-            $timings   = [];
+            $context = $this->buildContext($route);
+            $timings = [];
             $violations = 0;
 
             for ($i = 0; $i < $iterations; $i++) {
-                $measured   = PerformanceTimer::measure(fn () => $this->ruleEngine->run($context));
-                $timings[]  = $measured['elapsed_ms'];
+                $measured = PerformanceTimer::measure(fn () => $this->ruleEngine->run($context));
+                $timings[] = $measured['elapsed_ms'];
                 $violations = $measured['result']->count();
             }
 
             $methods = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
-            $method  = $methods[0] ?? 'GET';
+            $method = $methods[0] ?? 'GET';
 
             $results[] = [
-                'uri'        => $route->uri(),
-                'method'     => $method,
-                'avg_ms'     => count($timings) > 0 ? array_sum($timings) / count($timings) : 0.0,
-                'min_ms'     => count($timings) > 0 ? min($timings) : 0.0,
-                'max_ms'     => count($timings) > 0 ? max($timings) : 0.0,
+                'uri' => $route->uri(),
+                'method' => $method,
+                'avg_ms' => count($timings) > 0 ? array_sum($timings) / count($timings) : 0.0,
+                'min_ms' => count($timings) > 0 ? min($timings) : 0.0,
+                'max_ms' => count($timings) > 0 ? max($timings) : 0.0,
                 'violations' => $violations,
             ];
         }
@@ -107,10 +107,10 @@ final class BenchCommand extends Command
     private function collectRoutes(): array
     {
         $skipPrefixes = ['_ignition', '_telescope', 'horizon/', 'telescope/', 'debugbar/'];
-        $routes       = [];
+        $routes = [];
 
         foreach ($this->router->getRoutes()->getRoutes() as $route) {
-            $uri  = $route->uri();
+            $uri = $route->uri();
             $skip = false;
 
             foreach ($skipPrefixes as $prefix) {
@@ -131,8 +131,8 @@ final class BenchCommand extends Command
 
     private function buildContext(Route $route): SecurityRuntimeContext
     {
-        $methods    = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
-        $method     = $methods[0] ?? 'GET';
+        $methods = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
+        $method = $methods[0] ?? 'GET';
 
         /** @var list<string> $middleware */
         $middleware = array_values(
@@ -176,9 +176,9 @@ final class BenchCommand extends Command
 
         foreach ($results as $r) {
             $avgColor = match (true) {
-                $r['avg_ms'] < 1.0  => 'green',
-                $r['avg_ms'] < 5.0  => 'yellow',
-                default             => 'red',
+                $r['avg_ms'] < 1.0 => 'green',
+                $r['avg_ms'] < 5.0 => 'yellow',
+                default => 'red',
             };
 
             $rows[] = [
@@ -206,9 +206,9 @@ final class BenchCommand extends Command
             return;
         }
 
-        $avgMs   = array_sum(array_column($results, 'avg_ms')) / count($results);
-        $maxMs   = max(array_column($results, 'max_ms'));
-        $totalV  = array_sum(array_column($results, 'violations'));
+        $avgMs = array_sum(array_column($results, 'avg_ms')) / count($results);
+        $maxMs = max(array_column($results, 'max_ms'));
+        $totalV = array_sum(array_column($results, 'violations'));
 
         $this->line(CliRenderer::divider(52));
         $this->line(sprintf(

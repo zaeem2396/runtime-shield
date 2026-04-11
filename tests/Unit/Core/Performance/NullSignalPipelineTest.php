@@ -13,11 +13,6 @@ final class NullSignalPipelineTest extends TestCase
 {
     private NullSignalPipeline $pipeline;
 
-    protected function setUp(): void
-    {
-        $this->pipeline = new NullSignalPipeline();
-    }
-
     public function test_collect_request_returns_void_without_exception(): void
     {
         $this->pipeline->collectRequest(Request::create('/'));
@@ -54,5 +49,10 @@ final class NullSignalPipelineTest extends TestCase
         }
 
         $this->addToAssertionCount(1);
+    }
+
+    protected function setUp(): void
+    {
+        $this->pipeline = new NullSignalPipeline();
     }
 }

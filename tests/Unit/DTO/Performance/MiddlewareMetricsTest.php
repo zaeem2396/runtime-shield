@@ -9,21 +9,6 @@ use RuntimeShield\DTO\Performance\MiddlewareMetrics;
 
 final class MiddlewareMetricsTest extends TestCase
 {
-    private function make(
-        float $processingMs = 2.5,
-        int $memoryDeltaKb = 10,
-        bool $wasSampled = true,
-        int $rulesEvaluated = 5,
-    ): MiddlewareMetrics {
-        return new MiddlewareMetrics(
-            processingMs: $processingMs,
-            memoryDeltaKb: $memoryDeltaKb,
-            wasSampled: $wasSampled,
-            rulesEvaluated: $rulesEvaluated,
-            capturedAt: new \DateTimeImmutable('2026-04-11T00:00:00+00:00'),
-        );
-    }
-
     public function test_properties_are_stored(): void
     {
         $m = $this->make(3.5, 20, false, 3);
@@ -80,5 +65,19 @@ final class MiddlewareMetricsTest extends TestCase
         $this->assertTrue($arr['was_sampled']);
         $this->assertSame(5, $arr['rules_evaluated']);
         $this->assertStringContainsString('2026-04-11', $arr['captured_at']);
+    }
+    private function make(
+        float $processingMs = 2.5,
+        int $memoryDeltaKb = 10,
+        bool $wasSampled = true,
+        int $rulesEvaluated = 5,
+    ): MiddlewareMetrics {
+        return new MiddlewareMetrics(
+            processingMs: $processingMs,
+            memoryDeltaKb: $memoryDeltaKb,
+            wasSampled: $wasSampled,
+            rulesEvaluated: $rulesEvaluated,
+            capturedAt: new \DateTimeImmutable('2026-04-11T00:00:00+00:00'),
+        );
     }
 }
