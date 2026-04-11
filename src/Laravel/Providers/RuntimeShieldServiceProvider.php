@@ -11,6 +11,8 @@ use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Contracts\SamplerContract;
+use RuntimeShield\Contracts\Score\RuleCategoryMapContract;
+use RuntimeShield\Contracts\Score\ScoreEngineContract;
 use RuntimeShield\Contracts\ShieldContract;
 use RuntimeShield\Contracts\Signal\AuthCollectorContract;
 use RuntimeShield\Contracts\Signal\RequestCapturerContract;
@@ -24,6 +26,8 @@ use RuntimeShield\Core\Report\ReportBuilder;
 use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
 use RuntimeShield\Core\Rule\RuleEngine;
 use RuntimeShield\Core\Rule\RuleRegistry;
+use RuntimeShield\Core\Score\RuleCategoryMap;
+use RuntimeShield\Core\Score\ScoreEngine;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Core\Sampling\SamplerFactory;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
@@ -33,6 +37,7 @@ use RuntimeShield\Laravel\Console\InstallCommand;
 use RuntimeShield\Laravel\Console\ReportCommand;
 use RuntimeShield\Laravel\Console\RoutesCommand;
 use RuntimeShield\Laravel\Console\ScanCommand;
+use RuntimeShield\Laravel\Console\ScoreCommand;
 use RuntimeShield\Laravel\Signal\AuthSignalCollector;
 use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;
@@ -127,6 +132,18 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             $app->make(RuleEngineContract::class),
             $app->make(RouteProtectionAnalyzer::class),
         ));
+
+        $this->app->singleton(RuleCategoryMapContract::class, static fn (): RuleCategoryMap => new RuleCategoryMap());
+
+        $this->app->singleton(ScoreEngineContract::class, static function ($app): ScoreEngine {
+            /** @var array<string, int> $weights */
+            $weights = (array) $app['config']->get('runtime_shield.scoring.weights', []);
+
+            return new ScoreEngine(
+                $app->make(RuleCategoryMapContract::class),
+                $weights,
+            );
+        });
     }
 
     public function boot(): void
@@ -144,6 +161,7 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             ScanCommand::class,
             ReportCommand::class,
             RoutesCommand::class,
+            ScoreCommand::class,
         ]);
     }
 }
