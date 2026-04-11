@@ -57,6 +57,25 @@ final class PerformanceTimer
     }
 
     /**
+     * Reset the timer to its initial state.
+     */
+    public function reset(): void
+    {
+        $this->startNs = 0;
+        $this->stopNs  = 0;
+        $this->running = false;
+    }
+
+    /**
+     * Record a lap time without stopping the timer.
+     * Returns the elapsed ms since start() was called.
+     */
+    public function lap(): float
+    {
+        return $this->elapsedMs();
+    }
+
+    /**
      * Execute a callable, time it, and return both the result and elapsed ms.
      *
      * @template T
