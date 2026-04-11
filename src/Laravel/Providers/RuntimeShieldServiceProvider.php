@@ -22,6 +22,10 @@ use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
 use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
 use RuntimeShield\Core\ConfigRepository;
+use RuntimeShield\Core\Performance\AsyncRuleEngine;
+use RuntimeShield\Core\Performance\BatchedRuleEngine;
+use RuntimeShield\Core\Performance\MetricsStore;
+use RuntimeShield\Core\Performance\NullSignalPipeline;
 use RuntimeShield\Core\Report\ReportBuilder;
 use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
 use RuntimeShield\Core\Rule\RuleEngine;
@@ -33,9 +37,11 @@ use RuntimeShield\Core\Score\ScoreEngine;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\Engine\RuntimeShieldEngine;
+use RuntimeShield\Laravel\Console\BenchCommand;
 use RuntimeShield\Laravel\Console\InstallCommand;
 use RuntimeShield\Laravel\Console\ReportCommand;
 use RuntimeShield\Laravel\Console\RoutesCommand;
+use RuntimeShield\Laravel\Console\SamplingCommand;
 use RuntimeShield\Laravel\Console\ScanCommand;
 use RuntimeShield\Laravel\Console\ScoreCommand;
 use RuntimeShield\Laravel\Signal\AuthSignalCollector;
@@ -74,12 +80,12 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         $this->app->singleton(SamplerContract::class, static function ($app): SamplerContract {
             /** @var array<string, mixed> $raw */
             $raw = $app['config']->get('runtime_shield', []);
-            $rate = isset($raw['sampling_rate']) && is_numeric($raw['sampling_rate'])
-                ? (float) $raw['sampling_rate']
-                : 1.0;
+            $env = is_string($app->environment()) ? $app->environment() : 'production';
 
-            return SamplerFactory::fromRate($rate);
+            return SamplerFactory::fromConfig($raw, $env);
         });
+
+        $this->app->singleton(MetricsStore::class, static fn (): MetricsStore => new MetricsStore());
 
         $this->app->singleton(SignalStoreContract::class, static fn (): InMemorySignalStore => new InMemorySignalStore());
 
@@ -95,15 +101,23 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
         $this->app->singleton(RuntimeContextStoreContract::class, static fn (): InMemoryContextStore => new InMemoryContextStore());
 
-        $this->app->singleton(SignalPipelineContract::class, static fn ($app): SignalPipeline => new SignalPipeline(
-            $app->make(SamplerContract::class),
-            $app->make(SignalStoreContract::class),
-            $app->make(RuntimeContextStoreContract::class),
-            $app->make(RequestCapturerContract::class),
-            $app->make(ResponseCapturerContract::class),
-            $app->make(RouteCollectorContract::class),
-            $app->make(AuthCollectorContract::class),
-        ));
+        $this->app->singleton(SignalPipelineContract::class, static function ($app): SignalPipelineContract {
+            $enabled = (bool) $app['config']->get('runtime_shield.enabled', true);
+
+            if (! $enabled) {
+                return new NullSignalPipeline();
+            }
+
+            return new SignalPipeline(
+                $app->make(SamplerContract::class),
+                $app->make(SignalStoreContract::class),
+                $app->make(RuntimeContextStoreContract::class),
+                $app->make(RequestCapturerContract::class),
+                $app->make(ResponseCapturerContract::class),
+                $app->make(RouteCollectorContract::class),
+                $app->make(AuthCollectorContract::class),
+            );
+        });
 
         $this->app->singleton(RuleRegistry::class, static function (): RuleRegistry {
             $registry = new RuleRegistry();
@@ -116,9 +130,16 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             return $registry;
         });
 
-        $this->app->singleton(RuleEngineContract::class, static fn ($app): RuleEngine => new RuleEngine(
-            $app->make(RuleRegistry::class),
-        ));
+        $this->app->singleton(RuleEngineContract::class, static function ($app): RuleEngineContract {
+            $registry  = $app->make(RuleRegistry::class);
+            $batchSize = (int) $app['config']->get('runtime_shield.performance.batch_size', 50);
+            $timeoutMs = (int) $app['config']->get('runtime_shield.performance.timeout_ms', 100);
+            $async     = (bool) $app['config']->get('runtime_shield.performance.async', false);
+
+            $baseEngine = new BatchedRuleEngine($registry, $batchSize, $timeoutMs);
+
+            return new AsyncRuleEngine($baseEngine, $async);
+        });
 
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
@@ -162,6 +183,8 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             ReportCommand::class,
             RoutesCommand::class,
             ScoreCommand::class,
+            BenchCommand::class,
+            SamplingCommand::class,
         ]);
     }
 }
