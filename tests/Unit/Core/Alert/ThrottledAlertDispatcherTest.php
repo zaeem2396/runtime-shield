@@ -133,7 +133,7 @@ final class ThrottledAlertDispatcherTest extends TestCase
 
     private function makeNullChannel(): AlertChannelContract
     {
-        return new class implements AlertChannelContract {
+        return new class () implements AlertChannelContract {
             public function channelName(): string
             {
                 return 'null';

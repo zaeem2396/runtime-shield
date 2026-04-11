@@ -78,7 +78,10 @@ final class RuntimeShieldMiddleware
             $rulesEvaluated = $violations->count();
 
             if (! $violations->isEmpty()) {
-                $route = $context->route?->name ?? $context->route?->uri ?? '';
+                $routeSignal = $context->route;
+                $route = $routeSignal !== null
+                    ? ($routeSignal->name !== '' ? $routeSignal->name : $routeSignal->uri)
+                    : '';
 
                 if ($this->alertsAsync) {
                     AlertDispatchJob::dispatch($violations, $route);

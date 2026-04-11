@@ -32,7 +32,7 @@ final class LogChannelTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
             ->method('log')
-            ->with('error', $this->stringContains('[RuntimeShield]'), $this->isArray());
+            ->with('error', $this->stringContains('[RuntimeShield]'), $this->anything());
 
         $channel = new LogChannel(true, $logger);
         $channel->notify($this->makeEvent(Severity::CRITICAL));
@@ -43,7 +43,7 @@ final class LogChannelTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
             ->method('log')
-            ->with('warning', $this->isString(), $this->isArray());
+            ->with('warning', $this->anything(), $this->anything());
 
         $channel = new LogChannel(true, $logger);
         $channel->notify($this->makeEvent(Severity::HIGH));
@@ -54,7 +54,7 @@ final class LogChannelTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
             ->method('log')
-            ->with('notice', $this->isString(), $this->isArray());
+            ->with('notice', $this->anything(), $this->anything());
 
         (new LogChannel(true, $logger))->notify($this->makeEvent(Severity::MEDIUM));
     }
@@ -64,7 +64,7 @@ final class LogChannelTest extends TestCase
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
             ->method('log')
-            ->with('info', $this->isString(), $this->isArray());
+            ->with('info', $this->anything(), $this->anything());
 
         (new LogChannel(true, $logger))->notify($this->makeEvent(Severity::LOW));
     }

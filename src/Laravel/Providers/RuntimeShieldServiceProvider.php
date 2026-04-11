@@ -255,7 +255,7 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             $mailSend = static function (string $subject, string $body, array $recipients, string $from) use ($app): void {
                 /** @var \Illuminate\Contracts\Mail\Mailer $mailer */
                 $mailer = $app->make(\Illuminate\Contracts\Mail\Mailer::class);
-                $mailer->raw($body, static function (mixed $message) use ($subject, $recipients, $from): void {
+                $mailer->raw($body, static function (object $message) use ($subject, $recipients, $from): void {
                     if (method_exists($message, 'to')) {
                         $message->to($recipients)->from($from)->subject($subject);
                     }

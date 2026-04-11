@@ -27,8 +27,8 @@ final class MailChannel implements AlertChannelContract
     /**
      * @param list<string> $recipients
      * @param \Closure(string, string, list<string>, string): void|null $send
-     *        Callable that performs the actual delivery. Defaults to a no-op
-     *        when null — ServiceProvider injects the real mailer closure.
+     *                                                                        Callable that performs the actual delivery. Defaults to a no-op
+     *                                                                        when null — ServiceProvider injects the real mailer closure.
      */
     public function __construct(
         private readonly bool $enabled,

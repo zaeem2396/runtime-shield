@@ -30,8 +30,10 @@ final class AlertsCommand extends Command
     public function handle(): int
     {
         $enabled = (bool) config('runtime_shield.alerts.enabled', false);
-        $minSeverity = strtoupper((string) config('runtime_shield.alerts.min_severity', 'high'));
-        $throttle = (int) config('runtime_shield.alerts.throttle_seconds', 300);
+        $minSeverityRaw = config('runtime_shield.alerts.min_severity', 'high');
+        $minSeverity = strtoupper(is_string($minSeverityRaw) ? $minSeverityRaw : 'high');
+        $throttleRaw = config('runtime_shield.alerts.throttle_seconds', 300);
+        $throttle = is_numeric($throttleRaw) ? (int) $throttleRaw : 300;
         $async = (bool) config('runtime_shield.alerts.async', false);
 
         $this->line('');
@@ -46,7 +48,7 @@ final class AlertsCommand extends Command
         $this->line("  Status:           {$statusLabel}");
         $this->line("  Min Severity:     <options=bold>{$minSeverity}</>");
         $this->line("  Throttle:         <options=bold>{$throttle} s</>");
-        $this->line("  Async Dispatch:   " . ($async ? '<fg=green>yes</>' : '<fg=gray>no</>'));
+        $this->line('  Async Dispatch:   ' . ($async ? '<fg=green>yes</>' : '<fg=gray>no</>'));
         $this->line('');
 
         if (! $enabled) {

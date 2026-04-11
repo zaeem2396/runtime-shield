@@ -15,11 +15,6 @@ final class NullAlertChannelTest extends TestCase
 {
     private NullAlertChannel $channel;
 
-    protected function setUp(): void
-    {
-        $this->channel = new NullAlertChannel();
-    }
-
     public function test_channel_name_is_null(): void
     {
         $this->assertSame('null', $this->channel->channelName());
@@ -43,6 +38,11 @@ final class NullAlertChannelTest extends TestCase
         }
 
         $this->addToAssertionCount(1);
+    }
+
+    protected function setUp(): void
+    {
+        $this->channel = new NullAlertChannel();
     }
 
     private function makeEvent(): AlertEvent

@@ -30,7 +30,7 @@ final class WebhookChannel implements AlertChannelContract
     /**
      * @param array<string, string> $headers Additional HTTP headers to include in every request.
      * @param \Closure(string, string, string, array<string, string>): bool|null $sender
-     *        Custom HTTP sender; defaults to a stream_context implementation.
+     *                                                                                   Custom HTTP sender; defaults to a stream_context implementation.
      */
     public function __construct(
         private readonly bool $enabled,
