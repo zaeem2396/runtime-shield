@@ -480,9 +480,10 @@ Move rule evaluation off the HTTP critical path by enabling queue-based processi
 ],
 ```
 
-When `async = true`, `runtime-shield:scan` and request-time evaluation dispatch
-a `RuntimeShield\Laravel\Jobs\EvaluationJob` to your default queue. The HTTP
-response is returned immediately.
+When `async = true`, request-time middleware evaluation dispatches a
+`RuntimeShield\Laravel\Jobs\EvaluationJob` to your default queue and returns
+the HTTP response immediately with zero blocking wait. The `runtime-shield:bench`
+command always bypasses async and measures real synchronous rule cost.
 
 ### Batch Rule Execution
 
@@ -520,7 +521,9 @@ php artisan runtime-shield:sampling
 
 ### Benchmark Command
 
-Measure rule evaluation time across all routes:
+Measure rule evaluation time across all routes. The command always runs
+rules **synchronously** — bypassing the `async` wrapper — so the timing
+reflects real rule-engine cost, not queue-dispatch overhead.
 
 ```bash
 php artisan runtime-shield:bench

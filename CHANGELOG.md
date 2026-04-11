@@ -79,11 +79,17 @@ and sampling configuration at a glance.
 
 ---
 
+### Fixed
+
+- **`BenchCommand` async bypass** — `BenchCommand` was injecting `RuleEngineContract`, which the container resolves to `AsyncRuleEngine`. With `performance.async = true` every `run()` call dispatched an `EvaluationJob` to the queue and returned an empty collection immediately, so the benchmark reported 0 violations and measured queue-dispatch overhead (~0 ms) instead of real rule evaluation time. `BatchedRuleEngine` is now its own named singleton; `BenchCommand` injects it directly and always performs synchronous evaluation regardless of the `async` flag.
+
+---
+
 ### Tests
 
-72 new tests — **433 total** (up from 361 in v0.6.0)
+89 new tests — **450 total** (up from 361 in v0.6.0)
 
-New test classes: `PerformanceTimerTest`, `PerformanceTimerEdgeCaseTest`, `NullSignalPipelineTest`, `BatchedRuleEngineTest`, `AsyncRuleEngineTest`, `MetricsStoreTest`, `MiddlewareMetricsTest`, `EnvironmentSamplerTest`, `SamplerChainTest`, `SamplerFactoryFromConfigTest`
+New test classes: `PerformanceTimerTest`, `PerformanceTimerEdgeCaseTest`, `NullSignalPipelineTest`, `BatchedRuleEngineTest`, `AsyncRuleEngineTest`, `MetricsStoreTest`, `MetricsStoreLastTest`, `MiddlewareMetricsTest`, `EnvironmentSamplerTest`, `EnvironmentSamplerEdgeCaseTest`, `SamplerChainTest`, `SamplerFactoryFromConfigTest`
 
 ---
 
