@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Core\Performance;
 
-use RuntimeShield\Contracts\Rule\RuleContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\DTO\Rule\ViolationCollection;
