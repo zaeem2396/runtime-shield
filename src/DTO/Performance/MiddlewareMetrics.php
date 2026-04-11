@@ -38,6 +38,14 @@ final class MiddlewareMetrics
     }
 
     /**
+     * Human-readable processing time, e.g. "1.2345 ms".
+     */
+    public function formattedMs(): string
+    {
+        return round($this->processingMs, 4) . ' ms';
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array
