@@ -54,6 +54,7 @@ final class ScoreCommand extends Command
         $this->renderHeader();
         $this->renderScorePanel($score);
         $this->renderCategoryTable($score);
+        $this->renderHighestRisk($score);
         $this->renderFailedCategoriesWarning($score);
 
         return self::SUCCESS;
@@ -231,6 +232,32 @@ final class ScoreCommand extends Command
             $cs->weight . '%',
             (string) $cs->violationCount,
         ];
+    }
+
+    private function renderHighestRisk(SecurityScore $score): void
+    {
+        $risk = $score->highestRisk();
+
+        if ($risk === null || $risk->score >= 75) {
+            return;
+        }
+
+        $color = CliRenderer::scoreColor($risk->score);
+
+        $this->line(sprintf(
+            '  Highest risk area: <fg=%s;options=bold>%s</> (<fg=%s>%d/100</>)',
+            $color,
+            $risk->category->label(),
+            $color,
+            $risk->score,
+        ));
+
+        $this->line(sprintf(
+            '  → %s',
+            $risk->category->description(),
+        ));
+
+        $this->line('');
     }
 
     private function renderFailedCategoriesWarning(SecurityScore $score): void
