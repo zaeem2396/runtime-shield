@@ -6,6 +6,8 @@ namespace RuntimeShield\Laravel\Providers;
 
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Support\ServiceProvider;
+use Psr\Log\LoggerInterface;
+use RuntimeShield\Contracts\Alert\AlertDispatcherContract;
 use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
@@ -21,6 +23,14 @@ use RuntimeShield\Contracts\Signal\RouteCollectorContract;
 use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
 use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
+use RuntimeShield\Core\Alert\AlertDispatcher;
+use RuntimeShield\Core\Alert\AlertThrottle;
+use RuntimeShield\Core\Alert\LogChannel;
+use RuntimeShield\Core\Alert\MailChannel;
+use RuntimeShield\Core\Alert\NullAlertChannel;
+use RuntimeShield\Core\Alert\SlackChannel;
+use RuntimeShield\Core\Alert\ThrottledAlertDispatcher;
+use RuntimeShield\Core\Alert\WebhookChannel;
 use RuntimeShield\Core\ConfigRepository;
 use RuntimeShield\Core\Performance\AsyncRuleEngine;
 use RuntimeShield\Core\Performance\BatchedRuleEngine;
@@ -35,7 +45,9 @@ use RuntimeShield\Core\Score\RuleCategoryMap;
 use RuntimeShield\Core\Score\ScoreEngine;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
+use RuntimeShield\DTO\Rule\Severity;
 use RuntimeShield\Engine\RuntimeShieldEngine;
+use RuntimeShield\Laravel\Console\AlertsCommand;
 use RuntimeShield\Laravel\Console\BenchCommand;
 use RuntimeShield\Laravel\Console\InstallCommand;
 use RuntimeShield\Laravel\Console\ReportCommand;
@@ -169,6 +181,81 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
                 $weights,
             );
         });
+
+        $this->app->singleton(AlertDispatcherContract::class, static function ($app): AlertDispatcherContract {
+            $alertsEnabled = (bool) $app['config']->get('runtime_shield.alerts.enabled', false);
+
+            if (! $alertsEnabled) {
+                $dispatcher = new AlertDispatcher(Severity::HIGH);
+                $dispatcher->addChannel(new NullAlertChannel());
+
+                return $dispatcher;
+            }
+
+            $minSeverityValue = (string) $app['config']->get('runtime_shield.alerts.min_severity', 'high');
+            $minSeverity = Severity::tryFrom($minSeverityValue) ?? Severity::HIGH;
+            $throttleSeconds = (int) $app['config']->get('runtime_shield.alerts.throttle_seconds', 300);
+
+            $dispatcher = new AlertDispatcher($minSeverity);
+
+            // Log channel
+            /** @var array<string, mixed> $logConfig */
+            $logConfig = (array) $app['config']->get('runtime_shield.alerts.channels.log', []);
+            $logEnabled = isset($logConfig['enabled']) && (bool) $logConfig['enabled'];
+            $dispatcher->addChannel(new LogChannel($logEnabled, $app->make(LoggerInterface::class)));
+
+            // Webhook channel
+            /** @var array<string, mixed> $webhookConfig */
+            $webhookConfig = (array) $app['config']->get('runtime_shield.alerts.channels.webhook', []);
+            $webhookEnabled = isset($webhookConfig['enabled']) && (bool) $webhookConfig['enabled'];
+            /** @var array<string, string> $webhookHeaders */
+            $webhookHeaders = isset($webhookConfig['headers']) && is_array($webhookConfig['headers'])
+                ? $webhookConfig['headers'] : [];
+            $dispatcher->addChannel(new WebhookChannel(
+                $webhookEnabled,
+                is_string($webhookConfig['url'] ?? null) ? (string) $webhookConfig['url'] : '',
+                is_string($webhookConfig['method'] ?? null) ? (string) $webhookConfig['method'] : 'POST',
+                $webhookHeaders,
+            ));
+
+            // Slack channel
+            /** @var array<string, mixed> $slackConfig */
+            $slackConfig = (array) $app['config']->get('runtime_shield.alerts.channels.slack', []);
+            $slackEnabled = isset($slackConfig['enabled']) && (bool) $slackConfig['enabled'];
+            $dispatcher->addChannel(new SlackChannel(
+                $slackEnabled,
+                is_string($slackConfig['url'] ?? null) ? (string) $slackConfig['url'] : '',
+            ));
+
+            // Mail channel — sender closure delegates to Laravel Mailer
+            /** @var array<string, mixed> $mailConfig */
+            $mailConfig = (array) $app['config']->get('runtime_shield.alerts.channels.mail', []);
+            $mailEnabled = isset($mailConfig['enabled']) && (bool) $mailConfig['enabled'];
+            /** @var list<string> $mailRecipients */
+            $mailRecipients = isset($mailConfig['recipients']) && is_array($mailConfig['recipients'])
+                ? array_values(array_filter($mailConfig['recipients'], 'is_string'))
+                : [];
+            $mailFrom = is_string($mailConfig['from'] ?? null) ? (string) $mailConfig['from'] : '';
+
+            $mailSend = static function (string $subject, string $body, array $recipients, string $from) use ($app): void {
+                /** @var \Illuminate\Contracts\Mail\Mailer $mailer */
+                $mailer = $app->make(\Illuminate\Contracts\Mail\Mailer::class);
+                $mailer->raw($body, static function (mixed $message) use ($subject, $recipients, $from): void {
+                    if (method_exists($message, 'to')) {
+                        $message->to($recipients)->from($from)->subject($subject);
+                    }
+                });
+            };
+
+            $dispatcher->addChannel(new MailChannel($mailEnabled, $mailRecipients, $mailFrom, $mailSend));
+
+            // Wrap with throttle decorator
+            if ($throttleSeconds > 0) {
+                return new ThrottledAlertDispatcher($dispatcher, new AlertThrottle($throttleSeconds));
+            }
+
+            return $dispatcher;
+        });
     }
 
     public function boot(): void
@@ -189,6 +276,7 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             ScoreCommand::class,
             BenchCommand::class,
             SamplingCommand::class,
+            AlertsCommand::class,
         ]);
     }
 }
