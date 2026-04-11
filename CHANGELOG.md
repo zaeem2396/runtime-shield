@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.8.0] — 2026-04-12 — Alerting & Notifications
+
+### Overview
+
+Introduces a fully configurable **multi-channel alert system** that triggers
+after violations are detected in real HTTP requests. When `alerts.enabled = true`
+the middleware evaluates all registered rules in `terminate()` (after the response
+is sent) and fans the resulting `ViolationCollection` out to every configured
+channel: **Log**, **Webhook**, **Slack**, and **Mail**. An `AlertThrottle` prevents
+flood alerts by enforcing a per-rule cooldown window, and a `ThrottledAlertDispatcher`
+decorator applies that throttle transparently. Alerts can be queued for async
+delivery via `AlertDispatchJob`, keeping the `terminate()` overhead minimal.
+A new `runtime-shield:alerts` command shows the active channel configuration at a glance.
+
+---
+
+### Added
+
+#### Contracts — `RuntimeShield\Contracts\Alert`
+
+- `AlertChannelContract` — `channelName(): string`, `isEnabled(): bool`, `notify(AlertEvent): void`
+- `AlertDispatcherContract` — `dispatch(ViolationCollection, string $route): void`, `addChannel(): static`, `channels(): array`
+
+#### DTO — `RuntimeShield\DTO\Alert`
+
+- `AlertEvent` — immutable snapshot of an alert lifecycle event
+  - Properties: `violations`, `route`, `triggeredAt`
+  - `summary(): string` — human-readable description for log messages / email subjects
+  - `highestSeverityViolation(): Violation|null` — top violation for log level resolution
+  - `toArray(): array` — JSON-serialisable representation
+
+#### Core — `RuntimeShield\Core\Alert`
+
+- `AlertDispatcher` — multichannel fan-out; filters by `min_severity` before building `AlertEvent`
+  - `minSeverity(): Severity`, `channels(): array`
+- `AlertThrottle` — per-rule in-memory cooldown tracker
+  - `isThrottled(string $ruleId): bool`, `record(string $ruleId): void`
+  - `cooldownSeconds(): int`, `count(): int`, `flush(): void`
+- `ThrottledAlertDispatcher` — `AlertDispatcherContract` decorator; skips throttled rules, records after dispatch
+  - `throttle(): AlertThrottle`
+- `NullAlertChannel` — zero-overhead no-op used when alerting is disabled
+- `LogChannel` — PSR-3 structured log entry; level mapped from highest violation severity
+  - CRITICAL → `error`, HIGH → `warning`, MEDIUM → `notice`, LOW/INFO → `info`
+- `WebhookChannel` — HTTP POST of JSON-encoded `AlertEvent::toArray()` to a configured URL
+  - Injectable `\Closure $sender` for testability; default uses PHP stream contexts
+- `SlackChannel` — Slack Incoming Webhook with formatted violation list per channel contract
+  - Injectable sender closure; Slack `text` payload includes severity label and route per violation
+- `MailChannel` — plain-text email via injectable `\Closure $send`; body includes all violations with severity
+
+#### Laravel — Events / Jobs
+
+- `ViolationAlertedEvent` — Laravel event fired after channels are notified (hook for custom integrations)
+- `AlertDispatchJob` — `ShouldQueue` job for async alert delivery; dispatched when `alerts.async = true`
+
+#### Artisan Commands
+
+- `runtime-shield:alerts` — displays alert status, min severity, throttle window, async mode, and channel table
+
+#### Configuration
+
+- New `alerts` block in `config/runtime_shield.php`:
+  - `enabled`, `min_severity`, `throttle_seconds`, `async`
+  - `channels.log` — `enabled`, `channel`
+  - `channels.webhook` — `enabled`, `url`, `method`, `headers`
+  - `channels.slack` — `enabled`, `url`
+  - `channels.mail` — `enabled`, `recipients`, `from`
+
+---
+
+### Changed
+
+- `EngineContract` — added `evaluate(SecurityRuntimeContext): ViolationCollection` so the middleware and
+  other callers can run rule evaluation without depending on the concrete engine class
+- `RuntimeShieldMiddleware` — when `alerts.enabled = true`, `terminate()` evaluates rules and dispatches
+  alerts (sync or via `AlertDispatchJob`); `rulesEvaluated` field in `MiddlewareMetrics` now populated
+- `ServiceProvider` — registers `AlertDispatcherContract` singleton (builds `AlertDispatcher` with all four
+  channels and wraps in `ThrottledAlertDispatcher`); explicit singleton for `RuntimeShieldMiddleware`
+  to inject `alertsEnabled` and `alertsAsync` flags
+
+---
+
+### Tests
+
+29 new tests — **479 total** (up from 450 in v0.7.0)
+
+New test classes: `AlertEventTest`, `AlertDispatcherTest`, `AlertThrottleTest`,
+`ThrottledAlertDispatcherTest`, `NullAlertChannelTest`, `LogChannelTest`,
+`WebhookChannelTest`, `SlackChannelTest`, `MailChannelTest`
+
+---
+
 ## [v0.7.0] — 2026-04-11 — Performance
 
 ### Overview
