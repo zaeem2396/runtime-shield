@@ -9,7 +9,7 @@
 
 > Runtime security analysis and observation for PHP 8.2+ applications — with first-class Laravel 10 / 11 / 12 / 13 support.
 
-RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, and evaluates configurable security rules — with zero overhead when disabled.
+RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, evaluates configurable security rules, and produces a weighted **Security Score** (0–100) with per-category breakdown — with zero overhead when disabled.
 
 ---
 
