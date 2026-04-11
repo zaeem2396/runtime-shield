@@ -46,9 +46,7 @@ final class ScoreCategoryTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider categoryLabelProvider
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('categoryLabelProvider')]
     public function test_expected_labels(ScoreCategory $category, string $expectedFragment): void
     {
         $this->assertStringContainsStringIgnoringCase($expectedFragment, $category->label());
