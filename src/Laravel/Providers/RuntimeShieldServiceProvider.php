@@ -129,15 +129,20 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             return $registry;
         });
 
-        $this->app->singleton(RuleEngineContract::class, static function ($app): RuleEngineContract {
-            $registry = $app->make(RuleRegistry::class);
+        // BatchedRuleEngine is bound as its own singleton so that CLI commands
+        // needing real synchronous evaluation (e.g. BenchCommand) can inject
+        // it directly and always bypass the async wrapper.
+        $this->app->singleton(BatchedRuleEngine::class, static function ($app): BatchedRuleEngine {
             $batchSize = (int) $app['config']->get('runtime_shield.performance.batch_size', 50);
             $timeoutMs = (int) $app['config']->get('runtime_shield.performance.timeout_ms', 100);
+
+            return new BatchedRuleEngine($app->make(RuleRegistry::class), $batchSize, $timeoutMs);
+        });
+
+        $this->app->singleton(RuleEngineContract::class, static function ($app): RuleEngineContract {
             $async = (bool) $app['config']->get('runtime_shield.performance.async', false);
 
-            $baseEngine = new BatchedRuleEngine($registry, $batchSize, $timeoutMs);
-
-            return new AsyncRuleEngine($baseEngine, $async);
+            return new AsyncRuleEngine($app->make(BatchedRuleEngine::class), $async);
         });
 
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(

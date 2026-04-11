@@ -7,7 +7,7 @@ namespace RuntimeShield\Laravel\Console;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
-use RuntimeShield\Contracts\Rule\RuleEngineContract;
+use RuntimeShield\Core\Performance\BatchedRuleEngine;
 use RuntimeShield\Core\Performance\PerformanceTimer;
 use RuntimeShield\Core\RuntimeContextBuilder;
 use RuntimeShield\DTO\SecurityRuntimeContext;
@@ -18,6 +18,10 @@ use RuntimeShield\Support\CliRenderer;
 /**
  * Artisan command that measures rule-engine evaluation time across all
  * registered routes and reports timing statistics.
+ *
+ * Injects BatchedRuleEngine directly (not RuleEngineContract) so that
+ * benchmarks always run synchronous rule evaluation regardless of whether
+ * the async flag is enabled — measuring real rule cost, not queue dispatch.
  *
  * Usage: php artisan runtime-shield:bench
  */
@@ -31,7 +35,7 @@ final class BenchCommand extends Command
 
     public function __construct(
         private readonly Router $router,
-        private readonly RuleEngineContract $ruleEngine,
+        private readonly BatchedRuleEngine $ruleEngine,
     ) {
         parent::__construct();
     }
