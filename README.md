@@ -9,7 +9,7 @@
 
 > Runtime security analysis and observation for PHP 8.2+ applications — with first-class Laravel 10 / 11 / 12 / 13 support.
 
-RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, evaluates configurable security rules in **batches with timeout protection**, dispatches evaluation **asynchronously** to the queue when needed, samples traffic **per environment**, produces a weighted **Security Score** (0–100) with per-category breakdown, and **alerts your team** via Log, Webhook, Slack or Mail when violations are detected — with absolute zero overhead when disabled.
+RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, evaluates configurable security rules in **batches with timeout protection**, dispatches evaluation **asynchronously** to the queue when needed, samples traffic **per environment**, produces a weighted **Security Score** (0–100) with per-category breakdown, **alerts your team** via Log, Webhook, Slack or Mail when violations are detected, and is **fully extensible** via custom rules, signal collectors, plugins, and event hooks — with absolute zero overhead when disabled.
 
 ---
 
@@ -688,6 +688,149 @@ Event::listen(ViolationAlertedEvent::class, function (ViolationAlertedEvent $e) 
 | `runtime-shield:bench` | Benchmark rule evaluation time per route (v0.7.0+) |
 | `runtime-shield:sampling` | Display active sampler type and effective rate (v0.7.0+) |
 | `runtime-shield:alerts` | Display alert channel config and status (v0.8.0+) |
+| `runtime-shield:plugins` | List all registered plugins (v0.9.0+) |
+
+---
+
+## Extensibility (v0.9.0+)
+
+RuntimeShield is built to be extended without modifying package source code.
+Register your extensions in `config/runtime_shield.php` under the `extensibility` key.
+
+### Custom Rules
+
+Implement `RuleContract` (or extend `AbstractRule`) and list your class in the config:
+
+```php
+// config/runtime_shield.php
+'extensibility' => [
+    'rules' => [
+        App\Rules\MyCustomRule::class,
+    ],
+],
+```
+
+`AbstractRule` provides a sensible `Severity::LOW` default and a `make()` helper:
+
+```php
+use RuntimeShield\Core\Rule\AbstractRule;
+use RuntimeShield\DTO\SecurityRuntimeContext;
+
+final class NoAdminEndpointRule extends AbstractRule
+{
+    public function id(): string    { return 'no-admin-endpoint'; }
+    public function title(): string { return 'Admin Endpoint Detected'; }
+
+    public function evaluate(SecurityRuntimeContext $context): array
+    {
+        if (str_starts_with($context->route?->uri ?? '', '/admin')) {
+            return [$this->make('Admin endpoint accessed without extra verification', $context->route->uri)];
+        }
+        return [];
+    }
+}
+```
+
+Use `RuleRegistrar` in a service provider for fine-grained control:
+
+```php
+use RuntimeShield\Core\Rule\RuleRegistrar;
+
+$registrar = app(RuleRegistrar::class);
+$registrar->rule(new NoAdminEndpointRule())
+          ->disable('public-route-without-auth')   // remove a built-in rule
+          ->replace(new StrictCsrfRule());          // swap a built-in rule
+```
+
+### Custom Signal Collectors
+
+Implement `CustomSignalCollectorContract` to enrich context with application-specific data:
+
+```php
+use Illuminate\Http\Request;
+use RuntimeShield\Contracts\Signal\CustomSignalCollectorContract;
+
+final class TenantSignalCollector implements CustomSignalCollectorContract
+{
+    public function id(): string { return 'tenant'; }
+
+    public function collect(Request $request): array
+    {
+        return ['tenant_id' => $request->header('X-Tenant-ID', 'default')];
+    }
+}
+```
+
+```php
+// config/runtime_shield.php
+'extensibility' => [
+    'signal_collectors' => [
+        App\Signals\TenantSignalCollector::class,
+    ],
+],
+```
+
+Custom signals are stored in `CustomSignalStore` (keyed by collector ID) and available to
+your custom rules and event listeners.
+
+### Plugin System
+
+Bundle rules, collectors, and bootstrap logic into a distributable plugin:
+
+```php
+use RuntimeShield\Core\Plugin\AbstractPlugin;
+
+final class SqlInjectionPlugin extends AbstractPlugin
+{
+    public function id(): string   { return 'acme/sql-injection'; }
+    public function name(): string { return 'Acme SQL Injection Detector'; }
+
+    public function rules(): array
+    {
+        return [new RawQueryRule(), new UnboundParameterRule()];
+    }
+}
+```
+
+```php
+// config/runtime_shield.php
+'extensibility' => [
+    'plugins' => [
+        App\Plugins\SqlInjectionPlugin::class,
+    ],
+],
+```
+
+Run `php artisan runtime-shield:plugins` to list all active plugins.
+
+### Event Hooks
+
+Listen to scan lifecycle events anywhere in your application:
+
+```php
+use RuntimeShield\Laravel\Events\BeforeScanEvent;
+use RuntimeShield\Laravel\Events\AfterScanEvent;
+use RuntimeShield\Laravel\Events\ViolationDetectedEvent;
+
+Event::listen(AfterScanEvent::class, function (AfterScanEvent $event): void {
+    if ($event->hasViolations()) {
+        // persist violations, trigger custom alerting, etc.
+    }
+});
+
+Event::listen(ViolationDetectedEvent::class, function (ViolationDetectedEvent $event): void {
+    logger()->debug('Violation detected', [
+        'rule'  => $event->violation->ruleId,
+        'route' => $event->violation->route,
+    ]);
+});
+```
+
+Disable events to eliminate dispatch overhead when not needed:
+
+```env
+RUNTIME_SHIELD_EVENTS_ENABLED=false
+```
 
 ---
 
