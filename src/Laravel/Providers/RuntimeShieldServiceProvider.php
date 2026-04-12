@@ -5,18 +5,24 @@ declare(strict_types=1);
 namespace RuntimeShield\Laravel\Providers;
 
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
+use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
 use RuntimeShield\Contracts\Alert\AlertDispatcherContract;
 use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
+use RuntimeShield\Contracts\EventEmitterContract;
+use RuntimeShield\Contracts\Plugin\PluginContract;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
+use RuntimeShield\Contracts\Rule\RuleContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
+use RuntimeShield\Contracts\Rule\RuleRegistrarContract;
 use RuntimeShield\Contracts\SamplerContract;
 use RuntimeShield\Contracts\Score\RuleCategoryMapContract;
 use RuntimeShield\Contracts\Score\ScoreEngineContract;
 use RuntimeShield\Contracts\ShieldContract;
 use RuntimeShield\Contracts\Signal\AuthCollectorContract;
+use RuntimeShield\Contracts\Signal\CustomSignalCollectorContract;
 use RuntimeShield\Contracts\Signal\RequestCapturerContract;
 use RuntimeShield\Contracts\Signal\ResponseCapturerContract;
 use RuntimeShield\Contracts\Signal\RouteCollectorContract;
@@ -32,29 +38,22 @@ use RuntimeShield\Core\Alert\SlackChannel;
 use RuntimeShield\Core\Alert\ThrottledAlertDispatcher;
 use RuntimeShield\Core\Alert\WebhookChannel;
 use RuntimeShield\Core\ConfigRepository;
+use RuntimeShield\Core\NullEventEmitter;
 use RuntimeShield\Core\Performance\AsyncRuleEngine;
 use RuntimeShield\Core\Performance\BatchedRuleEngine;
 use RuntimeShield\Core\Performance\MetricsStore;
 use RuntimeShield\Core\Performance\NullSignalPipeline;
+use RuntimeShield\Core\Plugin\PluginRegistry;
 use RuntimeShield\Core\Report\ReportBuilder;
 use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
-use RuntimeShield\Contracts\Rule\RuleContract;
-use RuntimeShield\Contracts\Rule\RuleRegistrarContract;
-use RuntimeShield\Contracts\Signal\CustomSignalCollectorContract;
-use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
-use RuntimeShield\Contracts\EventEmitterContract;
-use RuntimeShield\Contracts\Plugin\PluginContract;
-use RuntimeShield\Core\Plugin\PluginRegistry;
 use RuntimeShield\Core\Rule\RuleRegistrar;
 use RuntimeShield\Core\Rule\RuleRegistry;
-use RuntimeShield\Core\Signal\CustomSignalRegistry;
-use RuntimeShield\Core\Signal\CustomSignalStore;
-use RuntimeShield\Core\NullEventEmitter;
 use RuntimeShield\Core\RuntimeShieldManager;
-use RuntimeShield\Laravel\LaravelEventEmitter;
 use RuntimeShield\Core\Sampling\SamplerFactory;
 use RuntimeShield\Core\Score\RuleCategoryMap;
 use RuntimeShield\Core\Score\ScoreEngine;
+use RuntimeShield\Core\Signal\CustomSignalRegistry;
+use RuntimeShield\Core\Signal\CustomSignalStore;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\DTO\Rule\Severity;
@@ -67,6 +66,7 @@ use RuntimeShield\Laravel\Console\RoutesCommand;
 use RuntimeShield\Laravel\Console\SamplingCommand;
 use RuntimeShield\Laravel\Console\ScanCommand;
 use RuntimeShield\Laravel\Console\ScoreCommand;
+use RuntimeShield\Laravel\LaravelEventEmitter;
 use RuntimeShield\Laravel\Signal\AuthSignalCollector;
 use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;
@@ -345,8 +345,10 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
      */
     private function bootPlugins(): void
     {
+        /** @var \Illuminate\Config\Repository $config */
+        $config = $this->app->make('config');
         /** @var list<mixed> $pluginClasses */
-        $pluginClasses = (array) $this->app['config']->get('runtime_shield.extensibility.plugins', []);
+        $pluginClasses = (array) $config->get('runtime_shield.extensibility.plugins', []);
 
         $pluginRegistry = $this->app->make(PluginRegistry::class);
 
@@ -377,8 +379,10 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
      */
     private function registerCustomSignalCollectors(): void
     {
+        /** @var \Illuminate\Config\Repository $config */
+        $config = $this->app->make('config');
         /** @var list<mixed> $collectorClasses */
-        $collectorClasses = (array) $this->app['config']->get('runtime_shield.extensibility.signal_collectors', []);
+        $collectorClasses = (array) $config->get('runtime_shield.extensibility.signal_collectors', []);
 
         if ($collectorClasses === []) {
             return;
@@ -405,8 +409,10 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
      */
     private function registerCustomRules(): void
     {
+        /** @var \Illuminate\Config\Repository $config */
+        $config = $this->app->make('config');
         /** @var list<mixed> $ruleClasses */
-        $ruleClasses = (array) $this->app['config']->get('runtime_shield.extensibility.rules', []);
+        $ruleClasses = (array) $config->get('runtime_shield.extensibility.rules', []);
 
         if ($ruleClasses === []) {
             return;

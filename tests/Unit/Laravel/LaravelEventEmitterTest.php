@@ -18,48 +18,6 @@ use RuntimeShield\Laravel\LaravelEventEmitter;
 
 final class LaravelEventEmitterTest extends TestCase
 {
-    // ------------------------------------------------------------------ helpers
-
-    private function makeContext(): SecurityRuntimeContext
-    {
-        return new SecurityRuntimeContext(
-            requestId: 'emitter-test-' . uniqid(),
-            createdAt: new \DateTimeImmutable(),
-        );
-    }
-
-    private function makeViolation(): Violation
-    {
-        return new Violation(
-            ruleId: 'test-rule',
-            title: 'Test Rule',
-            description: 'Test violation',
-            severity: Severity::HIGH,
-            route: '/test',
-        );
-    }
-
-    /**
-     * @return array{LaravelEventEmitter, object{dispatched: list<object>}}
-     */
-    private function makeEmitterWithCapture(): array
-    {
-        $capture = new class {
-            /** @var list<object> */
-            public array $dispatched = [];
-        };
-
-        $dispatcher = $this->createMock(Dispatcher::class);
-        $dispatcher->method('dispatch')
-            ->willReturnCallback(static function (object $event) use ($capture): void {
-                $capture->dispatched[] = $event;
-            });
-
-        $emitter = new LaravelEventEmitter($dispatcher);
-
-        return [$emitter, $capture];
-    }
-
     // ------------------------------------------------------------------ beforeScan
 
     #[Test]
@@ -145,5 +103,46 @@ final class LaravelEventEmitterTest extends TestCase
         $emitter = new LaravelEventEmitter($dispatcher);
 
         $this->assertInstanceOf(\RuntimeShield\Contracts\EventEmitterContract::class, $emitter);
+    }
+    // ------------------------------------------------------------------ helpers
+
+    private function makeContext(): SecurityRuntimeContext
+    {
+        return new SecurityRuntimeContext(
+            requestId: 'emitter-test-' . uniqid(),
+            createdAt: new \DateTimeImmutable(),
+        );
+    }
+
+    private function makeViolation(): Violation
+    {
+        return new Violation(
+            ruleId: 'test-rule',
+            title: 'Test Rule',
+            description: 'Test violation',
+            severity: Severity::HIGH,
+            route: '/test',
+        );
+    }
+
+    /**
+     * @return array{LaravelEventEmitter, object{dispatched: list<object>}}
+     */
+    private function makeEmitterWithCapture(): array
+    {
+        $capture = new class () {
+            /** @var list<object> */
+            public array $dispatched = [];
+        };
+
+        $dispatcher = $this->createMock(Dispatcher::class);
+        $dispatcher->method('dispatch')
+            ->willReturnCallback(static function (object $event) use ($capture): void {
+                $capture->dispatched[] = $event;
+            });
+
+        $emitter = new LaravelEventEmitter($dispatcher);
+
+        return [$emitter, $capture];
     }
 }

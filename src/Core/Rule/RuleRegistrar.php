@@ -16,7 +16,9 @@ use RuntimeShield\Contracts\Rule\RuleRegistrarContract;
  */
 final class RuleRegistrar implements RuleRegistrarContract
 {
-    public function __construct(private readonly RuleRegistry $registry) {}
+    public function __construct(private readonly RuleRegistry $registry)
+    {
+    }
 
     public function rule(RuleContract $rule): static
     {

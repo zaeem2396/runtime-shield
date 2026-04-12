@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Core\Plugin;
 
+use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\Contracts\Plugin\PluginContract;
@@ -14,66 +15,9 @@ use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\Signal\CustomSignalRegistry;
 use RuntimeShield\DTO\Rule\Severity;
 use RuntimeShield\DTO\SecurityRuntimeContext;
-use Illuminate\Http\Request;
 
 final class PluginRegistryTest extends TestCase
 {
-    // ------------------------------------------------------------------ helpers
-
-    private function makePlugin(
-        string $id,
-        string $name = '',
-        array $rules = [],
-        array $collectors = [],
-        bool &$bootCalled = false,
-    ): PluginContract {
-        return new class ($id, $name ?: "Plugin $id", $rules, $collectors, $bootCalled) implements PluginContract {
-            public function __construct(
-                private readonly string $pluginId,
-                private readonly string $pluginName,
-                private readonly array $pluginRules,
-                private readonly array $pluginCollectors,
-                private bool &$bootFlag,
-            ) {}
-
-            public function id(): string { return $this->pluginId; }
-
-            public function name(): string { return $this->pluginName; }
-
-            public function rules(): array { return $this->pluginRules; }
-
-            public function signalCollectors(): array { return $this->pluginCollectors; }
-
-            public function boot(): void { $this->bootFlag = true; }
-        };
-    }
-
-    private function makeRule(string $id): RuleContract
-    {
-        return new class ($id) implements RuleContract {
-            public function __construct(private readonly string $ruleId) {}
-
-            public function id(): string { return $this->ruleId; }
-
-            public function title(): string { return 'Rule ' . $this->ruleId; }
-
-            public function severity(): Severity { return Severity::LOW; }
-
-            public function evaluate(SecurityRuntimeContext $context): array { return []; }
-        };
-    }
-
-    private function makeCollector(string $id): CustomSignalCollectorContract
-    {
-        return new class ($id) implements CustomSignalCollectorContract {
-            public function __construct(private readonly string $collectorId) {}
-
-            public function id(): string { return $this->collectorId; }
-
-            public function collect(Request $request): array { return []; }
-        };
-    }
-
     // ------------------------------------------------------------------ register / all
 
     #[Test]
@@ -206,5 +150,98 @@ final class PluginRegistryTest extends TestCase
         $registry->boot(new RuleRegistry(), new CustomSignalRegistry());
 
         $this->assertSame(0, $registry->count());
+    }
+    // ------------------------------------------------------------------ helpers
+
+    private function makePlugin(
+        string $id,
+        string $name = '',
+        array $rules = [],
+        array $collectors = [],
+        bool &$bootCalled = false,
+    ): PluginContract {
+        return new class ($id, $name ?: "Plugin {$id}", $rules, $collectors, $bootCalled) implements PluginContract {
+            public function __construct(
+                private readonly string $pluginId,
+                private readonly string $pluginName,
+                private readonly array $pluginRules,
+                private readonly array $pluginCollectors,
+                private bool &$bootFlag,
+            ) {
+            }
+
+            public function id(): string
+            {
+                return $this->pluginId;
+            }
+
+            public function name(): string
+            {
+                return $this->pluginName;
+            }
+
+            public function rules(): array
+            {
+                return $this->pluginRules;
+            }
+
+            public function signalCollectors(): array
+            {
+                return $this->pluginCollectors;
+            }
+
+            public function boot(): void
+            {
+                $this->bootFlag = true;
+            }
+        };
+    }
+
+    private function makeRule(string $id): RuleContract
+    {
+        return new class ($id) implements RuleContract {
+            public function __construct(private readonly string $ruleId)
+            {
+            }
+
+            public function id(): string
+            {
+                return $this->ruleId;
+            }
+
+            public function title(): string
+            {
+                return 'Rule ' . $this->ruleId;
+            }
+
+            public function severity(): Severity
+            {
+                return Severity::LOW;
+            }
+
+            public function evaluate(SecurityRuntimeContext $context): array
+            {
+                return [];
+            }
+        };
+    }
+
+    private function makeCollector(string $id): CustomSignalCollectorContract
+    {
+        return new class ($id) implements CustomSignalCollectorContract {
+            public function __construct(private readonly string $collectorId)
+            {
+            }
+
+            public function id(): string
+            {
+                return $this->collectorId;
+            }
+
+            public function collect(Request $request): array
+            {
+                return [];
+            }
+        };
     }
 }

@@ -47,6 +47,13 @@ abstract class AbstractRule implements RuleContract
     }
 
     /**
+     * Evaluate the context and return any violations found.
+     *
+     * @return list<Violation>
+     */
+    abstract public function evaluate(SecurityRuntimeContext $context): array;
+
+    /**
      * Build a Violation for this rule without repeating id() and title().
      *
      * @param array<string, mixed> $context Additional metadata about the violation
@@ -66,11 +73,4 @@ abstract class AbstractRule implements RuleContract
             context: $context,
         );
     }
-
-    /**
-     * Evaluate the context and return any violations found.
-     *
-     * @return list<Violation>
-     */
-    abstract public function evaluate(SecurityRuntimeContext $context): array;
 }

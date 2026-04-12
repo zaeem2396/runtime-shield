@@ -14,26 +14,6 @@ use RuntimeShield\DTO\SecurityRuntimeContext;
 
 final class NullEventEmitterTest extends TestCase
 {
-    // ------------------------------------------------------------------ helpers
-
-    private function makeContext(): SecurityRuntimeContext
-    {
-        return new SecurityRuntimeContext(
-            requestId: 'evt-test-' . uniqid(),
-            createdAt: new \DateTimeImmutable(),
-        );
-    }
-
-    private function makeViolation(): Violation
-    {
-        return new Violation(
-            ruleId: 'test-rule',
-            title: 'Test Rule',
-            description: 'Test violation',
-            severity: Severity::LOW,
-        );
-    }
-
     // ------------------------------------------------------------------ beforeScan
 
     #[Test]
@@ -110,5 +90,24 @@ final class NullEventEmitterTest extends TestCase
         $emitter->afterScan($context, $violations, 1.0);
 
         $this->assertTrue(true);
+    }
+    // ------------------------------------------------------------------ helpers
+
+    private function makeContext(): SecurityRuntimeContext
+    {
+        return new SecurityRuntimeContext(
+            requestId: 'evt-test-' . uniqid(),
+            createdAt: new \DateTimeImmutable(),
+        );
+    }
+
+    private function makeViolation(): Violation
+    {
+        return new Violation(
+            ruleId: 'test-rule',
+            title: 'Test Rule',
+            description: 'Test violation',
+            severity: Severity::LOW,
+        );
     }
 }

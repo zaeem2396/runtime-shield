@@ -13,23 +13,6 @@ use RuntimeShield\DTO\SecurityRuntimeContext;
 
 final class RuleRegistryExtendedTest extends TestCase
 {
-    // ------------------------------------------------------------------ helpers
-
-    private function makeRule(string $id): RuleContract
-    {
-        return new class ($id) implements RuleContract {
-            public function __construct(private readonly string $ruleId) {}
-
-            public function id(): string { return $this->ruleId; }
-
-            public function title(): string { return 'Rule ' . $this->ruleId; }
-
-            public function severity(): Severity { return Severity::LOW; }
-
-            public function evaluate(SecurityRuntimeContext $context): array { return []; }
-        };
-    }
-
     // ------------------------------------------------------------------ unregister
 
     #[Test]
@@ -78,14 +61,26 @@ final class RuleRegistryExtendedTest extends TestCase
         $registry = new RuleRegistry();
         $registry->register($this->makeRule('rule-x'));
 
-        $replacement = new class implements RuleContract {
-            public function id(): string { return 'rule-x'; }
+        $replacement = new class () implements RuleContract {
+            public function id(): string
+            {
+                return 'rule-x';
+            }
 
-            public function title(): string { return 'Updated Rule X'; }
+            public function title(): string
+            {
+                return 'Updated Rule X';
+            }
 
-            public function severity(): Severity { return Severity::HIGH; }
+            public function severity(): Severity
+            {
+                return Severity::HIGH;
+            }
 
-            public function evaluate(SecurityRuntimeContext $context): array { return []; }
+            public function evaluate(SecurityRuntimeContext $context): array
+            {
+                return [];
+            }
         };
 
         $replaced = $registry->replace($replacement);
@@ -188,5 +183,35 @@ final class RuleRegistryExtendedTest extends TestCase
         $registry->unregister('a');
 
         $this->assertSame(['b'], $registry->ids());
+    }
+    // ------------------------------------------------------------------ helpers
+
+    private function makeRule(string $id): RuleContract
+    {
+        return new class ($id) implements RuleContract {
+            public function __construct(private readonly string $ruleId)
+            {
+            }
+
+            public function id(): string
+            {
+                return $this->ruleId;
+            }
+
+            public function title(): string
+            {
+                return 'Rule ' . $this->ruleId;
+            }
+
+            public function severity(): Severity
+            {
+                return Severity::LOW;
+            }
+
+            public function evaluate(SecurityRuntimeContext $context): array
+            {
+                return [];
+            }
+        };
     }
 }

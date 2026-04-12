@@ -13,44 +13,6 @@ use RuntimeShield\DTO\SecurityRuntimeContext;
 
 final class AbstractRuleTest extends TestCase
 {
-    // ------------------------------------------------------------------ helpers
-
-    private function makeContext(): SecurityRuntimeContext
-    {
-        return new SecurityRuntimeContext(
-            requestId: 'test-' . uniqid(),
-            createdAt: new \DateTimeImmutable(),
-        );
-    }
-
-    private function concreteRule(
-        string $id,
-        string $title,
-        Severity|null $overrideSeverity = null,
-    ): AbstractRule {
-        return new class ($id, $title, $overrideSeverity) extends AbstractRule {
-            public function __construct(
-                private readonly string $ruleId,
-                private readonly string $ruleTitle,
-                private readonly Severity|null $overrideSeverity,
-            ) {}
-
-            public function id(): string { return $this->ruleId; }
-
-            public function title(): string { return $this->ruleTitle; }
-
-            public function severity(): Severity
-            {
-                return $this->overrideSeverity ?? parent::severity();
-            }
-
-            public function evaluate(SecurityRuntimeContext $context): array
-            {
-                return [$this->make('Something is wrong', '/test', ['key' => 'val'])];
-            }
-        };
-    }
-
     // ------------------------------------------------------------------ severity default
 
     #[Test]
@@ -113,10 +75,16 @@ final class AbstractRuleTest extends TestCase
     #[Test]
     public function make_accepts_custom_severity_override(): void
     {
-        $rule = new class extends AbstractRule {
-            public function id(): string { return 'override-sev'; }
+        $rule = new class () extends AbstractRule {
+            public function id(): string
+            {
+                return 'override-sev';
+            }
 
-            public function title(): string { return 'Override Sev'; }
+            public function title(): string
+            {
+                return 'Override Sev';
+            }
 
             public function evaluate(SecurityRuntimeContext $context): array
             {
@@ -139,5 +107,49 @@ final class AbstractRuleTest extends TestCase
 
         $this->assertSame('my-id', $rule->id());
         $this->assertSame('My Title', $rule->title());
+    }
+    // ------------------------------------------------------------------ helpers
+
+    private function makeContext(): SecurityRuntimeContext
+    {
+        return new SecurityRuntimeContext(
+            requestId: 'test-' . uniqid(),
+            createdAt: new \DateTimeImmutable(),
+        );
+    }
+
+    private function concreteRule(
+        string $id,
+        string $title,
+        Severity|null $overrideSeverity = null,
+    ): AbstractRule {
+        return new class ($id, $title, $overrideSeverity) extends AbstractRule {
+            public function __construct(
+                private readonly string $ruleId,
+                private readonly string $ruleTitle,
+                private readonly Severity|null $overrideSeverity,
+            ) {
+            }
+
+            public function id(): string
+            {
+                return $this->ruleId;
+            }
+
+            public function title(): string
+            {
+                return $this->ruleTitle;
+            }
+
+            public function severity(): Severity
+            {
+                return $this->overrideSeverity ?? parent::severity();
+            }
+
+            public function evaluate(SecurityRuntimeContext $context): array
+            {
+                return [$this->make('Something is wrong', '/test', ['key' => 'val'])];
+            }
+        };
     }
 }

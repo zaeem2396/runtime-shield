@@ -12,22 +12,6 @@ use RuntimeShield\Core\Signal\CustomSignalRegistry;
 
 final class CustomSignalRegistryTest extends TestCase
 {
-    // ------------------------------------------------------------------ helpers
-
-    private function makeCollector(string $id, array $data = []): CustomSignalCollectorContract
-    {
-        return new class ($id, $data) implements CustomSignalCollectorContract {
-            public function __construct(
-                private readonly string $collectorId,
-                private readonly array $collectorData,
-            ) {}
-
-            public function id(): string { return $this->collectorId; }
-
-            public function collect(Request $request): array { return $this->collectorData; }
-        };
-    }
-
     // ------------------------------------------------------------------ register / all
 
     #[Test]
@@ -144,5 +128,27 @@ final class CustomSignalRegistryTest extends TestCase
 
         $registry->unregister('x');
         $this->assertSame(1, $registry->count());
+    }
+    // ------------------------------------------------------------------ helpers
+
+    private function makeCollector(string $id, array $data = []): CustomSignalCollectorContract
+    {
+        return new class ($id, $data) implements CustomSignalCollectorContract {
+            public function __construct(
+                private readonly string $collectorId,
+                private readonly array $collectorData,
+            ) {
+            }
+
+            public function id(): string
+            {
+                return $this->collectorId;
+            }
+
+            public function collect(Request $request): array
+            {
+                return $this->collectorData;
+            }
+        };
     }
 }

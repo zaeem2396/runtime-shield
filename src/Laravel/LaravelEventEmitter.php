@@ -22,7 +22,9 @@ use RuntimeShield\Laravel\Events\ViolationDetectedEvent;
  */
 final class LaravelEventEmitter implements EventEmitterContract
 {
-    public function __construct(private readonly Dispatcher $dispatcher) {}
+    public function __construct(private readonly Dispatcher $dispatcher)
+    {
+    }
 
     public function beforeScan(SecurityRuntimeContext $context, int $ruleCount): void
     {

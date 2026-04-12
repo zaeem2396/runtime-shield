@@ -14,31 +14,6 @@ use RuntimeShield\DTO\SecurityRuntimeContext;
 
 final class RuleRegistrarTest extends TestCase
 {
-    // ------------------------------------------------------------------ helpers
-
-    private function makeRule(string $id, Severity $severity = Severity::LOW): RuleContract
-    {
-        return new class ($id, $severity) implements RuleContract {
-            public function __construct(
-                private readonly string $ruleId,
-                private readonly Severity $ruleSeverity,
-            ) {}
-
-            public function id(): string { return $this->ruleId; }
-
-            public function title(): string { return 'Rule ' . $this->ruleId; }
-
-            public function severity(): Severity { return $this->ruleSeverity; }
-
-            public function evaluate(SecurityRuntimeContext $context): array { return []; }
-        };
-    }
-
-    private function freshRegistrar(): RuleRegistrar
-    {
-        return new RuleRegistrar(new RuleRegistry());
-    }
-
     // ------------------------------------------------------------------ rule() / rules()
 
     #[Test]
@@ -84,7 +59,7 @@ final class RuleRegistrarTest extends TestCase
     {
         $registrar = $this->freshRegistrar();
         $registrar->rule($this->makeRule('to-remove'))
-                  ->rule($this->makeRule('keep'));
+            ->rule($this->makeRule('keep'));
 
         $registrar->disable('to-remove');
 
@@ -109,7 +84,7 @@ final class RuleRegistrarTest extends TestCase
     {
         $registrar = $this->freshRegistrar();
         $registrar->rule($this->makeRule('a'))
-                  ->rule($this->makeRule('b'));
+            ->rule($this->makeRule('b'));
 
         $result = $registrar->disable('a')->disable('b');
 
@@ -189,5 +164,42 @@ final class RuleRegistrarTest extends TestCase
         $this->assertNull($registry->find('base-b'));
         $this->assertNotNull($registry->find('base-c'));
         $this->assertNotNull($registry->find('custom'));
+    }
+    // ------------------------------------------------------------------ helpers
+
+    private function makeRule(string $id, Severity $severity = Severity::LOW): RuleContract
+    {
+        return new class ($id, $severity) implements RuleContract {
+            public function __construct(
+                private readonly string $ruleId,
+                private readonly Severity $ruleSeverity,
+            ) {
+            }
+
+            public function id(): string
+            {
+                return $this->ruleId;
+            }
+
+            public function title(): string
+            {
+                return 'Rule ' . $this->ruleId;
+            }
+
+            public function severity(): Severity
+            {
+                return $this->ruleSeverity;
+            }
+
+            public function evaluate(SecurityRuntimeContext $context): array
+            {
+                return [];
+            }
+        };
+    }
+
+    private function freshRegistrar(): RuleRegistrar
+    {
+        return new RuleRegistrar(new RuleRegistry());
     }
 }

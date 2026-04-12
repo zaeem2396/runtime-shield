@@ -109,9 +109,9 @@ final class RuleRegistry
      */
     public function ids(): array
     {
-        return array_values(array_map(
+        return array_map(
             static fn (RuleContract $r): string => $r->id(),
             $this->rules,
-        ));
+        );
     }
 }
