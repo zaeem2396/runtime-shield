@@ -41,6 +41,8 @@ use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
 use RuntimeShield\Contracts\Rule\RuleContract;
 use RuntimeShield\Contracts\Rule\RuleRegistrarContract;
 use RuntimeShield\Contracts\Signal\CustomSignalCollectorContract;
+use RuntimeShield\Contracts\Plugin\PluginContract;
+use RuntimeShield\Core\Plugin\PluginRegistry;
 use RuntimeShield\Core\Rule\RuleRegistrar;
 use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\Signal\CustomSignalRegistry;
@@ -141,6 +143,8 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
         $this->app->singleton(CustomSignalStore::class, static fn (): CustomSignalStore => new CustomSignalStore());
 
         $this->app->singleton(CustomSignalRegistry::class, static fn (): CustomSignalRegistry => new CustomSignalRegistry());
+
+        $this->app->singleton(PluginRegistry::class, static fn (): PluginRegistry => new PluginRegistry());
 
         $this->app->singleton(RuleRegistry::class, static function (): RuleRegistry {
             $registry = new RuleRegistry();
@@ -293,6 +297,7 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->bootPlugins();
         $this->registerCustomRules();
         $this->registerCustomSignalCollectors();
 
@@ -313,7 +318,40 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             BenchCommand::class,
             SamplingCommand::class,
             AlertsCommand::class,
+            \RuntimeShield\Laravel\Console\PluginsCommand::class,
         ]);
+    }
+
+    /**
+     * Resolve plugin class names from extensibility.plugins, instantiate them,
+     * register into PluginRegistry, then boot all plugins to propagate their
+     * rules and signal collectors into their respective registries.
+     */
+    private function bootPlugins(): void
+    {
+        /** @var list<mixed> $pluginClasses */
+        $pluginClasses = (array) $this->app['config']->get('runtime_shield.extensibility.plugins', []);
+
+        $pluginRegistry = $this->app->make(PluginRegistry::class);
+
+        foreach ($pluginClasses as $class) {
+            if (! is_string($class) || ! class_exists($class)) {
+                continue;
+            }
+
+            $plugin = $this->app->make($class);
+
+            if ($plugin instanceof PluginContract) {
+                $pluginRegistry->register($plugin);
+            }
+        }
+
+        if ($pluginRegistry->count() > 0) {
+            $pluginRegistry->boot(
+                $this->app->make(RuleRegistry::class),
+                $this->app->make(CustomSignalRegistry::class),
+            );
+        }
     }
 
     /**
