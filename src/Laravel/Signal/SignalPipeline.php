@@ -14,6 +14,8 @@ use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
 use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
 use RuntimeShield\Core\RuntimeContextBuilder;
+use RuntimeShield\Core\Signal\CustomSignalRegistry;
+use RuntimeShield\Core\Signal\CustomSignalStore;
 use RuntimeShield\DTO\SecurityRuntimeContext;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -36,6 +38,8 @@ final class SignalPipeline implements SignalPipelineContract
         private readonly ResponseCapturerContract $responseCapturer,
         private readonly RouteCollectorContract $routeCollector,
         private readonly AuthCollectorContract $authCollector,
+        private readonly CustomSignalRegistry $customSignalRegistry = new CustomSignalRegistry(),
+        private readonly CustomSignalStore $customSignalStore = new CustomSignalStore(),
     ) {
     }
 
@@ -62,6 +66,10 @@ final class SignalPipeline implements SignalPipelineContract
         $this->signalStore->storeAuth(
             $this->authCollector->collect(),
         );
+
+        foreach ($this->customSignalRegistry->all() as $collector) {
+            $this->customSignalStore->store($collector->id(), $collector->collect($request));
+        }
     }
 
     public function assemble(Response $response, float $startTimeMs): SecurityRuntimeContext|null
@@ -104,5 +112,15 @@ final class SignalPipeline implements SignalPipelineContract
         $this->sampling = false;
         $this->signalStore->reset();
         $this->contextStore->reset();
+        $this->customSignalStore->flush();
+    }
+
+    /**
+     * Expose the custom signal store so that rules and listeners can
+     * inspect the custom signals collected during Phase 1.
+     */
+    public function customSignals(): CustomSignalStore
+    {
+        return $this->customSignalStore;
     }
 }
