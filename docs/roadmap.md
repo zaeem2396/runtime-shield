@@ -411,9 +411,9 @@ log, mail, webhook, Slack
 
 ---
 
-# 🔌 v0.9.0 — Extensibility &nbsp;🔴 Planned
+# 🔌 v0.9.0 — Extensibility &nbsp;🟢 Completed
 
-## STEP 33 — Custom Rule API &nbsp;🔴 Planned
+## STEP 33 — Custom Rule API &nbsp;🟢 Completed
 
 ```
 Allow user-defined rules
@@ -421,7 +421,7 @@ Allow user-defined rules
 
 ---
 
-## STEP 34 — Custom Signal Collectors &nbsp;🔴 Planned
+## STEP 34 — Custom Signal Collectors &nbsp;🟢 Completed
 
 ```
 Allow adding custom signals
@@ -429,7 +429,7 @@ Allow adding custom signals
 
 ---
 
-## STEP 35 — Plugin System &nbsp;🔴 Planned
+## STEP 35 — Plugin System &nbsp;🟢 Completed
 
 ```
 Register external plugins
@@ -437,7 +437,7 @@ Register external plugins
 
 ---
 
-## STEP 36 — Event Hooks &nbsp;🔴 Planned
+## STEP 36 — Event Hooks &nbsp;🟢 Completed
 
 ```
 Emit events:
