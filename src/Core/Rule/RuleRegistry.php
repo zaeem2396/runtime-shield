@@ -54,4 +54,64 @@ final class RuleRegistry
 
         return null;
     }
+
+    /**
+     * Remove the rule with the given ID from the registry.
+     * Returns true when a rule was found and removed, false when the ID
+     * was not registered.
+     */
+    public function unregister(string $id): bool
+    {
+        foreach ($this->rules as $index => $rule) {
+            if ($rule->id() === $id) {
+                array_splice($this->rules, $index, 1);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Replace an existing rule with the same ID.
+     * Returns true when the old rule was found and swapped, false when
+     * no rule with that ID existed (in which case the new rule is appended).
+     */
+    public function replace(RuleContract $rule): bool
+    {
+        foreach ($this->rules as $index => $existing) {
+            if ($existing->id() === $rule->id()) {
+                $this->rules[$index] = $rule;
+
+                return true;
+            }
+        }
+
+        $this->rules[] = $rule;
+
+        return false;
+    }
+
+    /**
+     * Remove all registered rules.
+     * Useful for test teardown or building a fresh rule set from scratch.
+     */
+    public function reset(): void
+    {
+        $this->rules = [];
+    }
+
+    /**
+     * Return the IDs of all currently registered rules.
+     *
+     * @return list<string>
+     */
+    public function ids(): array
+    {
+        return array_map(
+            static fn (RuleContract $r): string => $r->id(),
+            $this->rules,
+        );
+    }
 }

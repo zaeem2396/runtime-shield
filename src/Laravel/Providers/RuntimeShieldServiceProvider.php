@@ -5,18 +5,24 @@ declare(strict_types=1);
 namespace RuntimeShield\Laravel\Providers;
 
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
+use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
 use RuntimeShield\Contracts\Alert\AlertDispatcherContract;
 use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
+use RuntimeShield\Contracts\EventEmitterContract;
+use RuntimeShield\Contracts\Plugin\PluginContract;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
+use RuntimeShield\Contracts\Rule\RuleContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
+use RuntimeShield\Contracts\Rule\RuleRegistrarContract;
 use RuntimeShield\Contracts\SamplerContract;
 use RuntimeShield\Contracts\Score\RuleCategoryMapContract;
 use RuntimeShield\Contracts\Score\ScoreEngineContract;
 use RuntimeShield\Contracts\ShieldContract;
 use RuntimeShield\Contracts\Signal\AuthCollectorContract;
+use RuntimeShield\Contracts\Signal\CustomSignalCollectorContract;
 use RuntimeShield\Contracts\Signal\RequestCapturerContract;
 use RuntimeShield\Contracts\Signal\ResponseCapturerContract;
 use RuntimeShield\Contracts\Signal\RouteCollectorContract;
@@ -32,17 +38,22 @@ use RuntimeShield\Core\Alert\SlackChannel;
 use RuntimeShield\Core\Alert\ThrottledAlertDispatcher;
 use RuntimeShield\Core\Alert\WebhookChannel;
 use RuntimeShield\Core\ConfigRepository;
+use RuntimeShield\Core\NullEventEmitter;
 use RuntimeShield\Core\Performance\AsyncRuleEngine;
 use RuntimeShield\Core\Performance\BatchedRuleEngine;
 use RuntimeShield\Core\Performance\MetricsStore;
 use RuntimeShield\Core\Performance\NullSignalPipeline;
+use RuntimeShield\Core\Plugin\PluginRegistry;
 use RuntimeShield\Core\Report\ReportBuilder;
 use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
+use RuntimeShield\Core\Rule\RuleRegistrar;
 use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Core\Sampling\SamplerFactory;
 use RuntimeShield\Core\Score\RuleCategoryMap;
 use RuntimeShield\Core\Score\ScoreEngine;
+use RuntimeShield\Core\Signal\CustomSignalRegistry;
+use RuntimeShield\Core\Signal\CustomSignalStore;
 use RuntimeShield\Core\Signal\InMemoryContextStore;
 use RuntimeShield\Core\Signal\InMemorySignalStore;
 use RuntimeShield\DTO\Rule\Severity;
@@ -55,6 +66,7 @@ use RuntimeShield\Laravel\Console\RoutesCommand;
 use RuntimeShield\Laravel\Console\SamplingCommand;
 use RuntimeShield\Laravel\Console\ScanCommand;
 use RuntimeShield\Laravel\Console\ScoreCommand;
+use RuntimeShield\Laravel\LaravelEventEmitter;
 use RuntimeShield\Laravel\Signal\AuthSignalCollector;
 use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;
@@ -127,8 +139,16 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
                 $app->make(ResponseCapturerContract::class),
                 $app->make(RouteCollectorContract::class),
                 $app->make(AuthCollectorContract::class),
+                $app->make(CustomSignalRegistry::class),
+                $app->make(CustomSignalStore::class),
             );
         });
+
+        $this->app->singleton(CustomSignalStore::class, static fn (): CustomSignalStore => new CustomSignalStore());
+
+        $this->app->singleton(CustomSignalRegistry::class, static fn (): CustomSignalRegistry => new CustomSignalRegistry());
+
+        $this->app->singleton(PluginRegistry::class, static fn (): PluginRegistry => new PluginRegistry());
 
         $this->app->singleton(RuleRegistry::class, static function (): RuleRegistry {
             $registry = new RuleRegistry();
@@ -140,6 +160,12 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
             return $registry;
         });
+
+        $this->app->singleton(RuleRegistrar::class, static fn ($app): RuleRegistrar => new RuleRegistrar(
+            $app->make(RuleRegistry::class),
+        ));
+
+        $this->app->alias(RuleRegistrar::class, RuleRegistrarContract::class);
 
         // BatchedRuleEngine is bound as its own singleton so that CLI commands
         // needing real synchronous evaluation (e.g. BenchCommand) can inject
@@ -157,9 +183,21 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             return new AsyncRuleEngine($app->make(BatchedRuleEngine::class), $async);
         });
 
+        $this->app->singleton(EventEmitterContract::class, static function ($app): EventEmitterContract {
+            $eventsEnabled = (bool) $app['config']->get('runtime_shield.events.enabled', true);
+
+            if (! $eventsEnabled || ! $app->bound(EventDispatcher::class)) {
+                return new NullEventEmitter();
+            }
+
+            return new LaravelEventEmitter($app->make(EventDispatcher::class));
+        });
+
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
             $app->make(RuleEngineContract::class),
+            $app->make(RuleRegistry::class),
+            $app->make(EventEmitterContract::class),
         ));
 
         $this->app->singleton(\RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware::class, static function ($app): \RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware {
@@ -275,6 +313,10 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->bootPlugins();
+        $this->registerCustomRules();
+        $this->registerCustomSignalCollectors();
+
         if (! $this->app->runningInConsole()) {
             return;
         }
@@ -292,6 +334,102 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             BenchCommand::class,
             SamplingCommand::class,
             AlertsCommand::class,
+            \RuntimeShield\Laravel\Console\PluginsCommand::class,
         ]);
+    }
+
+    /**
+     * Resolve plugin class names from extensibility.plugins, instantiate them,
+     * register into PluginRegistry, then boot all plugins to propagate their
+     * rules and signal collectors into their respective registries.
+     */
+    private function bootPlugins(): void
+    {
+        /** @var \Illuminate\Config\Repository $config */
+        $config = $this->app->make('config');
+        /** @var list<mixed> $pluginClasses */
+        $pluginClasses = (array) $config->get('runtime_shield.extensibility.plugins', []);
+
+        $pluginRegistry = $this->app->make(PluginRegistry::class);
+
+        foreach ($pluginClasses as $class) {
+            if (! is_string($class) || ! class_exists($class)) {
+                continue;
+            }
+
+            $plugin = $this->app->make($class);
+
+            if ($plugin instanceof PluginContract) {
+                $pluginRegistry->register($plugin);
+            }
+        }
+
+        if ($pluginRegistry->count() > 0) {
+            $pluginRegistry->boot(
+                $this->app->make(RuleRegistry::class),
+                $this->app->make(CustomSignalRegistry::class),
+            );
+        }
+    }
+
+    /**
+     * Resolve any custom signal collector class names declared in
+     * extensibility.signal_collectors and register them into the singleton
+     * CustomSignalRegistry so the pipeline picks them up at boot time.
+     */
+    private function registerCustomSignalCollectors(): void
+    {
+        /** @var \Illuminate\Config\Repository $config */
+        $config = $this->app->make('config');
+        /** @var list<mixed> $collectorClasses */
+        $collectorClasses = (array) $config->get('runtime_shield.extensibility.signal_collectors', []);
+
+        if ($collectorClasses === []) {
+            return;
+        }
+
+        $registry = $this->app->make(CustomSignalRegistry::class);
+
+        foreach ($collectorClasses as $class) {
+            if (! is_string($class) || ! class_exists($class)) {
+                continue;
+            }
+
+            $collector = $this->app->make($class);
+
+            if ($collector instanceof CustomSignalCollectorContract) {
+                $registry->register($collector);
+            }
+        }
+    }
+
+    /**
+     * Resolve any custom rule class names declared in extensibility.rules
+     * and register them into the shared RuleRegistry singleton.
+     */
+    private function registerCustomRules(): void
+    {
+        /** @var \Illuminate\Config\Repository $config */
+        $config = $this->app->make('config');
+        /** @var list<mixed> $ruleClasses */
+        $ruleClasses = (array) $config->get('runtime_shield.extensibility.rules', []);
+
+        if ($ruleClasses === []) {
+            return;
+        }
+
+        $registry = $this->app->make(RuleRegistry::class);
+
+        foreach ($ruleClasses as $class) {
+            if (! is_string($class) || ! class_exists($class)) {
+                continue;
+            }
+
+            $rule = $this->app->make($class);
+
+            if ($rule instanceof RuleContract) {
+                $registry->register($rule);
+            }
+        }
     }
 }

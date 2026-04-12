@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace RuntimeShield\Engine;
 
 use RuntimeShield\Contracts\EngineContract;
+use RuntimeShield\Contracts\EventEmitterContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
+use RuntimeShield\Core\NullEventEmitter;
+use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\DTO\Rule\ViolationCollection;
 use RuntimeShield\DTO\SecurityRuntimeContext;
@@ -17,6 +20,7 @@ use RuntimeShield\DTO\SecurityRuntimeContext;
  * - v0.1.0: boot lifecycle, idempotency guard, enabled check
  * - v0.4.0+: rule evaluation, violation collection
  * - v0.7.0+: async / batched rule execution
+ * - v0.9.0+: lifecycle event hooks (BeforeScan, AfterScan, ViolationDetected)
  */
 final class RuntimeShieldEngine implements EngineContract
 {
@@ -25,6 +29,8 @@ final class RuntimeShieldEngine implements EngineContract
     public function __construct(
         private readonly RuntimeShieldManager $manager,
         private readonly RuleEngineContract $ruleEngine,
+        private readonly RuleRegistry $registry = new RuleRegistry(),
+        private readonly EventEmitterContract $emitter = new NullEventEmitter(),
     ) {
     }
 
@@ -65,12 +71,28 @@ final class RuntimeShieldEngine implements EngineContract
      * Run all registered security rules against the given context and return
      * a collection of any violations found.
      *
+     * Fires BeforeScanEvent before evaluation and AfterScanEvent after.
+     * For each individual violation, ViolationDetectedEvent is also fired.
+     *
      * This is the primary entry-point for on-demand rule evaluation; the CLI
      * scanner and any event listeners can call this directly without touching
      * the middleware pipeline.
      */
     public function evaluate(SecurityRuntimeContext $context): ViolationCollection
     {
-        return $this->ruleEngine->run($context);
+        $ruleCount = $this->registry->count();
+        $this->emitter->beforeScan($context, $ruleCount);
+
+        $start = hrtime(true);
+        $violations = $this->ruleEngine->run($context);
+        $durationMs = (hrtime(true) - $start) / 1_000_000;
+
+        foreach ($violations->all() as $violation) {
+            $this->emitter->violationDetected($violation, $context);
+        }
+
+        $this->emitter->afterScan($context, $violations, $durationMs);
+
+        return $violations;
     }
 }

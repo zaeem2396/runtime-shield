@@ -7,6 +7,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v0.9.0] — 2026-04-09 — Extensibility
+
+### Overview
+
+Transforms RuntimeShield from a monolithic scanner into an **open, extensible platform**.
+Four integrated subsystems give developers complete control over the package's behaviour
+without ever touching its source code:
+
+**Custom Rule API** — `RuleRegistry` gains `unregister()`, `replace()`, `reset()`, and
+`ids()` for surgical control over which rules are active. `AbstractRule` provides a
+zero-boilerplate base class with a `make()` helper so writing a rule is a handful of lines.
+`RuleRegistrar` exposes a fluent builder (`rule() → rules() → disable() → replace()`) that
+can be chained in service providers. Custom rule class names can be listed in
+`extensibility.rules` and are resolved from the container automatically.
+
+**Custom Signal Collectors** — `CustomSignalCollectorContract` allows injecting arbitrary
+key/value data into every request's context. Collectors are stored in a `CustomSignalStore`
+keyed by collector ID, made available to custom rules and event listeners. A
+`CustomSignalRegistry` singleton holds all registered collectors, which are iterated by
+`SignalPipeline` during Phase 1. Collector class names can be listed in
+`extensibility.signal_collectors` and auto-registered at boot.
+
+**Plugin System** — `PluginContract` bundles rules, signal collectors, and bootstrap logic
+into a single distributable unit. `AbstractPlugin` provides empty defaults so plugins only
+implement what they need. `PluginRegistry` boots all registered plugins by propagating their
+rules and collectors to the respective registries and calling each plugin's `boot()` method.
+Plugin class names are listed in `extensibility.plugins` and are resolved from the container.
+A new `runtime-shield:plugins` Artisan command lists all active plugins with rule and
+collector counts.
+
+**Event Hooks** — `BeforeScanEvent`, `AfterScanEvent`, and `ViolationDetectedEvent` are
+fired by the engine at key scan lifecycle points via `EventEmitterContract`. The Laravel
+implementation (`LaravelEventEmitter`) wraps `Illuminate\Contracts\Events\Dispatcher` and
+fires real Laravel events. `NullEventEmitter` is used in non-Laravel or testing contexts.
+Events are enabled by default and can be disabled via `events.enabled` config or
+`RUNTIME_SHIELD_EVENTS_ENABLED`.
+
+**Test count: 82 new tests — 603 total**
+
+---
+
+### Added
+
+#### Contracts — `RuntimeShield\Contracts`
+
+- `RuleRegistrarContract` — fluent interface for `rule()`, `rules()`, `disable()`, `replace()`
+- `EventEmitterContract` — `beforeScan()`, `afterScan()`, `violationDetected()` for lifecycle hooks
+- `CustomSignalCollectorContract` — `id(): string`, `collect(Request): array<string, mixed>`
+- `PluginContract` — `id()`, `name()`, `rules()`, `signalCollectors()`, `boot()`
+
+#### Core — `RuntimeShield\Core`
+
+- `AbstractRule` — base class implementing `RuleContract` with default `Severity::LOW` and `make()` helper
+- `RuleRegistrar` — fluent builder wrapping `RuleRegistry`; supports `rule()`, `rules()`, `disable()`, `replace()`, `registry()`
+- `CustomSignalStore` — keyed in-memory store for custom signal data (`store`, `get`, `has`, `all`, `count`, `flush`)
+- `CustomSignalRegistry` — singleton registry of `CustomSignalCollectorContract` instances
+- `AbstractPlugin` — convenience base class with empty `rules()`, `signalCollectors()`, and no-op `boot()`
+- `PluginRegistry` — registers plugins and boots them via `boot(RuleRegistry, CustomSignalRegistry)`
+- `NullEventEmitter` — zero-overhead no-op implementation of `EventEmitterContract`
+
+#### RuleRegistry extensions
+
+- `unregister(string $id): bool` — remove a rule by ID; returns `true` if found
+- `replace(RuleContract $rule): bool` — swap rule with same ID, or append if not found; returns `true` if swapped
+- `reset(): void` — remove all registered rules
+- `ids(): list<string>` — return IDs of all registered rules
+
+#### Laravel — `RuntimeShield\Laravel`
+
+- `LaravelEventEmitter` — wraps `Illuminate\Contracts\Events\Dispatcher`; fires `BeforeScanEvent`, `AfterScanEvent`, `ViolationDetectedEvent`
+- `Events\BeforeScanEvent` — `context`, `ruleCount`, `startedAt`
+- `Events\AfterScanEvent` — `context`, `violations`, `durationMs`; helper `hasViolations()`
+- `Events\ViolationDetectedEvent` — `violation`, `context`, `detectedAt`
+- `Console\PluginsCommand` — `runtime-shield:plugins` lists registered plugins with rule/collector counts
+
+#### Configuration — `config/runtime_shield.php`
+
+- `extensibility.rules` — FQCN list of custom rules to auto-register at boot
+- `extensibility.signal_collectors` — FQCN list of custom signal collectors to auto-register
+- `extensibility.plugins` — FQCN list of plugins to boot at startup
+- `events.enabled` — master switch for lifecycle events (default `true`)
+
+### Changed
+
+- `RuntimeShieldEngine::evaluate()` — fires `BeforeScanEvent`, per-violation `ViolationDetectedEvent`, and `AfterScanEvent`; measures evaluation duration
+- `RuntimeShieldEngine` — now injects `RuleRegistry` (for rule count in events) and `EventEmitterContract` (defaulting to `NullEventEmitter`)
+- `SignalPipeline` — now accepts `CustomSignalRegistry` and `CustomSignalStore`; iterates collectors in `collectRequest()` and flushes store in `reset()`
+- `RuntimeShieldServiceProvider` — binds `RuleRegistrar`, `CustomSignalStore`, `CustomSignalRegistry`, `PluginRegistry`, `EventEmitterContract`; boots plugins and auto-registers rules/collectors from config
+
+### Tests
+
+- `RuleRegistryExtendedTest` — `unregister`, `replace`, `reset`, `ids` (15 assertions)
+- `AbstractRuleTest` — default severity, `make()` helper, severity override (14 assertions)
+- `RuleRegistrarTest` — `rule`, `rules`, `disable`, `replace`, chaining, `registry()` (22 assertions)
+- `CustomSignalStoreTest` — `store`, `get`, `has`, `all`, `count`, `flush` (19 assertions)
+- `CustomSignalRegistryTest` — `register`, `all`, `has`, `find`, `unregister`, `count` (20 assertions)
+- `PluginRegistryTest` — `register`, `all`, `has`, `find`, `boot` rules/collectors/lifecycle (18 assertions)
+- `AbstractPluginTest` — default returns, overridable `rules`/`collectors`/`boot`, `id`/`name` (9 assertions)
+- `NullEventEmitterTest` — no-op behaviour, contract implementation, zero state (2 assertions)
+- `LaravelEventEmitterTest` — `BeforeScanEvent`, `AfterScanEvent`, `ViolationDetectedEvent` dispatch via mock (20 assertions)
+
+---
+
 ## [v0.8.0] — 2026-04-12 — Alerting & Notifications
 
 ### Overview

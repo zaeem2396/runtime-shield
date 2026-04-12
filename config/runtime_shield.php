@@ -182,4 +182,58 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Extensibility
+    |--------------------------------------------------------------------------
+    |
+    | Register custom rules, signal collectors, and plugins that extend
+    | RuntimeShield's core behaviour without modifying package source code.
+    |
+    | rules            — FQCN list of classes implementing RuleContract (or
+    |                    extending AbstractRule). Each is resolved from the
+    |                    container so constructor injection is supported.
+    |
+    | signal_collectors — FQCN list of classes implementing
+    |                    CustomSignalCollectorContract. Each collector is
+    |                    invoked during Phase 1 of the signal pipeline and its
+    |                    key→value output is stored in CustomSignalStore.
+    |
+    | plugins          — FQCN list of classes implementing PluginContract (or
+    |                    extending AbstractPlugin). Plugins bundle rules and
+    |                    collectors into reusable, distributable packages.
+    |
+    */
+    /*
+    |--------------------------------------------------------------------------
+    | Event Hooks
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, RuntimeShield fires Laravel events at key scan lifecycle
+    | points: BeforeScanEvent, AfterScanEvent, and ViolationDetectedEvent.
+    |
+    | Disable this when you do not use the events to avoid the Dispatcher
+    | dispatch overhead on every evaluated request.
+    |
+    */
+    'events' => [
+        'enabled' => (bool) env('RUNTIME_SHIELD_EVENTS_ENABLED', true),
+    ],
+
+    'extensibility' => [
+
+        'rules' => [
+            // App\Rules\MyCustomRule::class,
+        ],
+
+        'signal_collectors' => [
+            // App\Signals\MySignalCollector::class,
+        ],
+
+        'plugins' => [
+            // App\Plugins\MyPlugin::class,
+        ],
+
+    ],
+
 ];
