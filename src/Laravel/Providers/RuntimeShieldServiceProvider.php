@@ -40,8 +40,11 @@ use RuntimeShield\Core\Report\ReportBuilder;
 use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
 use RuntimeShield\Contracts\Rule\RuleContract;
 use RuntimeShield\Contracts\Rule\RuleRegistrarContract;
+use RuntimeShield\Contracts\Signal\CustomSignalCollectorContract;
 use RuntimeShield\Core\Rule\RuleRegistrar;
 use RuntimeShield\Core\Rule\RuleRegistry;
+use RuntimeShield\Core\Signal\CustomSignalRegistry;
+use RuntimeShield\Core\Signal\CustomSignalStore;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Core\Sampling\SamplerFactory;
 use RuntimeShield\Core\Score\RuleCategoryMap;
@@ -130,8 +133,14 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
                 $app->make(ResponseCapturerContract::class),
                 $app->make(RouteCollectorContract::class),
                 $app->make(AuthCollectorContract::class),
+                $app->make(CustomSignalRegistry::class),
+                $app->make(CustomSignalStore::class),
             );
         });
+
+        $this->app->singleton(CustomSignalStore::class, static fn (): CustomSignalStore => new CustomSignalStore());
+
+        $this->app->singleton(CustomSignalRegistry::class, static fn (): CustomSignalRegistry => new CustomSignalRegistry());
 
         $this->app->singleton(RuleRegistry::class, static function (): RuleRegistry {
             $registry = new RuleRegistry();
@@ -285,6 +294,7 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerCustomRules();
+        $this->registerCustomSignalCollectors();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -304,6 +314,35 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             SamplingCommand::class,
             AlertsCommand::class,
         ]);
+    }
+
+    /**
+     * Resolve any custom signal collector class names declared in
+     * extensibility.signal_collectors and register them into the singleton
+     * CustomSignalRegistry so the pipeline picks them up at boot time.
+     */
+    private function registerCustomSignalCollectors(): void
+    {
+        /** @var list<mixed> $collectorClasses */
+        $collectorClasses = (array) $this->app['config']->get('runtime_shield.extensibility.signal_collectors', []);
+
+        if ($collectorClasses === []) {
+            return;
+        }
+
+        $registry = $this->app->make(CustomSignalRegistry::class);
+
+        foreach ($collectorClasses as $class) {
+            if (! is_string($class) || ! class_exists($class)) {
+                continue;
+            }
+
+            $collector = $this->app->make($class);
+
+            if ($collector instanceof CustomSignalCollectorContract) {
+                $registry->register($collector);
+            }
+        }
     }
 
     /**
