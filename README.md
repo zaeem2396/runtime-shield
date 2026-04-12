@@ -9,7 +9,7 @@
 
 > Runtime security analysis and observation for PHP 8.2+ applications — with first-class Laravel 10 / 11 / 12 / 13 support.
 
-RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, evaluates configurable security rules in **batches with timeout protection**, dispatches evaluation **asynchronously** to the queue when needed, samples traffic **per environment**, and produces a weighted **Security Score** (0–100) with per-category breakdown — with absolute zero overhead when disabled.
+RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, evaluates configurable security rules in **batches with timeout protection**, dispatches evaluation **asynchronously** to the queue when needed, samples traffic **per environment**, produces a weighted **Security Score** (0–100) with per-category breakdown, and **alerts your team** via Log, Webhook, Slack or Mail when violations are detected — with absolute zero overhead when disabled.
 
 ---
 
@@ -571,6 +571,110 @@ literally nothing executed on the hot path.
 
 ---
 
+## Alerting & Notifications (v0.8.0+)
+
+Receive real-time alerts when security violations are detected during live HTTP traffic.
+
+### Enabling alerts
+
+```php
+// config/runtime_shield.php
+'alerts' => [
+    'enabled'          => true,         // master switch
+    'min_severity'     => 'high',       // critical | high | medium | low | info
+    'throttle_seconds' => 300,          // cooldown per rule (0 = no throttle)
+    'async'            => false,        // true = queue via AlertDispatchJob
+
+    'channels' => [
+        'log' => [
+            'enabled' => true,
+            'channel' => 'stack',       // Laravel log channel
+        ],
+        'webhook' => [
+            'enabled' => true,
+            'url'     => env('RUNTIME_SHIELD_WEBHOOK_URL'),
+            'method'  => 'POST',
+            'headers' => [],
+        ],
+        'slack' => [
+            'enabled' => true,
+            'url'     => env('RUNTIME_SHIELD_SLACK_WEBHOOK_URL'),
+        ],
+        'mail' => [
+            'enabled'    => true,
+            'recipients' => ['security@yourapp.com'],
+            'from'       => env('MAIL_FROM_ADDRESS'),
+        ],
+    ],
+],
+```
+
+Or via environment variables:
+
+```ini
+RUNTIME_SHIELD_ALERTS_ENABLED=true
+RUNTIME_SHIELD_ALERT_MIN_SEVERITY=high
+RUNTIME_SHIELD_ALERT_THROTTLE=300
+RUNTIME_SHIELD_WEBHOOK_URL=https://hooks.example.com/security
+RUNTIME_SHIELD_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T/B/x
+```
+
+### How it works
+
+1. Alerts fire in `terminate()` — **after** the HTTP response is already sent, so the client never waits.
+2. The middleware runs rule evaluation only when `alerts.enabled = true` (zero-overhead otherwise).
+3. Violations at or above `min_severity` are forwarded to every enabled channel.
+4. Each rule is **throttled** independently — a rule that fires once won't alert again until the cooldown expires.
+5. Set `async = true` to dispatch `AlertDispatchJob` to your queue instead of blocking `terminate()`.
+
+### Alert Throttling
+
+Each rule ID has its own cooldown window. Once a rule triggers an alert it is silenced for `throttle_seconds`:
+
+```
+RUNTIME_SHIELD_ALERT_THROTTLE=600   # 10 minutes per rule
+```
+
+Set `throttle_seconds = 0` to disable throttling and receive every occurrence.
+
+### Inspect active alert config
+
+```bash
+php artisan runtime-shield:alerts
+```
+
+```
+ RuntimeShield Alert Channels
+──────────────────────────────────────────────────
+
+  Status:           ENABLED
+  Min Severity:     HIGH
+  Throttle:         300 s
+  Async Dispatch:   no
+
+ ┌─────────┬─────────┬───────────────────────────────────┐
+ │ Channel │ Status  │ Config key                        │
+ ├─────────┼─────────┼───────────────────────────────────┤
+ │ log     │ ✔ On    │ alerts.channels.log.channel       │
+ │ webhook │ ✘ Off   │ alerts.channels.webhook.url       │
+ │ slack   │ ✘ Off   │ alerts.channels.slack.url         │
+ │ mail    │ ✘ Off   │ alerts.channels.mail.recipients   │
+ └─────────┴─────────┴───────────────────────────────────┘
+```
+
+### Hooking into alert events
+
+```php
+use RuntimeShield\Laravel\Events\ViolationAlertedEvent;
+
+Event::listen(ViolationAlertedEvent::class, function (ViolationAlertedEvent $e) {
+    // $e->alertEvent->violations, $e->alertEvent->route, $e->alertEvent->triggeredAt
+    MyMonitoringService::record($e->alertEvent->toArray());
+});
+```
+
+---
+
 ## Artisan Commands
 
 | Command | Description |
@@ -583,6 +687,7 @@ literally nothing executed on the hot path.
 | `runtime-shield:score` | Weighted security score with category breakdown (v0.6.0+) |
 | `runtime-shield:bench` | Benchmark rule evaluation time per route (v0.7.0+) |
 | `runtime-shield:sampling` | Display active sampler type and effective rate (v0.7.0+) |
+| `runtime-shield:alerts` | Display alert channel config and status (v0.8.0+) |
 
 ---
 

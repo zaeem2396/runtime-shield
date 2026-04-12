@@ -369,9 +369,9 @@ Configurable per env
 
 ---
 
-# 🔔 v0.8.0 — Alerting &amp; Notifications &nbsp;🔴 Planned
+# 🔔 v0.8.0 — Alerting &amp; Notifications &nbsp;🟢 Completed
 
-## STEP 29 — Webhook Dispatcher &nbsp;🔴 Planned
+## STEP 29 — Webhook Dispatcher &nbsp;🟢 Completed
 
 ```
 Dispatch HTTP webhook on critical violations
@@ -380,7 +380,7 @@ Configurable URL, method, and payload
 
 ---
 
-## STEP 30 — Alert Throttling &nbsp;🔴 Planned
+## STEP 30 — Alert Throttling &nbsp;🟢 Completed
 
 ```
 Prevent alert floods
@@ -389,7 +389,7 @@ Cooldown period per rule / channel
 
 ---
 
-## STEP 31 — Mail Notifications &nbsp;🔴 Planned
+## STEP 31 — Mail Notifications &nbsp;🟢 Completed
 
 ```
 Send email on CRITICAL or HIGH violations
@@ -398,7 +398,7 @@ Configurable recipients and severity threshold
 
 ---
 
-## STEP 32 — Alert Channels &nbsp;🔴 Planned
+## STEP 32 — Alert Channels &nbsp;🟢 Completed
 
 ```
 Configurable alert channels:
