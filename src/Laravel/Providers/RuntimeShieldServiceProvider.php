@@ -38,6 +38,9 @@ use RuntimeShield\Core\Performance\MetricsStore;
 use RuntimeShield\Core\Performance\NullSignalPipeline;
 use RuntimeShield\Core\Report\ReportBuilder;
 use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
+use RuntimeShield\Contracts\Rule\RuleContract;
+use RuntimeShield\Contracts\Rule\RuleRegistrarContract;
+use RuntimeShield\Core\Rule\RuleRegistrar;
 use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Core\Sampling\SamplerFactory;
@@ -140,6 +143,12 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
             return $registry;
         });
+
+        $this->app->singleton(RuleRegistrar::class, static fn ($app): RuleRegistrar => new RuleRegistrar(
+            $app->make(RuleRegistry::class),
+        ));
+
+        $this->app->alias(RuleRegistrar::class, RuleRegistrarContract::class);
 
         // BatchedRuleEngine is bound as its own singleton so that CLI commands
         // needing real synchronous evaluation (e.g. BenchCommand) can inject
@@ -275,6 +284,8 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerCustomRules();
+
         if (! $this->app->runningInConsole()) {
             return;
         }
@@ -293,5 +304,33 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             SamplingCommand::class,
             AlertsCommand::class,
         ]);
+    }
+
+    /**
+     * Resolve any custom rule class names declared in extensibility.rules
+     * and register them into the shared RuleRegistry singleton.
+     */
+    private function registerCustomRules(): void
+    {
+        /** @var list<mixed> $ruleClasses */
+        $ruleClasses = (array) $this->app['config']->get('runtime_shield.extensibility.rules', []);
+
+        if ($ruleClasses === []) {
+            return;
+        }
+
+        $registry = $this->app->make(RuleRegistry::class);
+
+        foreach ($ruleClasses as $class) {
+            if (! is_string($class) || ! class_exists($class)) {
+                continue;
+            }
+
+            $rule = $this->app->make($class);
+
+            if ($rule instanceof RuleContract) {
+                $registry->register($rule);
+            }
+        }
     }
 }
