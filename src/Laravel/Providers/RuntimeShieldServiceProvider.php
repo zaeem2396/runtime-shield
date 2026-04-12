@@ -41,13 +41,17 @@ use RuntimeShield\Core\Report\RouteProtectionAnalyzer;
 use RuntimeShield\Contracts\Rule\RuleContract;
 use RuntimeShield\Contracts\Rule\RuleRegistrarContract;
 use RuntimeShield\Contracts\Signal\CustomSignalCollectorContract;
+use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
+use RuntimeShield\Contracts\EventEmitterContract;
 use RuntimeShield\Contracts\Plugin\PluginContract;
 use RuntimeShield\Core\Plugin\PluginRegistry;
 use RuntimeShield\Core\Rule\RuleRegistrar;
 use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\Signal\CustomSignalRegistry;
 use RuntimeShield\Core\Signal\CustomSignalStore;
+use RuntimeShield\Core\NullEventEmitter;
 use RuntimeShield\Core\RuntimeShieldManager;
+use RuntimeShield\Laravel\LaravelEventEmitter;
 use RuntimeShield\Core\Sampling\SamplerFactory;
 use RuntimeShield\Core\Score\RuleCategoryMap;
 use RuntimeShield\Core\Score\ScoreEngine;
@@ -179,9 +183,21 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             return new AsyncRuleEngine($app->make(BatchedRuleEngine::class), $async);
         });
 
+        $this->app->singleton(EventEmitterContract::class, static function ($app): EventEmitterContract {
+            $eventsEnabled = (bool) $app['config']->get('runtime_shield.events.enabled', true);
+
+            if (! $eventsEnabled || ! $app->bound(EventDispatcher::class)) {
+                return new NullEventEmitter();
+            }
+
+            return new LaravelEventEmitter($app->make(EventDispatcher::class));
+        });
+
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
             $app->make(RuleEngineContract::class),
+            $app->make(RuleRegistry::class),
+            $app->make(EventEmitterContract::class),
         ));
 
         $this->app->singleton(\RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware::class, static function ($app): \RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware {

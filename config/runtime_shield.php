@@ -204,6 +204,22 @@ return [
     |                    collectors into reusable, distributable packages.
     |
     */
+    /*
+    |--------------------------------------------------------------------------
+    | Event Hooks
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, RuntimeShield fires Laravel events at key scan lifecycle
+    | points: BeforeScanEvent, AfterScanEvent, and ViolationDetectedEvent.
+    |
+    | Disable this when you do not use the events to avoid the Dispatcher
+    | dispatch overhead on every evaluated request.
+    |
+    */
+    'events' => [
+        'enabled' => (bool) env('RUNTIME_SHIELD_EVENTS_ENABLED', true),
+    ],
+
     'extensibility' => [
 
         'rules' => [
