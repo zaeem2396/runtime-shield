@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v1.0.0] — Unreleased — AI Advisory
+
+### Overview
+
+Introduces an optional AI advisory layer that augments deterministic rule violations
+with human-readable explanations, advisory severity hints, and confidence metadata.
+Core scanning remains deterministic and fully operational when AI is disabled.
+
+### Added
+
+- Planned `AdvisoryExplanation` DTO fields: `summary`, `impact`, `remediation`
+- Planned advisory metadata fields: `advisorySeverity`, `confidence`, `rationale`
+
+### Changed
+
+- Planned serializer updates to include advisory metadata only when enabled
+- Planned CLI table/JSON formatting updates for advisory fields
+
+### Fixed
+
+- Planned deterministic fallback path when AI providers fail or timeout
+- Planned strict null-handling to avoid advisory regressions in existing consumers
+
+### Tests
+
+- Planned unit tests for advisory DTO normalization and confidence bounds
+- Planned integration tests for AI disabled mode and provider timeout fallback
+
+### Migration notes
+
+- No breaking configuration changes are planned for existing users.
+- AI support is opt-in; default behaviour remains unchanged.
+
+### Release checklist
+
+- [ ] `composer run format:test`
+- [ ] `composer run analyse`
+- [ ] `composer run test`
+
+---
+
 ## [v0.9.0] — 2026-04-09 — Extensibility
 
 ### Overview

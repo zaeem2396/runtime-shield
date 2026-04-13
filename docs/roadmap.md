@@ -452,11 +452,20 @@ beforeScan, afterScan, violationDetected
 
 # 🤖 v1.0.0 — AI Advisory &nbsp;🔴 Planned
 
+Goal: add optional AI-generated advisory context without compromising deterministic scanning.
+
+Rollout: ship behind `ai.enabled=false` default, then enable per-environment gradually.
+
 ## STEP 37 — AI Explanation Layer &nbsp;🔴 Planned
 
 ```
 Explain violations in human-readable format
+Define strict advisory DTO schema for stable output
 ```
+
+Acceptance criteria:
+- Explanation includes summary, impact, and remediation.
+- Missing provider credentials never break scan command output.
 
 ---
 
@@ -464,7 +473,12 @@ Explain violations in human-readable format
 
 ```
 AI-assisted severity scoring
+Keep deterministic severity as baseline and store advisory severity separately
 ```
+
+Acceptance criteria:
+- Advisory severity never overwrites deterministic rule severity.
+- `runtime-shield:score` remains based on deterministic severity only.
 
 ---
 
@@ -472,7 +486,12 @@ AI-assisted severity scoring
 
 ```
 Assign confidence level per issue
+Document score range normalization to 0.00-1.00
 ```
+
+Acceptance criteria:
+- Confidence values are bounded and validated.
+- Confidence defaults to `null` when advisory is unavailable.
 
 ---
 
@@ -481,11 +500,23 @@ Assign confidence level per issue
 ```
 Enable/disable AI
 Support multiple providers
+Add timeout and retry guardrails
 ```
+
+Acceptance criteria:
+- Provider, timeout, and token limits are configurable via env vars.
+- Disabling AI skips provider calls entirely.
 
 ---
 
 ✅ `git tag v1.0.0`
+
+Release gate checklist:
+- [ ] `composer run format:test`
+- [ ] `composer run analyse`
+- [ ] `composer run test`
+- [ ] Document provider-specific setup examples in README
+- [ ] Add upgrade note in CHANGELOG
 
 ---
 
