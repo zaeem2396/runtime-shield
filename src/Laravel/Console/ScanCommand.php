@@ -7,9 +7,12 @@ namespace RuntimeShield\Laravel\Console;
 use Illuminate\Console\Command;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Str;
+use RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Contracts\Score\ScoreEngineContract;
 use RuntimeShield\Core\RuntimeContextBuilder;
+use RuntimeShield\DTO\Advisory\AdvisorySource;
 use RuntimeShield\DTO\Rule\Violation;
 use RuntimeShield\DTO\Rule\ViolationCollection;
 use RuntimeShield\DTO\SecurityRuntimeContext;
@@ -27,7 +30,8 @@ final class ScanCommand extends Command
 {
     protected $signature = 'runtime-shield:scan
                             {--format=table : Output format (table|json)}
-                            {--score : Show the weighted security score after scanning}';
+                            {--score : Show the weighted security score after scanning}
+                            {--no-ai : Skip AI advisory enrichment for this run}';
 
     protected $description = 'Scan all registered routes for security violations';
 
@@ -35,6 +39,7 @@ final class ScanCommand extends Command
         private readonly Router $router,
         private readonly RuleEngineContract $ruleEngine,
         private readonly ScoreEngineContract $scoreEngine,
+        private readonly ViolationAdvisoryEnricherContract $advisoryEnricher,
     ) {
         parent::__construct();
     }
@@ -50,6 +55,10 @@ final class ScanCommand extends Command
         $this->line('');
 
         $violations = $this->evaluateRoutes($routes);
+
+        if (! (bool) $this->option('no-ai')) {
+            $violations = $this->advisoryEnricher->enrich($violations, AdvisorySource::Cli);
+        }
 
         if ($violations->isEmpty()) {
             $this->line('<fg=green>  ✔ No security violations detected.</>');
@@ -232,9 +241,15 @@ final class ScanCommand extends Command
             $severity = $violation->severity;
             $label = "<fg={$severity->color()}>{$severity->label()}</>";
 
+            $ruleCell = $violation->title;
+
+            if ($violation->advisory !== null) {
+                $ruleCell .= "\n<fg=gray>" . Str::limit($violation->advisory->summary, 72) . '</>';
+            }
+
             $rows[] = [
                 $violation->route !== '' ? $violation->route : '—',
-                $violation->title,
+                $ruleCell,
                 $label,
             ];
         }
