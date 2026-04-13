@@ -450,13 +450,13 @@ beforeScan, afterScan, violationDetected
 
 ---
 
-# 🤖 v1.0.0 — AI Advisory &nbsp;🔴 Planned
+# 🤖 v1.0.0 — AI Advisory &nbsp;🟢 Completed
 
 Goal: add optional AI-generated advisory context without compromising deterministic scanning.
 
 Rollout: ship behind `ai.enabled=false` default, then enable per-environment gradually.
 
-## STEP 37 — AI Explanation Layer &nbsp;🔴 Planned
+## STEP 37 — AI Explanation Layer &nbsp;🟢 Completed
 
 ```
 Explain violations in human-readable format
@@ -469,7 +469,7 @@ Acceptance criteria:
 
 ---
 
-## STEP 38 — Severity Classification &nbsp;🔴 Planned
+## STEP 38 — Severity Classification &nbsp;🟢 Completed
 
 ```
 AI-assisted severity scoring
@@ -482,7 +482,7 @@ Acceptance criteria:
 
 ---
 
-## STEP 39 — Confidence Score &nbsp;🔴 Planned
+## STEP 39 — Confidence Score &nbsp;🟢 Completed
 
 ```
 Assign confidence level per issue
@@ -495,7 +495,7 @@ Acceptance criteria:
 
 ---
 
-## STEP 40 — AI Config &nbsp;🔴 Planned
+## STEP 40 — AI Config &nbsp;🟢 Completed
 
 ```
 Enable/disable AI
@@ -512,11 +512,11 @@ Acceptance criteria:
 ✅ `git tag v1.0.0`
 
 Release gate checklist:
-- [ ] `composer run format:test`
-- [ ] `composer run analyse`
-- [ ] `composer run test`
-- [ ] Document provider-specific setup examples in README
-- [ ] Add upgrade note in CHANGELOG
+- [x] `composer run format:test`
+- [x] `composer run analyse`
+- [x] `composer run test`
+- [x] Document provider-specific setup examples in README
+- [x] Add upgrade note in CHANGELOG
 
 ---
 

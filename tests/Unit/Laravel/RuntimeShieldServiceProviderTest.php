@@ -6,9 +6,11 @@ namespace RuntimeShield\Tests\Unit\Laravel;
 
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract;
 use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\ShieldContract;
+use RuntimeShield\Core\Advisory\NullViolationAdvisoryEnricher;
 use RuntimeShield\Core\ConfigRepository;
 use RuntimeShield\Core\RuntimeShieldManager;
 use RuntimeShield\Engine\RuntimeShieldEngine;
@@ -26,6 +28,7 @@ final class RuntimeShieldServiceProviderTest extends TestCase
         $this->assertArrayHasKey('sampling_rate', $config);
         $this->assertArrayHasKey('rules', $config);
         $this->assertArrayHasKey('performance', $config);
+        $this->assertArrayHasKey('ai', $config);
     }
 
     #[Test]
@@ -77,6 +80,14 @@ final class RuntimeShieldServiceProviderTest extends TestCase
         $b = $this->app->make(EngineContract::class);
 
         $this->assertSame($a, $b);
+    }
+
+    #[Test]
+    public function it_resolves_null_advisory_enricher_when_ai_is_not_configured(): void
+    {
+        $enricher = $this->app->make(ViolationAdvisoryEnricherContract::class);
+
+        $this->assertInstanceOf(NullViolationAdvisoryEnricher::class, $enricher);
     }
 
     #[Test]
