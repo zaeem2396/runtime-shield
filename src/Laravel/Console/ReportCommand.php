@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace RuntimeShield\Laravel\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
+use RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
 use RuntimeShield\Contracts\Score\ScoreEngineContract;
+use RuntimeShield\DTO\Advisory\AdvisorySource;
 use RuntimeShield\DTO\Report\SecurityReport;
 use RuntimeShield\DTO\Rule\Severity;
 use RuntimeShield\DTO\Score\CategoryScore;
@@ -23,13 +26,15 @@ final class ReportCommand extends Command
 {
     protected $signature = 'runtime-shield:report
                             {--format=table : Output format (table|json)}
-                            {--save= : Optional file path to write JSON report output}';
+                            {--save= : Optional file path to write JSON report output}
+                            {--no-ai : Skip AI advisory enrichment for this run}';
 
     protected $description = 'Generate a full security report for all registered routes';
 
     public function __construct(
         private readonly ReportBuilderContract $builder,
         private readonly ScoreEngineContract $scoreEngine,
+        private readonly ViolationAdvisoryEnricherContract $advisoryEnricher,
     ) {
         parent::__construct();
     }
@@ -41,6 +46,17 @@ final class ReportCommand extends Command
         $this->line(CliRenderer::divider(52));
 
         $report = $this->builder->build();
+
+        if (! (bool) $this->option('no-ai')) {
+            $enriched = $this->advisoryEnricher->enrich($report->violations, AdvisorySource::Cli);
+            $report = new SecurityReport(
+                scannedAt: $report->scannedAt,
+                routeCount: $report->routeCount,
+                violations: $enriched,
+                routeProtections: $report->routeProtections,
+            );
+        }
+
         $score = $this->scoreEngine->calculate($report->violations);
 
         $this->line("  Scanning <options=bold>{$report->routeCount}</> route(s)…");
@@ -109,6 +125,11 @@ final class ReportCommand extends Command
                 $route = $violation->route !== '' ? "<fg=white>{$violation->route}</>" : '';
                 $this->line("  {$route}");
                 $this->line("  <fg=gray>↳ {$violation->title}</>");
+
+                if ($violation->advisory !== null) {
+                    $this->line('  <fg=gray>  · ' . Str::limit($violation->advisory->summary, 80) . '</>');
+                }
+
                 $this->line('');
             }
         }
