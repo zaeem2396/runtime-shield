@@ -7,72 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [v1.0.0] — 2026-04-13 — AI Advisory
+## [v1.0.0] — Unreleased — AI Advisory
 
 ### Overview
 
-Adds an optional **OpenAI-compatible** advisory layer: violations can carry AI-generated
-`summary`, `impact`, `remediation`, an advisory-only severity hint, `confidence`, and
-`rationale`. Rule severity and scoring remain fully deterministic; when AI is disabled,
-misconfigured, or the API errors, behaviour matches earlier releases.
+Introduces an optional AI advisory layer that augments deterministic rule violations
+with human-readable explanations, advisory severity hints, and confidence metadata.
+Core scanning remains deterministic and fully operational when AI is disabled.
 
 ### Added
 
-#### DTO — `RuntimeShield\DTO`
-
-- `AdvisorySource` — `cli` vs `http` invocation context for enrichment policy
-- `ViolationAdvisory` — immutable advisory payload with `toArray()` for JSON
-- `HttpResponse` — minimal status + body for internal HTTP transport
-
-#### Contracts
-
-- `ViolationAdvisoryEnricherContract` — `enrich(ViolationCollection, AdvisorySource)`
-- `HttpTransportContract` — POST helper for Chat Completions calls
-
-#### Core
-
-- `NullViolationAdvisoryEnricher` — no-op implementation
-- `OpenAiViolationAdvisoryEnricher` — batches violations, calls `/v1/chat/completions`,
-  parses JSON advisories, attaches via `Violation::withAdvisory()`
-- `StreamHttpTransport` — stream-based HTTPS POST (no extra Composer deps)
-
-#### Violation model
-
-- `Violation::$advisory` optional `ViolationAdvisory`
-- `Violation::withAdvisory()` — immutable copy with advisory
-- `Violation::toArray()` includes `advisory` key only when set
-- `ViolationCollection::map()` — transform violations immutably
-
-#### Configuration — `config/runtime_shield.php`
-
-- `ai.enabled`, `ai.enrich_http_requests`, `ai.api_key`, `ai.base_url`, `ai.model`,
-  `ai.timeout_ms`, `ai.max_tokens`, `ai.batch_size` (all env-driven)
-
-#### Laravel
-
-- `RuntimeShieldEngine::evaluate()` enriches after rule evaluation when HTTP enrichment is allowed
-- `ScanCommand` / `ReportCommand` — optional enrichment on CLI; `--no-ai` to skip
-- Service provider binds `HttpTransportContract`, `ViolationAdvisoryEnricherContract`
-  (OpenAI implementation when enabled + API key, else null enricher)
-
-#### Version
-
-- `PackageVersion::VERSION` set to **1.0.0**
+- Planned `AdvisoryExplanation` DTO fields: `summary`, `impact`, `remediation`
+- Planned advisory metadata fields: `advisorySeverity`, `confidence`, `rationale`
 
 ### Changed
 
-- CLI scan table and report text output show a truncated advisory summary when present
+- Planned serializer updates to include advisory metadata only when enabled
+- Planned CLI table/JSON formatting updates for advisory fields
+
+### Fixed
+
+- Planned deterministic fallback path when AI providers fail or timeout
+- Planned strict null-handling to avoid advisory regressions in existing consumers
 
 ### Tests
 
-- `NullViolationAdvisoryEnricherTest`, `OpenAiViolationAdvisoryEnricherTest`
-- `ViolationTest` / `ViolationCollectionTest` extensions for advisory and `map()`
-- `RuntimeShieldServiceProviderTest` — `ai` config key and default null enricher
+- Planned unit tests for advisory DTO normalization and confidence bounds
+- Planned integration tests for AI disabled mode and provider timeout fallback
 
 ### Migration notes
 
-- Opt-in only (`RUNTIME_SHIELD_AI_ENABLED=false` by default). No breaking changes to existing
-  config keys. Publish or merge `config/runtime_shield.php` to pick up the `ai` section.
+- No breaking configuration changes are planned for existing users.
+- AI support is opt-in; default behaviour remains unchanged.
+
+### Release checklist
+
+- [ ] `composer run format:test`
+- [ ] `composer run analyse`
+- [ ] `composer run test`
 
 ---
 

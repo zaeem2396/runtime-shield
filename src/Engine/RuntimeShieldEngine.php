@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Engine;
 
-use RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract;
 use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\EventEmitterContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Core\NullEventEmitter;
 use RuntimeShield\Core\Rule\RuleRegistry;
 use RuntimeShield\Core\RuntimeShieldManager;
-use RuntimeShield\DTO\Advisory\AdvisorySource;
 use RuntimeShield\DTO\Rule\ViolationCollection;
 use RuntimeShield\DTO\SecurityRuntimeContext;
 
@@ -31,7 +29,6 @@ final class RuntimeShieldEngine implements EngineContract
     public function __construct(
         private readonly RuntimeShieldManager $manager,
         private readonly RuleEngineContract $ruleEngine,
-        private readonly ViolationAdvisoryEnricherContract $advisoryEnricher,
         private readonly RuleRegistry $registry = new RuleRegistry(),
         private readonly EventEmitterContract $emitter = new NullEventEmitter(),
     ) {
@@ -88,7 +85,6 @@ final class RuntimeShieldEngine implements EngineContract
 
         $start = hrtime(true);
         $violations = $this->ruleEngine->run($context);
-        $violations = $this->advisoryEnricher->enrich($violations, AdvisorySource::Http);
         $durationMs = (hrtime(true) - $start) / 1_000_000;
 
         foreach ($violations->all() as $violation) {
