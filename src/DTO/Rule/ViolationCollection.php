@@ -85,12 +85,4 @@ final class ViolationCollection
 
         return $copy;
     }
-
-    /**
-     * @param callable(Violation): Violation $fn
-     */
-    public function map(callable $fn): self
-    {
-        return new self(array_map($fn, $this->violations));
-    }
 }

@@ -681,10 +681,8 @@ Event::listen(ViolationAlertedEvent::class, function (ViolationAlertedEvent $e) 
 |---------|-------------|
 | `runtime-shield:install` | Publish the configuration file |
 | `runtime-shield:scan` | Scan all routes for security violations (table/JSON) |
-| `runtime-shield:scan --no-ai` | Skip AI advisory enrichment for this run (v1.0.0+) |
 | `runtime-shield:scan --score` | Scan and display the weighted security score |
 | `runtime-shield:report` | Full security report with per-category score breakdown |
-| `runtime-shield:report --no-ai` | Skip AI advisory enrichment for this run (v1.0.0+) |
 | `runtime-shield:routes` | Route protection inspector (auth · CSRF · rate-limit) |
 | `runtime-shield:score` | Weighted security score with category breakdown (v0.6.0+) |
 | `runtime-shield:bench` | Benchmark rule evaluation time per route (v0.7.0+) |
@@ -838,74 +836,72 @@ RUNTIME_SHIELD_EVENTS_ENABLED=false
 
 ## AI Advisory (v1.0.0+)
 
-Optional **OpenAI-compatible** Chat Completions enrichment: each violation may gain an `advisory`
-object (summary, impact, remediation, advisory severity hint, confidence, rationale). Rule
-evaluation and security **scores stay deterministic**; only the extra metadata changes.
+**Status:** A full implementation was merged in [PR #18](https://github.com/zaeem2396/runtime-shield/pull/18) and subsequently **reverted** from `main`. The behaviour below is still the **planned** design for the v1.0.0 milestone; see `docs/roadmap.md` for scope and acceptance criteria.
+
+This upcoming release adds AI-assisted advisory metadata on top of existing deterministic rules.
+Until v1.0.0 ships on `main`, this section documents the planned API and behavior.
 
 ### Advisory philosophy
 
-- Deterministic rule detection remains the source of truth.
-- AI adds explanation and triage hints only.
-- If the API fails, times out, or is off, behaviour matches pre-v1 scans (no advisory keys in JSON).
+- Keep deterministic rule detection as the source of truth.
+- Use AI only for explanation quality, severity refinement, and confidence hints.
+- Preserve stable output when AI is disabled or unavailable.
 
-### Where enrichment runs
+### AI explanation payload
 
-- **CLI** (`runtime-shield:scan`, `runtime-shield:report`): runs when `ai.enabled` is true and
-  `api_key` is non-empty. Use `--no-ai` to skip for a single run.
-- **HTTP / middleware alerts**: **off by default**. Set `enrich_http_requests` to `true` only if you
-  accept API latency and cost on the alert path.
+When enabled, each violation can include:
 
-### AI explanation payload (`Violation::toArray()`)
+- `advisory.summary`: plain-language issue explanation
+- `advisory.impact`: why this matters in production
+- `advisory.remediation`: concrete next action for developers
 
-When present:
+### Severity and confidence
 
-- `advisory.summary` — short plain-language explanation
-- `advisory.impact` — production risk framing
-- `advisory.remediation` — suggested fix
-- `advisory.severity` — optional triage hint (`critical|high|medium|low|info`), separate from rule severity
-- `advisory.confidence` — float `0`–`1` or omitted
-- `advisory.rationale` — why the model chose that hint
+AI can suggest calibrated metadata for triage:
 
-### Configuration
+- `advisory.severity`: optional advisory severity (`low|medium|high|critical`)
+- `advisory.confidence`: 0.00-1.00 confidence score
+- `advisory.rationale`: short reason behind severity/confidence
+
+### Safe fallback behavior
+
+If an AI provider fails, times out, or is disabled:
+
+- scan commands continue with deterministic results
+- advisory fields are omitted (or set to `null`, based on serializer mode)
+- exit codes and score calculations remain deterministic
+
+### Advisory configuration (planned)
 
 ```php
 // config/runtime_shield.php
 'ai' => [
     'enabled' => env('RUNTIME_SHIELD_AI_ENABLED', false),
-    'enrich_http_requests' => env('RUNTIME_SHIELD_AI_ENRICH_HTTP', false),
-    'api_key' => env('RUNTIME_SHIELD_AI_API_KEY', ''),
-    'base_url' => env('RUNTIME_SHIELD_AI_BASE_URL', 'https://api.openai.com/v1'),
-    'model' => env('RUNTIME_SHIELD_AI_MODEL', 'gpt-4o-mini'),
+    'provider' => env('RUNTIME_SHIELD_AI_PROVIDER', 'openai'),
     'timeout_ms' => (int) env('RUNTIME_SHIELD_AI_TIMEOUT_MS', 1200),
-    'max_tokens' => (int) env('RUNTIME_SHIELD_AI_MAX_TOKENS', 800),
-    'batch_size' => (int) env('RUNTIME_SHIELD_AI_BATCH_SIZE', 20),
+    'max_tokens' => (int) env('RUNTIME_SHIELD_AI_MAX_TOKENS', 300),
 ],
 ```
 
-Use `base_url` pointing at any API that implements `/v1/chat/completions` in OpenAI format.
-
-### Environment variables
+### Environment variables (planned)
 
 ```env
 RUNTIME_SHIELD_AI_ENABLED=false
-RUNTIME_SHIELD_AI_ENRICH_HTTP=false
-RUNTIME_SHIELD_AI_API_KEY=
-RUNTIME_SHIELD_AI_BASE_URL=https://api.openai.com/v1
-RUNTIME_SHIELD_AI_MODEL=gpt-4o-mini
+RUNTIME_SHIELD_AI_PROVIDER=openai
 RUNTIME_SHIELD_AI_TIMEOUT_MS=1200
-RUNTIME_SHIELD_AI_MAX_TOKENS=800
-RUNTIME_SHIELD_AI_BATCH_SIZE=20
+RUNTIME_SHIELD_AI_MAX_TOKENS=300
+RUNTIME_SHIELD_AI_API_KEY=
 ```
 
 ### Data handling notes
 
-- Prompts include rule id, title, description, deterministic severity, and route URI only — not request bodies.
-- Do not log full API responses if they may contain sensitive content.
+- Advisory prompts should avoid including raw secrets or credentials.
+- Prefer route pattern metadata over full payload bodies where possible.
 
-### Extending / testing
+### Backward compatibility target
 
-Bind `RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract` in a service provider
-to replace the default implementation (for example a custom model or offline stub).
+`runtime-shield:scan`, `runtime-shield:report`, and `runtime-shield:score` keep existing
+output fields stable. Advisory fields are additive and optional.
 
 ---
 

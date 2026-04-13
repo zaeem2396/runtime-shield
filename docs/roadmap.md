@@ -450,13 +450,15 @@ beforeScan, afterScan, violationDetected
 
 ---
 
-# 🤖 v1.0.0 — AI Advisory &nbsp;🟢 Completed
+# 🤖 v1.0.0 — AI Advisory &nbsp;🔴 Planned
+
+**Current status:** The v1.0.0 AI Advisory implementation was merged to `main` via [PR #18](https://github.com/zaeem2396/runtime-shield/pull/18) and then **reverted**. The branch `revert-18-feature/v1.0.0-ai-advisory-implementation` tracks that revert for reference. This milestone remains **planned** until a follow-up merge ships the feature again.
 
 Goal: add optional AI-generated advisory context without compromising deterministic scanning.
 
 Rollout: ship behind `ai.enabled=false` default, then enable per-environment gradually.
 
-## STEP 37 — AI Explanation Layer &nbsp;🟢 Completed
+## STEP 37 — AI Explanation Layer &nbsp;🔴 Planned
 
 ```
 Explain violations in human-readable format
@@ -469,7 +471,7 @@ Acceptance criteria:
 
 ---
 
-## STEP 38 — Severity Classification &nbsp;🟢 Completed
+## STEP 38 — Severity Classification &nbsp;🔴 Planned
 
 ```
 AI-assisted severity scoring
@@ -482,7 +484,7 @@ Acceptance criteria:
 
 ---
 
-## STEP 39 — Confidence Score &nbsp;🟢 Completed
+## STEP 39 — Confidence Score &nbsp;🔴 Planned
 
 ```
 Assign confidence level per issue
@@ -495,7 +497,7 @@ Acceptance criteria:
 
 ---
 
-## STEP 40 — AI Config &nbsp;🟢 Completed
+## STEP 40 — AI Config &nbsp;🔴 Planned
 
 ```
 Enable/disable AI
@@ -509,14 +511,14 @@ Acceptance criteria:
 
 ---
 
-✅ `git tag v1.0.0`
+⏳ `git tag v1.0.0` — apply only after this milestone is complete **on `main`** (tag not cut while the implementation remains reverted).
 
 Release gate checklist:
-- [x] `composer run format:test`
-- [x] `composer run analyse`
-- [x] `composer run test`
-- [x] Document provider-specific setup examples in README
-- [x] Add upgrade note in CHANGELOG
+- [ ] `composer run format:test`
+- [ ] `composer run analyse`
+- [ ] `composer run test`
+- [ ] Document provider-specific setup examples in README
+- [ ] Add upgrade note in CHANGELOG
 
 ---
 

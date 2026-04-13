@@ -8,12 +8,10 @@ use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
-use RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract;
 use RuntimeShield\Contracts\Alert\AlertDispatcherContract;
 use RuntimeShield\Contracts\ConfigRepositoryContract;
 use RuntimeShield\Contracts\EngineContract;
 use RuntimeShield\Contracts\EventEmitterContract;
-use RuntimeShield\Contracts\Http\HttpTransportContract;
 use RuntimeShield\Contracts\Plugin\PluginContract;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
 use RuntimeShield\Contracts\Rule\RuleContract;
@@ -31,8 +29,6 @@ use RuntimeShield\Contracts\Signal\RouteCollectorContract;
 use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
 use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
-use RuntimeShield\Core\Advisory\NullViolationAdvisoryEnricher;
-use RuntimeShield\Core\Advisory\OpenAiViolationAdvisoryEnricher;
 use RuntimeShield\Core\Alert\AlertDispatcher;
 use RuntimeShield\Core\Alert\AlertThrottle;
 use RuntimeShield\Core\Alert\LogChannel;
@@ -42,7 +38,6 @@ use RuntimeShield\Core\Alert\SlackChannel;
 use RuntimeShield\Core\Alert\ThrottledAlertDispatcher;
 use RuntimeShield\Core\Alert\WebhookChannel;
 use RuntimeShield\Core\ConfigRepository;
-use RuntimeShield\Core\Http\StreamHttpTransport;
 use RuntimeShield\Core\NullEventEmitter;
 use RuntimeShield\Core\Performance\AsyncRuleEngine;
 use RuntimeShield\Core\Performance\BatchedRuleEngine;
@@ -198,27 +193,9 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             return new LaravelEventEmitter($app->make(EventDispatcher::class));
         });
 
-        $this->app->singleton(HttpTransportContract::class, static fn (): HttpTransportContract => new StreamHttpTransport());
-
-        $this->app->singleton(ViolationAdvisoryEnricherContract::class, static function ($app): ViolationAdvisoryEnricherContract {
-            /** @var array<string, mixed> $ai */
-            $ai = (array) $app['config']->get('runtime_shield.ai', []);
-            $enabled = (bool) ($ai['enabled'] ?? false);
-            $apiKey = isset($ai['api_key']) && is_string($ai['api_key']) ? $ai['api_key'] : '';
-
-            if (! $enabled || $apiKey === '') {
-                return new NullViolationAdvisoryEnricher();
-            }
-
-            $logger = $app->bound(LoggerInterface::class) ? $app->make(LoggerInterface::class) : null;
-
-            return new OpenAiViolationAdvisoryEnricher($ai, $app->make(HttpTransportContract::class), $logger);
-        });
-
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
             $app->make(RuntimeShieldManager::class),
             $app->make(RuleEngineContract::class),
-            $app->make(ViolationAdvisoryEnricherContract::class),
             $app->make(RuleRegistry::class),
             $app->make(EventEmitterContract::class),
         ));

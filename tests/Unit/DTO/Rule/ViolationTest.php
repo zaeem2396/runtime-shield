@@ -8,7 +8,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeShield\DTO\Rule\Severity;
 use RuntimeShield\DTO\Rule\Violation;
-use RuntimeShield\DTO\Rule\ViolationAdvisory;
 
 final class ViolationTest extends TestCase
 {
@@ -66,34 +65,6 @@ final class ViolationTest extends TestCase
         $v = $this->makeViolation();
 
         $this->assertSame('missing-rate-limit', $v->ruleId);
-    }
-
-    #[Test]
-    public function to_array_includes_advisory_when_set(): void
-    {
-        $adv = new ViolationAdvisory(
-            summary: 'S',
-            impact: 'I',
-            remediation: 'R',
-            advisorySeverity: Severity::HIGH,
-            confidence: 0.5,
-            rationale: 'Because',
-        );
-        $v = $this->makeViolation()->withAdvisory($adv);
-        $arr = $v->toArray();
-
-        $this->assertArrayHasKey('advisory', $arr);
-        $this->assertSame('S', $arr['advisory']['summary']);
-        $this->assertSame('high', $arr['advisory']['severity']);
-        $this->assertSame(0.5, $arr['advisory']['confidence']);
-    }
-
-    #[Test]
-    public function to_array_omits_advisory_when_null(): void
-    {
-        $arr = $this->makeViolation()->toArray();
-
-        $this->assertArrayNotHasKey('advisory', $arr);
     }
     private function makeViolation(): Violation
     {
