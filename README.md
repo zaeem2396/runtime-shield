@@ -834,6 +834,75 @@ RUNTIME_SHIELD_EVENTS_ENABLED=false
 
 ---
 
+## AI Advisory (v1.0.0+)
+
+This upcoming release adds AI-assisted advisory metadata on top of existing deterministic rules.
+Until v1.0.0 ships, this section documents the planned API and behavior.
+
+### Advisory philosophy
+
+- Keep deterministic rule detection as the source of truth.
+- Use AI only for explanation quality, severity refinement, and confidence hints.
+- Preserve stable output when AI is disabled or unavailable.
+
+### AI explanation payload
+
+When enabled, each violation can include:
+
+- `advisory.summary`: plain-language issue explanation
+- `advisory.impact`: why this matters in production
+- `advisory.remediation`: concrete next action for developers
+
+### Severity and confidence
+
+AI can suggest calibrated metadata for triage:
+
+- `advisory.severity`: optional advisory severity (`low|medium|high|critical`)
+- `advisory.confidence`: 0.00-1.00 confidence score
+- `advisory.rationale`: short reason behind severity/confidence
+
+### Safe fallback behavior
+
+If an AI provider fails, times out, or is disabled:
+
+- scan commands continue with deterministic results
+- advisory fields are omitted (or set to `null`, based on serializer mode)
+- exit codes and score calculations remain deterministic
+
+### Advisory configuration (planned)
+
+```php
+// config/runtime_shield.php
+'ai' => [
+    'enabled' => env('RUNTIME_SHIELD_AI_ENABLED', false),
+    'provider' => env('RUNTIME_SHIELD_AI_PROVIDER', 'openai'),
+    'timeout_ms' => (int) env('RUNTIME_SHIELD_AI_TIMEOUT_MS', 1200),
+    'max_tokens' => (int) env('RUNTIME_SHIELD_AI_MAX_TOKENS', 300),
+],
+```
+
+### Environment variables (planned)
+
+```env
+RUNTIME_SHIELD_AI_ENABLED=false
+RUNTIME_SHIELD_AI_PROVIDER=openai
+RUNTIME_SHIELD_AI_TIMEOUT_MS=1200
+RUNTIME_SHIELD_AI_MAX_TOKENS=300
+RUNTIME_SHIELD_AI_API_KEY=
+```
+
+### Data handling notes
+
+- Advisory prompts should avoid including raw secrets or credentials.
+- Prefer route pattern metadata over full payload bodies where possible.
+
+### Backward compatibility target
+
+`runtime-shield:scan`, `runtime-shield:report`, and `runtime-shield:score` keep existing
+output fields stable. Advisory fields are additive and optional.
+
+---
+
 ## CI / GitHub Actions
 
 Three independent workflows run on every push and pull request:
