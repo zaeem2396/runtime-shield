@@ -236,4 +236,30 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | AI Advisory (v1.0.0+)
+    |--------------------------------------------------------------------------
+    |
+    | Optional OpenAI-compatible advisory metadata on violations (summary,
+    | impact, remediation, advisory severity hint, confidence). Deterministic
+    | rule severity is never modified. When disabled or on API failure, scans
+    | behave exactly as before.
+    |
+    | enrich_http_requests — when true, middleware/alert evaluation may call
+    | the AI API (use with care in production). CLI scan/report honor
+    | ai.enabled unless you pass --no-ai.
+    |
+    */
+    'ai' => [
+        'enabled' => (bool) env('RUNTIME_SHIELD_AI_ENABLED', false),
+        'enrich_http_requests' => (bool) env('RUNTIME_SHIELD_AI_ENRICH_HTTP', false),
+        'api_key' => (string) env('RUNTIME_SHIELD_AI_API_KEY', ''),
+        'base_url' => (string) env('RUNTIME_SHIELD_AI_BASE_URL', 'https://api.openai.com/v1'),
+        'model' => (string) env('RUNTIME_SHIELD_AI_MODEL', 'gpt-4o-mini'),
+        'timeout_ms' => (int) env('RUNTIME_SHIELD_AI_TIMEOUT_MS', 1200),
+        'max_tokens' => (int) env('RUNTIME_SHIELD_AI_MAX_TOKENS', 800),
+        'batch_size' => (int) env('RUNTIME_SHIELD_AI_BATCH_SIZE', 20),
+    ],
+
 ];
