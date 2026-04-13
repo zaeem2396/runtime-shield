@@ -82,10 +82,15 @@ final class OpenAiViolationAdvisoryEnricher implements ViolationAdvisoryEnricher
      */
     private function enrichChunk(array $chunk, string $apiKey): array
     {
+        if ($chunk === []) {
+            return [];
+        }
+
         $baseUrl = rtrim($this->stringConfig('base_url', 'https://api.openai.com/v1'), '/');
         $model = $this->stringConfig('model', 'gpt-4o-mini');
-        $timeoutMs = max(100, $this->intConfig('timeout_ms', 1200));
-        $maxTokens = max(64, $this->intConfig('max_tokens', 800));
+        $n = count($chunk);
+        $timeoutMs = $this->effectiveTimeoutMs($n);
+        $maxTokens = $this->effectiveMaxTokens($n);
 
         $userContent = $this->buildUserPayload($chunk);
 
@@ -113,14 +118,187 @@ final class OpenAiViolationAdvisoryEnricher implements ViolationAdvisoryEnricher
         if (! $response->isSuccess()) {
             $this->logger?->notice('RuntimeShield AI HTTP non-success', [
                 'status' => $response->statusCode,
+                'body_prefix' => $this->safeBodyPrefix($response->body),
             ]);
 
             return $chunk;
         }
 
-        $advisories = $this->parseOpenAiResponse($response->body);
+        $decoded = $this->decodeJsonObject($response->body);
+
+        if ($decoded === null) {
+            $this->logger?->notice(
+                'RuntimeShield AI response body is not valid JSON',
+                ['body_prefix' => $this->safeBodyPrefix($response->body)],
+            );
+
+            return $chunk;
+        }
+
+        if (isset($decoded['error'])) {
+            $this->logger?->warning(
+                'RuntimeShield AI API error: ' . $this->formatOpenAiError($decoded['error']),
+                [],
+            );
+
+            return $chunk;
+        }
+
+        $advisories = $this->parseAdvisoriesFromCompletionEnvelope($decoded);
+
+        if ($advisories === null) {
+            $this->logger?->notice(
+                'RuntimeShield AI advisory response could not be parsed (invalid message content or truncated output). '
+                . 'Try increasing RUNTIME_SHIELD_AI_MAX_TOKENS or lowering RUNTIME_SHIELD_AI_BATCH_SIZE.',
+                ['violations_in_chunk' => $n],
+            );
+        }
 
         return $this->applyAdvisories($chunk, $advisories);
+    }
+
+    /**
+     * Batched Chat Completions need far more than a few seconds; short timeouts produced
+     * empty or partial HTTP bodies (no advisories) while still returning HTTP 200 in some setups.
+     */
+    private function effectiveTimeoutMs(int $violationCount): int
+    {
+        $n = max(1, $violationCount);
+        $configured = max(100, $this->intConfig('timeout_ms', 60_000));
+        $floor = (int) min(180_000, 4_000 + $n * 2_000);
+
+        return max($configured, $floor);
+    }
+
+    /**
+     * Ensure output budget scales with batch size even when .env still has a low cap.
+     */
+    private function effectiveMaxTokens(int $violationCount): int
+    {
+        $n = max(1, $violationCount);
+        $configured = max(64, $this->intConfig('max_tokens', 4096));
+        $floor = (int) min(16_384, $n * 280);
+
+        return max($configured, $floor);
+    }
+
+    private function safeBodyPrefix(string $body): string
+    {
+        $trimmed = trim($body);
+
+        return strlen($trimmed) <= 240 ? $trimmed : substr($trimmed, 0, 240) . '…';
+    }
+
+    private function formatOpenAiError(mixed $error): string
+    {
+        if (is_array($error)) {
+            $msg = $error['message'] ?? null;
+
+            return is_string($msg) ? $msg : (string) json_encode($error);
+        }
+
+        return is_string($error) ? $error : (string) json_encode($error);
+    }
+
+    /**
+     * @return array<mixed, mixed>|null
+     */
+    private function decodeJsonObject(string $body): ?array
+    {
+        try {
+            $decoded = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return null;
+        }
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * @param array<mixed, mixed> $decoded
+     *
+     * @return list<mixed>|null
+     */
+    private function parseAdvisoriesFromCompletionEnvelope(array $decoded): ?array
+    {
+        $choices = $decoded['choices'] ?? null;
+
+        if (! is_array($choices) || $choices === [] || ! is_array($choices[0] ?? null)) {
+            return null;
+        }
+
+        /** @var array<string, mixed> $first */
+        $first = $choices[0];
+        $message = $first['message'] ?? null;
+
+        if (! is_array($message)) {
+            return null;
+        }
+
+        $text = $this->normalizeAssistantContent($message['content'] ?? null);
+
+        if ($text === null || $text === '') {
+            return null;
+        }
+
+        try {
+            /** @var array<string, mixed> $inner */
+            $inner = json_decode($text, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return null;
+        }
+
+        $advisories = $inner['advisories'] ?? null;
+
+        if (! is_array($advisories)) {
+            return null;
+        }
+
+        /** @var list<mixed> $asList */
+        $asList = array_values($advisories);
+
+        return $asList;
+    }
+
+    private function normalizeAssistantContent(mixed $content): ?string
+    {
+        if (is_string($content)) {
+            return $this->stripOptionalMarkdownFences(trim($content));
+        }
+
+        if (! is_array($content)) {
+            return null;
+        }
+
+        $parts = [];
+
+        foreach ($content as $part) {
+            if (! is_array($part)) {
+                continue;
+            }
+
+            if (($part['type'] ?? '') === 'text' && isset($part['text']) && is_string($part['text'])) {
+                $parts[] = $part['text'];
+            }
+        }
+
+        $joined = trim(implode('', $parts));
+
+        return $joined === '' ? null : $this->stripOptionalMarkdownFences($joined);
+    }
+
+    private function stripOptionalMarkdownFences(string $s): string
+    {
+        $s = trim($s);
+
+        if ($s === '' || ! str_starts_with($s, '```')) {
+            return $s;
+        }
+
+        $s = preg_replace('/^```(?:json)?\s*/i', '', $s) ?? $s;
+        $s = preg_replace('/\s*```\s*$/', '', $s) ?? $s;
+
+        return trim($s);
     }
 
     /**
@@ -142,57 +320,6 @@ final class OpenAiViolationAdvisoryEnricher implements ViolationAdvisoryEnricher
         }
 
         return (string) json_encode(['violations' => $minimal], JSON_THROW_ON_ERROR);
-    }
-
-    /**
-     * @return list<mixed>|null
-     */
-    private function parseOpenAiResponse(string $body): ?array
-    {
-        try {
-            /** @var array<string, mixed> $decoded */
-            $decoded = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return null;
-        }
-
-        $choices = $decoded['choices'] ?? null;
-
-        if (! is_array($choices) || $choices === [] || ! is_array($choices[0] ?? null)) {
-            return null;
-        }
-
-        /** @var array<string, mixed> $first */
-        $first = $choices[0];
-        $message = $first['message'] ?? null;
-
-        if (! is_array($message)) {
-            return null;
-        }
-
-        $content = $message['content'] ?? null;
-
-        if (! is_string($content)) {
-            return null;
-        }
-
-        try {
-            /** @var array<string, mixed> $inner */
-            $inner = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
-            return null;
-        }
-
-        $advisories = $inner['advisories'] ?? null;
-
-        if (! is_array($advisories)) {
-            return null;
-        }
-
-        /** @var list<mixed> $asList */
-        $asList = array_values($advisories);
-
-        return $asList;
     }
 
     /**

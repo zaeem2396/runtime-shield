@@ -876,8 +876,8 @@ When present:
     'api_key' => env('RUNTIME_SHIELD_AI_API_KEY', ''),
     'base_url' => env('RUNTIME_SHIELD_AI_BASE_URL', 'https://api.openai.com/v1'),
     'model' => env('RUNTIME_SHIELD_AI_MODEL', 'gpt-4o-mini'),
-    'timeout_ms' => (int) env('RUNTIME_SHIELD_AI_TIMEOUT_MS', 1200),
-    'max_tokens' => (int) env('RUNTIME_SHIELD_AI_MAX_TOKENS', 800),
+    'timeout_ms' => (int) env('RUNTIME_SHIELD_AI_TIMEOUT_MS', 60_000),
+    'max_tokens' => (int) env('RUNTIME_SHIELD_AI_MAX_TOKENS', 4096),
     'batch_size' => (int) env('RUNTIME_SHIELD_AI_BATCH_SIZE', 20),
 ],
 ```
@@ -892,8 +892,8 @@ RUNTIME_SHIELD_AI_ENRICH_HTTP=false
 RUNTIME_SHIELD_AI_API_KEY=
 RUNTIME_SHIELD_AI_BASE_URL=https://api.openai.com/v1
 RUNTIME_SHIELD_AI_MODEL=gpt-4o-mini
-RUNTIME_SHIELD_AI_TIMEOUT_MS=1200
-RUNTIME_SHIELD_AI_MAX_TOKENS=800
+RUNTIME_SHIELD_AI_TIMEOUT_MS=60000
+RUNTIME_SHIELD_AI_MAX_TOKENS=4096
 RUNTIME_SHIELD_AI_BATCH_SIZE=20
 ```
 

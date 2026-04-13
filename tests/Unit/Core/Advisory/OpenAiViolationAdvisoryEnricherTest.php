@@ -6,6 +6,7 @@ namespace RuntimeShield\Tests\Unit\Core\Advisory;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use RuntimeShield\Contracts\Http\HttpTransportContract;
 use RuntimeShield\Core\Advisory\OpenAiViolationAdvisoryEnricher;
 use RuntimeShield\DTO\Advisory\AdvisorySource;
@@ -114,5 +115,147 @@ final class OpenAiViolationAdvisoryEnricherTest extends TestCase
         $out = $enricher->enrich(new ViolationCollection([$v]), AdvisorySource::Cli);
 
         $this->assertNull($out->all()[0]->advisory);
+    }
+
+    #[Test]
+    public function it_parses_advisory_when_model_wraps_json_in_markdown_fences(): void
+    {
+        $inner = (string) json_encode([
+            'advisories' => [
+                [
+                    'summary' => 'Fenced',
+                    'impact' => 'I',
+                    'remediation' => 'R',
+                    'advisory_severity' => 'low',
+                    'confidence' => null,
+                    'rationale' => 'X',
+                ],
+            ],
+        ]);
+
+        $wrapped = "```json\n" . $inner . "\n```";
+
+        $openaiBody = (string) json_encode([
+            'choices' => [
+                ['message' => ['content' => $wrapped]],
+            ],
+        ]);
+
+        $transport = new class ($openaiBody) implements HttpTransportContract {
+            public function __construct(private readonly string $payload)
+            {
+            }
+
+            public function post(string $url, array $headers, string $body, int $timeoutMs): HttpResponse
+            {
+                return new HttpResponse(200, $this->payload);
+            }
+        };
+
+        $enricher = new OpenAiViolationAdvisoryEnricher(
+            ['enabled' => true, 'api_key' => 'sk-test', 'batch_size' => 10],
+            $transport,
+        );
+
+        $v = new Violation('r', 'T', 'D', Severity::LOW);
+        $out = $enricher->enrich(new ViolationCollection([$v]), AdvisorySource::Cli);
+
+        $this->assertSame('Fenced', $out->all()[0]->advisory?->summary);
+    }
+
+    #[Test]
+    public function it_logs_warning_and_skips_advisory_on_openai_error_json(): void
+    {
+        $openaiBody = (string) json_encode([
+            'error' => ['message' => 'Incorrect API key provided', 'type' => 'invalid_request_error'],
+        ]);
+
+        $transport = new class ($openaiBody) implements HttpTransportContract {
+            public function __construct(private readonly string $payload)
+            {
+            }
+
+            public function post(string $url, array $headers, string $body, int $timeoutMs): HttpResponse
+            {
+                return new HttpResponse(200, $this->payload);
+            }
+        };
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('warning')
+            ->with($this->stringContains('Incorrect API key'));
+
+        $enricher = new OpenAiViolationAdvisoryEnricher(
+            ['enabled' => true, 'api_key' => 'sk-bad'],
+            $transport,
+            $logger,
+        );
+
+        $v = new Violation('r', 'T', 'D', Severity::LOW);
+        $out = $enricher->enrich(new ViolationCollection([$v]), AdvisorySource::Cli);
+
+        $this->assertNull($out->all()[0]->advisory);
+    }
+
+    #[Test]
+    public function it_uses_batch_based_minimum_http_timeout_even_when_config_is_low(): void
+    {
+        $inner = (string) json_encode([
+            'advisories' => array_map(
+                static fn (int $i): array => [
+                    'summary' => 'S' . $i,
+                    'impact' => 'I',
+                    'remediation' => 'R',
+                    'advisory_severity' => null,
+                    'confidence' => null,
+                    'rationale' => 'N',
+                ],
+                range(0, 19),
+            ),
+        ]);
+
+        $openaiBody = (string) json_encode([
+            'choices' => [
+                ['message' => ['content' => $inner]],
+            ],
+        ]);
+
+        $transport = new class ($openaiBody) implements HttpTransportContract {
+            public int $lastTimeoutMs = 0;
+
+            public function __construct(private readonly string $payload)
+            {
+            }
+
+            public function post(string $url, array $headers, string $body, int $timeoutMs): HttpResponse
+            {
+                $this->lastTimeoutMs = $timeoutMs;
+
+                return new HttpResponse(200, $this->payload);
+            }
+        };
+
+        $enricher = new OpenAiViolationAdvisoryEnricher(
+            [
+                'enabled' => true,
+                'api_key' => 'sk-test',
+                'batch_size' => 20,
+                'timeout_ms' => 1200,
+                'max_tokens' => 800,
+            ],
+            $transport,
+        );
+
+        $violations = [];
+
+        for ($i = 0; $i < 20; ++$i) {
+            $violations[] = new Violation('rule-' . $i, 'T', 'D', Severity::LOW, 'r/' . $i);
+        }
+
+        $out = $enricher->enrich(new ViolationCollection($violations), AdvisorySource::Cli);
+
+        $this->assertGreaterThanOrEqual(44_000, $transport->lastTimeoutMs);
+        $this->assertSame('S0', $out->all()[0]->advisory?->summary);
     }
 }
