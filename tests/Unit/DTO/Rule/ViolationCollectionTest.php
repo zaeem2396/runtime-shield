@@ -88,6 +88,22 @@ final class ViolationCollectionTest extends TestCase
         $this->assertSame(1, $a->count());
         $this->assertSame(1, $b->count());
     }
+
+    #[Test]
+    public function map_returns_new_collection_with_transformed_violations(): void
+    {
+        $c = new ViolationCollection([$this->violation(Severity::LOW, 'a')]);
+        $mapped = $c->map(static fn (Violation $v): Violation => new Violation(
+            $v->ruleId,
+            $v->title . '!',
+            $v->description,
+            Severity::HIGH,
+        ));
+
+        $this->assertSame(Severity::LOW, $c->all()[0]->severity, 'original unchanged');
+        $this->assertSame(Severity::HIGH, $mapped->all()[0]->severity);
+        $this->assertStringEndsWith('!', $mapped->all()[0]->title);
+    }
     private function violation(Severity $severity = Severity::MEDIUM, string $id = 'rule-id'): Violation
     {
         return new Violation($id, 'Title', 'Desc', $severity);
