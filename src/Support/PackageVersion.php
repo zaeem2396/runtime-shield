@@ -6,11 +6,11 @@ namespace RuntimeShield\Support;
 
 final class PackageVersion
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '1.0.0';
 
-    public const MAJOR = 0;
+    public const MAJOR = 1;
 
-    public const MINOR = 1;
+    public const MINOR = 0;
 
     public const PATCH = 0;
 

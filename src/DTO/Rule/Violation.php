@@ -19,7 +19,21 @@ final class Violation
         public readonly Severity $severity,
         public readonly string $route = '',
         public readonly array $context = [],
+        public readonly ViolationAdvisory|null $advisory = null,
     ) {
+    }
+
+    public function withAdvisory(ViolationAdvisory|null $advisory): self
+    {
+        return new self(
+            ruleId: $this->ruleId,
+            title: $this->title,
+            description: $this->description,
+            severity: $this->severity,
+            route: $this->route,
+            context: $this->context,
+            advisory: $advisory,
+        );
     }
 
     /**
@@ -29,7 +43,7 @@ final class Violation
      */
     public function toArray(): array
     {
-        return [
+        $out = [
             'rule_id' => $this->ruleId,
             'title' => $this->title,
             'description' => $this->description,
@@ -37,5 +51,11 @@ final class Violation
             'route' => $this->route,
             'context' => $this->context,
         ];
+
+        if ($this->advisory !== null) {
+            $out['advisory'] = $this->advisory->toArray();
+        }
+
+        return $out;
     }
 }
