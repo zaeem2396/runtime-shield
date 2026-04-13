@@ -836,8 +836,10 @@ RUNTIME_SHIELD_EVENTS_ENABLED=false
 
 ## AI Advisory (v1.0.0+)
 
+**Status:** A full implementation was merged in [PR #18](https://github.com/zaeem2396/runtime-shield/pull/18) and subsequently **reverted** from `main`. The behaviour below is still the **planned** design for the v1.0.0 milestone; see `docs/roadmap.md` for scope and acceptance criteria.
+
 This upcoming release adds AI-assisted advisory metadata on top of existing deterministic rules.
-Until v1.0.0 ships, this section documents the planned API and behavior.
+Until v1.0.0 ships on `main`, this section documents the planned API and behavior.
 
 ### Advisory philosophy
 

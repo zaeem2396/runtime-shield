@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Reverted
+
+- **PR #18** (v1.0.0 AI Advisory implementation) was reverted from `main`. The feature is not present in the default branch; milestone scope remains documented under v1.0.0 in `docs/roadmap.md`.
+
+---
+
 ## [v1.0.0] — Unreleased — AI Advisory
 
 ### Overview
@@ -14,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Introduces an optional AI advisory layer that augments deterministic rule violations
 with human-readable explanations, advisory severity hints, and confidence metadata.
 Core scanning remains deterministic and fully operational when AI is disabled.
+
+*(Implementation for this release was merged and reverted in PR #18; see **[Unreleased] → Reverted** above.)*
 
 ### Added
 

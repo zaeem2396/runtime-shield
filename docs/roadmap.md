@@ -452,6 +452,8 @@ beforeScan, afterScan, violationDetected
 
 # 🤖 v1.0.0 — AI Advisory &nbsp;🔴 Planned
 
+**Current status:** The v1.0.0 AI Advisory implementation was merged to `main` via [PR #18](https://github.com/zaeem2396/runtime-shield/pull/18) and then **reverted**. The branch `revert-18-feature/v1.0.0-ai-advisory-implementation` tracks that revert for reference. This milestone remains **planned** until a follow-up merge ships the feature again.
+
 Goal: add optional AI-generated advisory context without compromising deterministic scanning.
 
 Rollout: ship behind `ai.enabled=false` default, then enable per-environment gradually.
@@ -509,7 +511,7 @@ Acceptance criteria:
 
 ---
 
-✅ `git tag v1.0.0`
+⏳ `git tag v1.0.0` — apply only after this milestone is complete **on `main`** (tag not cut while the implementation remains reverted).
 
 Release gate checklist:
 - [ ] `composer run format:test`
