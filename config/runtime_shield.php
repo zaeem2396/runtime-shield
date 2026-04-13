@@ -257,8 +257,8 @@ return [
         'api_key' => (string) env('RUNTIME_SHIELD_AI_API_KEY', ''),
         'base_url' => (string) env('RUNTIME_SHIELD_AI_BASE_URL', 'https://api.openai.com/v1'),
         'model' => (string) env('RUNTIME_SHIELD_AI_MODEL', 'gpt-4o-mini'),
-        'timeout_ms' => (int) env('RUNTIME_SHIELD_AI_TIMEOUT_MS', 1200),
-        'max_tokens' => (int) env('RUNTIME_SHIELD_AI_MAX_TOKENS', 800),
+        'timeout_ms' => (int) env('RUNTIME_SHIELD_AI_TIMEOUT_MS', 60_000),
+        'max_tokens' => (int) env('RUNTIME_SHIELD_AI_MAX_TOKENS', 4096),
         'batch_size' => (int) env('RUNTIME_SHIELD_AI_BATCH_SIZE', 20),
     ],
 
