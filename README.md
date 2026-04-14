@@ -221,6 +221,13 @@ security rules and returns a typed `ViolationCollection`.
 | `MissingCsrfRule` | `HIGH` | Mutable web routes (POST / PUT / PATCH / DELETE) missing CSRF middleware |
 | `MissingValidationRule` | `LOW` | Mutable routes without any input-validation middleware (advisory) |
 | `FileUploadValidationRule` | `MEDIUM` | POST routes whose URI suggests file upload with no upload-validation middleware |
+| `ErrorExposureRule` | `HIGH` | 5xx responses that look like debug / exception leakage |
+| `BruteForcePatternRule` | `HIGH` | 401 auth-endpoint failures without request throttling |
+| `MissingSecurityHeadersRule` | `MEDIUM` | Missing baseline security headers (CSP, X-Frame-Options, HSTS on HTTPS) |
+| `ResponseAnomalyRule` | `MEDIUM` | Abnormal response traits (very slow, huge body, malformed 5xx/204 patterns) |
+
+Response-driven rules run during middleware evaluation (request+response context). `runtime-shield:scan`
+and `runtime-shield:report` build route/request contexts only, so response-dependent rules may not fire there.
 
 ### Evaluating violations in code
 
