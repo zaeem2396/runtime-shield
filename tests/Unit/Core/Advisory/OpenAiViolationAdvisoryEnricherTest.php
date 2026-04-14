@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeShield\Contracts\Http\HttpTransportContract;
+use RuntimeShield\Core\Advisory\AdvisoryBatchProgress;
 use RuntimeShield\Core\Advisory\OpenAiViolationAdvisoryEnricher;
 use RuntimeShield\DTO\Advisory\AdvisorySource;
 use RuntimeShield\DTO\Http\HttpResponse;
@@ -257,5 +258,58 @@ final class OpenAiViolationAdvisoryEnricherTest extends TestCase
 
         $this->assertGreaterThanOrEqual(44_000, $transport->lastTimeoutMs);
         $this->assertSame('S0', $out->all()[0]->advisory?->summary);
+    }
+
+    #[Test]
+    public function it_notifies_batch_progress_after_each_chunk(): void
+    {
+        $inner = (string) json_encode([
+            'advisories' => [
+                ['summary' => 'A', 'impact' => 'I', 'remediation' => 'R', 'advisory_severity' => null, 'confidence' => null, 'rationale' => 'N'],
+                ['summary' => 'B', 'impact' => 'I', 'remediation' => 'R', 'advisory_severity' => null, 'confidence' => null, 'rationale' => 'N'],
+            ],
+        ]);
+
+        $openaiBody = (string) json_encode([
+            'choices' => [['message' => ['content' => $inner]]],
+        ]);
+
+        $transport = new class ($openaiBody) implements HttpTransportContract {
+            public int $calls = 0;
+
+            public function __construct(private readonly string $payload)
+            {
+            }
+
+            public function post(string $url, array $headers, string $body, int $timeoutMs): HttpResponse
+            {
+                ++$this->calls;
+
+                return new HttpResponse(200, $this->payload);
+            }
+        };
+
+        $batches = [];
+        $progress = new AdvisoryBatchProgress();
+        $progress->setListener(static function (int $cur, int $total, int $inBatch) use (&$batches): void {
+            $batches[] = [$cur, $total, $inBatch];
+        });
+
+        $enricher = new OpenAiViolationAdvisoryEnricher(
+            ['enabled' => true, 'api_key' => 'sk-test', 'batch_size' => 2],
+            $transport,
+            null,
+            $progress,
+        );
+
+        $violations = [
+            new Violation('a', 'T', 'D', Severity::LOW),
+            new Violation('b', 'T', 'D', Severity::LOW),
+            new Violation('c', 'T', 'D', Severity::LOW),
+        ];
+        $enricher->enrich(new ViolationCollection($violations), AdvisorySource::Cli);
+
+        $this->assertSame(2, $transport->calls);
+        $this->assertSame([[1, 2, 2], [2, 2, 1]], $batches);
     }
 }

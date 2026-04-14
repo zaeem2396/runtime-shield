@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 use RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract;
 use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Contracts\Score\ScoreEngineContract;
+use RuntimeShield\Core\Advisory\AdvisoryBatchProgress;
+use RuntimeShield\Core\Advisory\OpenAiViolationAdvisoryEnricher;
 use RuntimeShield\Core\RuntimeContextBuilder;
 use RuntimeShield\DTO\Advisory\AdvisorySource;
 use RuntimeShield\DTO\Rule\Violation;
@@ -57,7 +59,33 @@ final class ScanCommand extends Command
         $violations = $this->evaluateRoutes($routes);
 
         if (! (bool) $this->option('no-ai')) {
-            $violations = $this->advisoryEnricher->enrich($violations, AdvisorySource::Cli);
+            $progress = null;
+            $progressBar = null;
+
+            if (! $violations->isEmpty() && $this->advisoryEnricher instanceof OpenAiViolationAdvisoryEnricher) {
+                $this->line('  <fg=yellow>AI advisory: calling OpenAI in batches (can take several minutes). Use --no-ai to skip.</>');
+                $batchSizeConfig = config('runtime_shield.ai.batch_size', 20);
+                $batchSize = is_int($batchSizeConfig) ? $batchSizeConfig : (is_numeric($batchSizeConfig) ? (int) $batchSizeConfig : 20);
+                $batchSize = max(1, $batchSize);
+                $totalBatches = (int) max(1, (int) ceil($violations->count() / $batchSize));
+                $progressBar = $this->output->createProgressBar($totalBatches);
+                $progressBar->setFormat('  AI advisory %current%/%max% [%bar%] %percent:3s%%');
+                $progressBar->start();
+                $progress = $this->laravel->make(AdvisoryBatchProgress::class);
+                $progress->setListener(function (int $_current, int $_total, int $_inBatch) use ($progressBar): void {
+                    $progressBar->advance();
+                });
+            }
+
+            try {
+                $violations = $this->advisoryEnricher->enrich($violations, AdvisorySource::Cli);
+            } finally {
+                $progress?->clear();
+                if ($progressBar !== null) {
+                    $progressBar->finish();
+                    $this->line('');
+                }
+            }
         }
 
         if ($violations->isEmpty()) {

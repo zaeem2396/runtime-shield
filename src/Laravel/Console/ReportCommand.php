@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 use RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract;
 use RuntimeShield\Contracts\Report\ReportBuilderContract;
 use RuntimeShield\Contracts\Score\ScoreEngineContract;
+use RuntimeShield\Core\Advisory\AdvisoryBatchProgress;
+use RuntimeShield\Core\Advisory\OpenAiViolationAdvisoryEnricher;
 use RuntimeShield\DTO\Advisory\AdvisorySource;
 use RuntimeShield\DTO\Report\SecurityReport;
 use RuntimeShield\DTO\Rule\Severity;
@@ -48,7 +50,34 @@ final class ReportCommand extends Command
         $report = $this->builder->build();
 
         if (! (bool) $this->option('no-ai')) {
-            $enriched = $this->advisoryEnricher->enrich($report->violations, AdvisorySource::Cli);
+            $progress = null;
+            $progressBar = null;
+
+            if (! $report->violations->isEmpty() && $this->advisoryEnricher instanceof OpenAiViolationAdvisoryEnricher) {
+                $this->line('  <fg=yellow>AI advisory: calling OpenAI in batches (can take several minutes). Use --no-ai to skip.</>');
+                $batchSizeConfig = config('runtime_shield.ai.batch_size', 20);
+                $batchSize = is_int($batchSizeConfig) ? $batchSizeConfig : (is_numeric($batchSizeConfig) ? (int) $batchSizeConfig : 20);
+                $batchSize = max(1, $batchSize);
+                $totalBatches = (int) max(1, (int) ceil($report->violations->count() / $batchSize));
+                $progressBar = $this->output->createProgressBar($totalBatches);
+                $progressBar->setFormat('  AI advisory %current%/%max% [%bar%] %percent:3s%%');
+                $progressBar->start();
+                $progress = $this->laravel->make(AdvisoryBatchProgress::class);
+                $progress->setListener(function (int $_current, int $_total, int $_inBatch) use ($progressBar): void {
+                    $progressBar->advance();
+                });
+            }
+
+            try {
+                $enriched = $this->advisoryEnricher->enrich($report->violations, AdvisorySource::Cli);
+            } finally {
+                $progress?->clear();
+                if ($progressBar !== null) {
+                    $progressBar->finish();
+                    $this->line('');
+                }
+            }
+
             $report = new SecurityReport(
                 scannedAt: $report->scannedAt,
                 routeCount: $report->routeCount,

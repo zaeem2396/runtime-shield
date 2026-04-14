@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - AI advisory: raised default `ai.max_tokens` to **4096** and `ai.timeout_ms` to **60_000**; apply per-batch **floors** for `max_tokens` and timeout so low `.env` values (e.g. 1200 ms → ~2 s socket timeout) no longer yield empty advisories. Strip optional markdown fences from model JSON; handle OpenAI `error` JSON with a warning log. Log short `body_prefix` on HTTP / JSON parse failures.
+- CLI `runtime-shield:scan` / `runtime-shield:report`: show an AI advisory **loader with percentage** while batched HTTP calls run (many violations = several minutes of wall time; use `--no-ai` for an immediate deterministic scan).
 
 ## [v1.0.0] — 2026-04-13 — AI Advisory
 
