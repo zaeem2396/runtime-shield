@@ -28,6 +28,7 @@ final class OpenAiViolationAdvisoryEnricher implements ViolationAdvisoryEnricher
         private readonly array $config,
         private readonly HttpTransportContract $http,
         private readonly LoggerInterface|null $logger = null,
+        private readonly AdvisoryBatchProgress|null $batchProgress = null,
     ) {
     }
 
@@ -48,10 +49,12 @@ final class OpenAiViolationAdvisoryEnricher implements ViolationAdvisoryEnricher
         /** @var list<list<Violation>> $chunks */
         $chunks = array_chunk($all, $batchSize);
         $merged = [];
+        $totalChunks = count($chunks);
 
         try {
-            foreach ($chunks as $chunk) {
+            foreach ($chunks as $index => $chunk) {
                 $merged = array_merge($merged, $this->enrichChunk($chunk, $apiKey));
+                $this->batchProgress?->notify($index + 1, $totalChunks, count($chunk));
             }
         } catch (\Throwable $e) {
             $this->logger?->warning('RuntimeShield AI advisory enrichment failed: ' . $e->getMessage());

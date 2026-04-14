@@ -31,6 +31,7 @@ use RuntimeShield\Contracts\Signal\RouteCollectorContract;
 use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
 use RuntimeShield\Contracts\Signal\SignalPipelineContract;
 use RuntimeShield\Contracts\Signal\SignalStoreContract;
+use RuntimeShield\Core\Advisory\AdvisoryBatchProgress;
 use RuntimeShield\Core\Advisory\NullViolationAdvisoryEnricher;
 use RuntimeShield\Core\Advisory\OpenAiViolationAdvisoryEnricher;
 use RuntimeShield\Core\Alert\AlertDispatcher;
@@ -200,6 +201,8 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
         $this->app->singleton(HttpTransportContract::class, static fn (): HttpTransportContract => new StreamHttpTransport());
 
+        $this->app->singleton(AdvisoryBatchProgress::class, static fn (): AdvisoryBatchProgress => new AdvisoryBatchProgress());
+
         $this->app->singleton(ViolationAdvisoryEnricherContract::class, static function ($app): ViolationAdvisoryEnricherContract {
             /** @var array<string, mixed> $ai */
             $ai = (array) $app['config']->get('runtime_shield.ai', []);
@@ -212,7 +215,12 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
             $logger = $app->bound(LoggerInterface::class) ? $app->make(LoggerInterface::class) : null;
 
-            return new OpenAiViolationAdvisoryEnricher($ai, $app->make(HttpTransportContract::class), $logger);
+            return new OpenAiViolationAdvisoryEnricher(
+                $ai,
+                $app->make(HttpTransportContract::class),
+                $logger,
+                $app->make(AdvisoryBatchProgress::class),
+            );
         });
 
         $this->app->singleton(EngineContract::class, static fn ($app): RuntimeShieldEngine => new RuntimeShieldEngine(
