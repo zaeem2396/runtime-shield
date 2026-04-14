@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.1.0] — 2026-04-14 — Advanced Detection
+
+### Overview
+
+Adds four new runtime-focused detection rules that extend RuntimeShield beyond route configuration checks
+into live response behavior analysis, while keeping existing deterministic scoring semantics.
+
 ### Added
 
 - Advanced detection rules for runtime contexts:
