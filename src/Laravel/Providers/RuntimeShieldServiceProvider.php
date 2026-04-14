@@ -78,11 +78,15 @@ use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;
 use RuntimeShield\Laravel\Signal\RouteSignalCollector;
 use RuntimeShield\Laravel\Signal\SignalPipeline;
+use RuntimeShield\Rules\BruteForcePatternRule;
+use RuntimeShield\Rules\ErrorExposureRule;
 use RuntimeShield\Rules\FileUploadValidationRule;
 use RuntimeShield\Rules\MissingCsrfRule;
 use RuntimeShield\Rules\MissingRateLimitRule;
+use RuntimeShield\Rules\MissingSecurityHeadersRule;
 use RuntimeShield\Rules\MissingValidationRule;
 use RuntimeShield\Rules\PublicRouteWithoutAuthRule;
+use RuntimeShield\Rules\ResponseAnomalyRule;
 
 final class RuntimeShieldServiceProvider extends ServiceProvider
 {
@@ -163,6 +167,10 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
             $registry->register(new MissingCsrfRule());
             $registry->register(new MissingValidationRule());
             $registry->register(new FileUploadValidationRule());
+            $registry->register(new ErrorExposureRule());
+            $registry->register(new BruteForcePatternRule());
+            $registry->register(new MissingSecurityHeadersRule());
+            $registry->register(new ResponseAnomalyRule());
 
             return $registry;
         });
