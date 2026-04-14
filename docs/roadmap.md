@@ -525,7 +525,7 @@ Release gate checklist:
 
 ---
 
-# 📈 v1.1.0 — Advanced Detection &nbsp;🟡 In Progress
+# 📈 v1.1.0 — Advanced Detection &nbsp;🟢 Completed
 
 ## STEP 41 — Error Exposure Detection &nbsp;🟢 Completed
 
@@ -576,7 +576,7 @@ Release status:
 - [x] Runtime rules implemented and registered
 - [x] Rule-level unit tests added
 - [x] README + CHANGELOG updated
-- [ ] `git tag v1.1.0`
+- [x] `git tag v1.1.0`
 
 ---
 
