@@ -525,42 +525,58 @@ Release gate checklist:
 
 ---
 
-# 📈 v1.1.0 — Advanced Detection &nbsp;🔴 Planned
+# 📈 v1.1.0 — Advanced Detection &nbsp;🟡 In Progress
 
-## STEP 41 — Error Exposure Detection &nbsp;🔴 Planned
+## STEP 41 — Error Exposure Detection &nbsp;🟢 Completed
 
 ```
 Detect stack trace leaks
 ```
 
+Implementation: added `ErrorExposureRule` to flag 5xx responses that expose debug/exception indicators
+(`x-debug-*` headers, suspicious HTML 5xx payloads).
+
 ---
 
-## STEP 42 — Brute Force Detection &nbsp;🔴 Planned
+## STEP 42 — Brute Force Detection &nbsp;🟢 Completed
 
 ```
 Detect repeated 401 patterns
 ```
 
+Implementation: added `BruteForcePatternRule` to detect 401 failures on auth-like endpoints when
+no throttle/rate-limit middleware is present.
+
 ---
 
-## STEP 43 — Security Headers &nbsp;🔴 Planned
+## STEP 43 — Security Headers &nbsp;🟢 Completed
 
 ```
 Check:
 CSP, HSTS, X-Frame-Options
 ```
 
+Implementation: added `MissingSecurityHeadersRule` for CSP and X-Frame-Options, plus HSTS checks
+on HTTPS requests.
+
 ---
 
-## STEP 44 — Response Anomalies &nbsp;🔴 Planned
+## STEP 44 — Response Anomalies &nbsp;🟢 Completed
 
 ```
 Detect abnormal responses
 ```
 
+Implementation: added `ResponseAnomalyRule` for very slow responses, oversized bodies, empty 5xx
+responses, and malformed 204 bodies.
+
 ---
 
-✅ `git tag v1.1.0`
+Release status:
+- [x] Runtime rules implemented and registered
+- [x] Rule-level unit tests added
+- [x] README + CHANGELOG updated
+- [ ] `git tag v1.1.0`
 
 ---
 
