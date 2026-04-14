@@ -855,6 +855,14 @@ evaluation and security **scores stay deterministic**; only the extra metadata c
 - **HTTP / middleware alerts**: **off by default**. Set `enrich_http_requests` to `true` only if you
   accept API latency and cost on the alert path.
 
+### CLI “stuck” or very slow
+
+- The Artisan command is **`runtime-shield:scan`** (spelling **shield**, not `sheild`).
+- With AI enabled, enrichment performs **one Chat Completions request per batch** of violations, so
+  hundreds of findings can mean **several minutes** of wall time. The command now shows a **loader with
+  percentage** while those requests run. For an immediate scan with **no** OpenAI traffic, pass
+  **`--no-ai`**.
+
 ### AI explanation payload (`Violation::toArray()`)
 
 When present:
