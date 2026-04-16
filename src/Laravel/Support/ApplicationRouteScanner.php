@@ -33,6 +33,12 @@ final class ApplicationRouteScanner
         return $this->evaluateRoutes($this->collectRoutes());
     }
 
+    /** Number of routes that would be scanned (framework internals excluded). */
+    public function scannableRouteCount(): int
+    {
+        return count($this->collectRoutes());
+    }
+
     /**
      * @param list<Route> $routes
      */
