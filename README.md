@@ -1,5 +1,7 @@
 # RuntimeShield
 
+**Runtime security and observability for Laravel — scan routes, score risk, and catch misconfigurations before production.**
+
 [![Tests](https://github.com/zaeem2396/runtime-shield/actions/workflows/tests.yml/badge.svg)](https://github.com/zaeem2396/runtime-shield/actions/workflows/tests.yml)
 [![Code Style](https://github.com/zaeem2396/runtime-shield/actions/workflows/code-style.yml/badge.svg)](https://github.com/zaeem2396/runtime-shield/actions/workflows/code-style.yml)
 [![Static Analysis](https://github.com/zaeem2396/runtime-shield/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/zaeem2396/runtime-shield/actions/workflows/static-analysis.yml)
@@ -7,284 +9,21 @@
 [![Laravel](https://img.shields.io/badge/Laravel-10%2F11%2F12%2F13-red)](https://laravel.com)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-> Runtime security analysis and observation for PHP 8.2+ applications — with first-class Laravel 10 / 11 / 12 / 13 support.
-
-RuntimeShield sits transparently in your HTTP middleware stack, captures request and response signals per lifecycle, evaluates configurable security rules in **batches with timeout protection**, dispatches evaluation **asynchronously** to the queue when needed, samples traffic **per environment**, produces a weighted **Security Score** (0–100) with per-category breakdown, **alerts your team** via Log, Webhook, Slack or Mail when violations are detected, and is **fully extensible** via custom rules, signal collectors, plugins, and event hooks — with absolute zero overhead when disabled.
+PHP **8.2+**. Laravel **10 / 11 / 12 / 13**. Middleware captures request + response signals, runs a **rule engine** (batched, timeout-bounded, optionally async), and can **alert** on live traffic. **Disabled = zero hot-path overhead.**
 
 ---
 
-## Requirements
-
-| Dependency | Version |
-|------------|---------|
-| PHP        | `^8.2`  |
-| Laravel    | `^10.0`, `^11.0`, `^12.0`, or `^13.0` |
-
----
-
-## Installation
+### Try in 30 seconds
 
 ```bash
 composer require zaeem2396/runtime-shield
-```
-
-### Publish configuration
-
-```bash
 php artisan runtime-shield:install
-```
-
-This publishes `config/runtime_shield.php` to your application's config directory.
-
----
-
-## Setup
-
-### 1 — Register the middleware
-
-Add `RuntimeShieldMiddleware` to your HTTP middleware stack.
-
-**Laravel 11, 12, 13** (`bootstrap/app.php`):
-
-```php
-use RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware;
-use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
-
-return Application::configure(basePath: dirname(__DIR__))
-    ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        commands: __DIR__.'/../routes/console.php',
-        health: '/up',
-    )
-    ->withMiddleware(function (Middleware $middleware): void {
-        // Add RuntimeShield alongside any existing middleware you have
-        $middleware->append(RuntimeShieldMiddleware::class);
-    })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        //
-    })->create();
-```
-
-> If you already have a `->withMiddleware()` callback with other middleware (e.g. `$middleware->alias([...])`), simply add `$middleware->append(RuntimeShieldMiddleware::class)` **inside the same callback** — do not create a second one.
-
-**Laravel 10** (`app/Http/Kernel.php`):
-
-```php
-use RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware;
-
-protected $middleware = [
-    // ...
-    RuntimeShieldMiddleware::class,
-];
-```
-
-### 2 — Register the service provider (if not auto-discovered)
-
-```php
-// config/app.php
-'providers' => [
-    RuntimeShield\Laravel\Providers\RuntimeShieldServiceProvider::class,
-],
-```
-
-> Laravel's package auto-discovery picks this up automatically if your `composer.json` includes the `extra.laravel.providers` key.
-
----
-
-## Configuration
-
-After publishing, edit `config/runtime_shield.php`:
-
-```php
-return [
-    // Master switch — set false for absolute zero overhead
-    'enabled' => env('RUNTIME_SHIELD_ENABLED', true),
-
-    // Fraction of requests to process (0.0 = none, 1.0 = all)
-    'sampling_rate' => env('RUNTIME_SHIELD_SAMPLING_RATE', 1.0),
-
-    // Enable/disable rule groups
-    'rules' => [
-        'auth'       => true,
-        'rate_limit' => true,
-        'csrf'       => true,
-        'validation' => true,
-    ],
-
-    // Engine performance tuning
-    'performance' => [
-        'async'      => false,
-        'batch_size' => 50,
-        'timeout_ms' => 100,
-    ],
-];
-```
-
-### Environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `RUNTIME_SHIELD_ENABLED` | `true` | Master on/off switch |
-| `RUNTIME_SHIELD_SAMPLING_RATE` | `1.0` | Request sampling (0.0–1.0) |
-
----
-
-## Usage
-
-### Resolving the manager
-
-```php
-use RuntimeShield\Contracts\ShieldContract;
-
-$shield = app(ShieldContract::class);
-
-if ($shield->isEnabled()) {
-    // shield is active
-}
-```
-
-### Reading the assembled context (v0.3.0+)
-
-```php
-use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
-
-$store   = app(RuntimeContextStoreContract::class);
-$context = $store->get(); // SecurityRuntimeContext|null
-
-if ($context !== null && $context->isComplete()) {
-    echo $context->requestId;            // unique request identifier
-    echo $context->processingTimeMs;     // total wall-clock time in ms
-    echo $context->request->method;      // e.g. "GET"
-    echo $context->response->statusCode; // e.g. 200
-    echo $context->route->name;          // e.g. "dashboard"
-    echo $context->auth->isAuthenticated ? 'auth' : 'guest';
-
-    // JSON-serializable snapshot
-    $payload = $context->toArray();
-}
-```
-
-### Reading individual signals
-
-```php
-use RuntimeShield\Contracts\Signal\SignalStoreContract;
-
-$store = app(SignalStoreContract::class);
-
-$request  = $store->getRequest();   // RequestSignal|null
-$response = $store->getResponse();  // ResponseSignal|null
-$route    = $store->getRoute();     // RouteSignal|null
-$auth     = $store->getAuth();      // AuthSignal|null
-```
-
-### Captured data
-
-**`RequestSignal`**
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `method` | `string` | Upper-cased HTTP method |
-| `url` | `string` | Full URL including query string |
-| `path` | `string` | URL path segment |
-| `ip` | `string` | Client IP address |
-| `headers` | `array<string, string>` | Normalized header map |
-| `query` | `array<string, mixed>` | Decoded query parameters |
-| `bodySize` | `int` | Request body size in bytes |
-| `capturedAt` | `DateTimeImmutable` | Capture timestamp |
-
-**`ResponseSignal`**
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `statusCode` | `int` | HTTP status code |
-| `statusText` | `string` | HTTP reason phrase |
-| `headers` | `array<string, string>` | Normalized header map |
-| `bodySize` | `int` | Response body size in bytes |
-| `responseTimeMs` | `float` | Wall-clock time in milliseconds |
-| `capturedAt` | `DateTimeImmutable` | Capture timestamp |
-
----
-
-## Rule Engine (v0.4.0+)
-
-The Rule Engine evaluates every assembled `SecurityRuntimeContext` against a set of
-security rules and returns a typed `ViolationCollection`.
-
-### Built-in rules
-
-| Rule | Severity | What it detects |
-|------|----------|----------------|
-| `PublicRouteWithoutAuthRule` | `CRITICAL` | Routes with no authentication middleware |
-| `MissingRateLimitRule` | `MEDIUM` | Routes with no throttle / rate-limit middleware |
-| `MissingCsrfRule` | `HIGH` | Mutable web routes (POST / PUT / PATCH / DELETE) missing CSRF middleware |
-| `MissingValidationRule` | `LOW` | Mutable routes without any input-validation middleware (advisory) |
-| `FileUploadValidationRule` | `MEDIUM` | POST routes whose URI suggests file upload with no upload-validation middleware |
-| `ErrorExposureRule` | `HIGH` | 5xx responses that look like debug / exception leakage |
-| `BruteForcePatternRule` | `HIGH` | 401 auth-endpoint failures without request throttling |
-| `MissingSecurityHeadersRule` | `MEDIUM` | Missing baseline security headers (CSP, X-Frame-Options, HSTS on HTTPS) |
-| `ResponseAnomalyRule` | `MEDIUM` | Abnormal response traits (very slow, huge body, malformed 5xx/204 patterns) |
-
-Response-driven rules run during middleware evaluation (request+response context). `runtime-shield:scan`
-and `runtime-shield:report` build route/request contexts only, so response-dependent rules may not fire there.
-
-### Evaluating violations in code
-
-```php
-use RuntimeShield\Contracts\Rule\RuleEngineContract;
-use RuntimeShield\Contracts\Signal\RuntimeContextStoreContract;
-
-$context = app(RuntimeContextStoreContract::class)->get();
-
-if ($context !== null) {
-    $violations = app(RuleEngineContract::class)->run($context);
-
-    foreach ($violations->sorted() as $violation) {
-        echo "[{$violation->severity->label()}] {$violation->title} — {$violation->route}\n";
-    }
-}
-```
-
-### Adding custom rules
-
-```php
-use RuntimeShield\Contracts\Rule\RuleContract;
-use RuntimeShield\Core\Rule\RuleRegistry;
-use RuntimeShield\DTO\Rule\Severity;
-use RuntimeShield\DTO\Rule\Violation;
-use RuntimeShield\DTO\SecurityRuntimeContext;
-
-class MyCustomRule implements RuleContract
-{
-    public function id(): string      { return 'my-custom-rule'; }
-    public function title(): string   { return 'My Custom Security Rule'; }
-    public function severity(): Severity { return Severity::HIGH; }
-
-    public function evaluate(SecurityRuntimeContext $context): array
-    {
-        // inspect $context->route, $context->request, etc.
-        return [];
-    }
-}
-
-// In a service provider:
-app(RuleRegistry::class)->register(new MyCustomRule());
-```
-
----
-
-## Security Scan Command (v0.4.0+)
-
-Scan all registered routes for security violations without sending a real request:
-
-```bash
 php artisan runtime-shield:scan
 ```
 
-**Example output:**
+**Example — what you see on a risky app:**
 
-```
+```text
  RuntimeShield Security Scan
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Scanning 12 route(s)…
@@ -300,35 +39,172 @@ php artisan runtime-shield:scan
   Found 3 violation(s)  (1 critical · 1 high · 1 medium · 0 low)
 ```
 
-Output as JSON for CI pipelines:
+Then go deeper:
+
+```bash
+php artisan runtime-shield:report
+php artisan runtime-shield:score
+```
+
+---
+
+## Why this exists
+
+- **Static analysis** and route files tell you what *might* run. **RuntimeShield** reasons about **middleware, auth, CSRF, throttles, and responses** in the shape Laravel actually executes.
+- The gap: issues like **public POSTs without auth**, **missing rate limits**, **CSRF gaps**, **risky uploads**, and **runtime response anomalies** are easy to miss in code review alone.
+- Outcome: a **fast CLI** for CI and local dev, plus an optional **HTTP path** for live observation — without replacing Laravel’s own security features.
+
+---
+
+## Features
+
+**Detection (examples)**
+
+- Missing or weak **authentication** on sensitive routes  
+- **CSRF** gaps on mutable web routes  
+- **Rate limiting** / throttle coverage  
+- **Validation** middleware hints  
+- **File upload** surface heuristics  
+- **Runtime** signals: error exposure, auth brute-force patterns, security headers, response anomalies (slow/huge/malformed patterns)
+
+**Operations**
+
+- **CLI**: `scan`, `report`, `score`, `routes`, `bench`, `sampling`, `alerts`, `plugins`  
+- **Weighted security score** (0–100) + grade + per-category breakdown  
+- **Alerts**: log, webhook, Slack, mail — throttled, optional async  
+- **Performance**: sampling (incl. per-`APP_ENV`), batched rules, `timeout_ms`, optional **async** evaluation off the request path  
+- **DX** (v1.2+): `dashboard`, versioned `export`, `ci` gate  
+
+**Extensibility**
+
+- Custom **rules**, **signal collectors**, **plugins**, **events** — all config-driven  
+
+**Optional AI**
+
+- OpenAI-compatible **advisory** text on violations — **scores stay deterministic**; toggle off with `--no-ai` or config  
+
+---
+
+## Table of contents
+
+- [Why this exists](#why-this-exists)  
+- [Features](#features)  
+- [Requirements](#requirements)  
+- [Installation](#installation)  
+- [Setup](#setup)  
+- [Quick usage](#quick-usage)  
+- [Rule engine overview](#rule-engine-overview)  
+- [Security scan output](#security-scan-output)  
+- [Security score](#security-score)  
+- [Performance notes](#performance-notes)  
+- [Extensibility](#extensibility)  
+- [AI advisory (optional)](#ai-advisory-optional)  
+- [CLI commands summary](#cli-commands-summary)  
+- [Developer experience](#developer-experience)  
+- [CI and GitHub Actions](#ci-and-github-actions)  
+- [Contributing](#contributing)  
+- [License](#license)  
+
+---
+
+## Requirements
+
+| Dependency | Version |
+|------------|---------|
+| PHP        | `^8.2` |
+| Laravel    | `^10.0`, `^11.0`, `^12.0`, or `^13.0` |
+
+---
+
+## Installation
+
+```bash
+composer require zaeem2396/runtime-shield
+```
+
+Publish config:
+
+```bash
+php artisan runtime-shield:install
+```
+
+Creates `config/runtime_shield.php`.
+
+---
+
+## Setup
+
+**1. Middleware** — append `RuntimeShieldMiddleware` to your HTTP stack.
+
+Laravel **11 / 12 / 13** — `bootstrap/app.php`:
+
+```php
+use RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(RuntimeShieldMiddleware::class);
+    })
+    ->withExceptions(function (Exceptions $exceptions): void {
+        //
+    })->create();
+```
+
+> Already using `->withMiddleware()`? Add `append(RuntimeShieldMiddleware::class)` **inside the same callback** — avoid a second `withMiddleware` block.
+
+Laravel **10** — `app/Http/Kernel.php`:
+
+```php
+use RuntimeShield\Laravel\Middleware\RuntimeShieldMiddleware;
+
+protected $middleware = [
+    // ...
+    RuntimeShieldMiddleware::class,
+];
+```
+
+**2. Service provider** — auto-discovered via `composer.json` `extra.laravel.providers`. If you disabled discovery:
+
+```php
+// config/app.php
+'providers' => [
+    RuntimeShield\Laravel\Providers\RuntimeShieldServiceProvider::class,
+],
+```
+
+---
+
+## Quick usage
+
+**Scan every route** (synthetic request/route context — fast, CI-friendly):
+
+```bash
+php artisan runtime-shield:scan
+```
+
+**JSON** (automation, dashboards):
 
 ```bash
 php artisan runtime-shield:scan --format=json
 ```
 
-The command exits with code `1` when any `CRITICAL` or `HIGH` violations are found,
-making it suitable as a CI gate.
-
----
-
-## Security Report Command (v0.5.0+)
-
-Generate a comprehensive security report with violation sections, score, and grade:
+**Full report** + score summary:
 
 ```bash
 php artisan runtime-shield:report
 ```
 
-**Options:**
+**Example — report header + score strip:**
 
-| Option | Description |
-|--------|-------------|
-| `--format=json` | Output the full report as JSON |
-| `--save=<path>` | Write the JSON report to a file |
-
-**Example output:**
-
-```
+```text
  RuntimeShield Security Report
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Scanning 12 route(s)…
@@ -351,52 +227,81 @@ php artisan runtime-shield:report
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
----
-
-## Route Protection Inspector (v0.5.0+)
-
-Inspect every registered route's security coverage — auth, CSRF, and rate-limiting:
+**Score only:**
 
 ```bash
-php artisan runtime-shield:routes
+php artisan runtime-shield:score
+php artisan runtime-shield:scan --score
 ```
 
-**Options:**
-
-| Option | Description |
-|--------|-------------|
-| `--filter=exposed` | Show only routes with at least one missing protection |
-| `--method=POST` | Filter rows by HTTP method |
-| `--sort=risk` | Order rows by highest risk first |
-
-**Example output:**
-
-```
- RuntimeShield Route Protection Inspector
-────────────────────────────────────────────────────────
- ┌────────┬───────────────────┬──────┬──────┬────────────┬──────────┐
- │ Method │ URI               │ Auth │ CSRF │ Rate Limit │ Status   │
- ├────────┼───────────────────┼──────┼──────┼────────────┼──────────┤
- │ GET    │ dashboard         │ ✘    │ —    │ ✘          │ CRITICAL │
- │ POST   │ contact           │ ✔    │ ✘    │ ✘          │ HIGH RISK│
- │ POST   │ api/users         │ ✔    │ —    │ ✔          │ SAFE     │
- └────────┴───────────────────┴──────┴──────┴────────────┴──────────┘
-
-  3 route(s) shown   1 protected   2 exposed
-```
+**AI on by default in config?** Use `--no-ai` on `scan` / `report` for a deterministic, instant run.
 
 ---
 
-## Security Score Command (v0.6.0+)
+## Rule engine overview
 
-`runtime-shield:score` calculates a weighted security score (0–100) with a
-per-category breakdown, letter grade, and a Unicode progress-bar table.
+1. **Signals** — middleware + collectors assemble a `SecurityRuntimeContext` (request, route, auth, response when available).  
+2. **Rules** — each rule inspects that context and returns zero or more `Violation` objects with deterministic severity.  
+3. **Engine** — rules run in **batches** under a **time budget**; optional **async** mode dispatches work to the queue so the HTTP response is not blocked.  
+4. **Outputs** — CLI aggregates violations across routes; live traffic can trigger **alerts** when enabled.
+
+**Built-in rules (summary)**
+
+| Rule | Severity | Detects |
+|------|----------|---------|
+| `PublicRouteWithoutAuthRule` | CRITICAL | Sensitive routes without auth middleware |
+| `MissingCsrfRule` | HIGH | Mutable web routes without CSRF middleware |
+| `MissingRateLimitRule` | MEDIUM | Missing throttle / rate limit |
+| `MissingValidationRule` | LOW | Mutable routes without validation middleware (advisory) |
+| `FileUploadValidationRule` | MEDIUM | Upload-shaped POSTs without upload validation middleware |
+| `ErrorExposureRule` | HIGH | 5xx responses suggesting debug / exception leakage |
+| `BruteForcePatternRule` | HIGH | 401 auth-endpoint failures without throttling |
+| `MissingSecurityHeadersRule` | MEDIUM | Baseline headers (CSP, X-Frame-Options, HSTS on HTTPS) |
+| `ResponseAnomalyRule` | MEDIUM | Very slow, oversized, or malformed response patterns |
+
+> **CLI vs HTTP:** `scan` / `report` synthesize **route + request** contexts. Rules that need a **real response** fire on the **middleware** path. Plan scans accordingly.
+
+---
+
+## Security scan output
+
+```bash
+php artisan runtime-shield:scan
+```
+
+**Table example:**
+
+```text
+ RuntimeShield Security Scan
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Scanning 12 route(s)…
+
+ ┌─────────────────────┬──────────────────────────────────────┬──────────┐
+ │ Route / URI         │ Rule                                 │ Severity │
+ ├─────────────────────┼──────────────────────────────────────┼──────────┤
+ │ dashboard           │ Public Route Without Authentication  │ CRITICAL │
+ │ contact             │ Missing CSRF Protection              │ HIGH     │
+ │ api/users           │ Missing Rate Limit                   │ MEDIUM   │
+ └─────────────────────┴──────────────────────────────────────┴──────────┘
+
+  Found 3 violation(s)  (1 critical · 1 high · 1 medium · 0 low)
+```
+
+**Exit codes:** `runtime-shield:scan` exits **1** when any **CRITICAL** or **HIGH** violation is present — suitable as a CI gate alongside `runtime-shield:ci`.
+
+---
+
+## Security score
+
+Weighted **0–100** score, **letter grade**, and per-category rows (auth, CSRF, rate limit, validation, file upload). Deductions per violation severity are applied **per category**; overall score is a **weighted blend**.
 
 ```bash
 php artisan runtime-shield:score
 ```
 
-```
+**Example:**
+
+```text
  RuntimeShield Security Score
 ──────────────────────────────────────────────────
 
@@ -423,331 +328,45 @@ php artisan runtime-shield:score
     · Authentication — score 40/100 (3 violation(s))
 ```
 
-**Options:**
-
-| Option | Description |
-|--------|-------------|
-| `--format=json` | Output the full score as JSON |
-
-### Score as part of `runtime-shield:report`
-
-The report command now includes the same per-category breakdown in its summary panel:
-
-```bash
-php artisan runtime-shield:report
-```
-
-### Quick score in scan
-
-Add `--score` to any scan to see the weighted score at a glance:
-
-```bash
-php artisan runtime-shield:scan --score
-```
-
----
-
-## Security Score Weights
-
-The five categories and their default weights are:
-
-| Category | Key | Default Weight |
-|----------|-----|----------------|
+| Category | Config key | Default weight |
+|----------|------------|----------------|
 | Authentication | `auth` | 30% |
-| CSRF Protection | `csrf` | 25% |
-| Rate Limiting | `rate_limit` | 20% |
-| Input Validation | `validation` | 15% |
-| File Upload Safety | `file_upload` | 10% |
+| CSRF | `csrf` | 25% |
+| Rate limiting | `rate_limit` | 20% |
+| Validation | `validation` | 15% |
+| File upload | `file_upload` | 10% |
 
-Override in `config/runtime_shield.php`:
+Override weights and thresholds in `config/runtime_shield.php` under `scoring`.
 
-```php
-'scoring' => [
-    'weights' => [
-        'auth'        => 40,  // heavier auth focus
-        'csrf'        => 20,
-        'rate_limit'  => 20,
-        'validation'  => 10,
-        'file_upload' => 10,
-    ],
-],
+```bash
+php artisan runtime-shield:score --format=json
 ```
-
-### Score deductions per severity
-
-| Severity | Points deducted per violation |
-|----------|-------------------------------|
-| CRITICAL | −20 |
-| HIGH | −10 |
-| MEDIUM | −5 |
-| LOW | −2 |
-| INFO | 0 |
-
-Each category starts at 100 and is floored at 0. The overall score is the weighted average across all five categories.
 
 ---
 
-## Performance (v0.7.0+)
+## Performance notes
 
-### Async Rule Evaluation
-
-Move rule evaluation off the HTTP critical path by enabling queue-based processing:
-
-```php
-// config/runtime_shield.php
-'performance' => [
-    'async'      => true,   // dispatch EvaluationJob to queue
-    'batch_size' => 50,     // rules per batch
-    'timeout_ms' => 100,    // abort evaluation after 100 ms
-],
-```
-
-When `async = true`, request-time middleware evaluation dispatches a
-`RuntimeShield\Laravel\Jobs\EvaluationJob` to your default queue and returns
-the HTTP response immediately with zero blocking wait. The `runtime-shield:bench`
-command always bypasses async and measures real synchronous rule cost.
-
-### Batch Rule Execution
-
-Rules are always processed in batches of `batch_size`. Set `timeout_ms > 0` to
-abort evaluation if the cumulative batch time exceeds the budget:
-
-```php
-'performance' => [
-    'batch_size' => 10,   // evaluate 10 rules per chunk
-    'timeout_ms' => 50,   // hard stop after 50 ms
-],
-```
-
-### Dynamic Sampling per Environment
-
-Override the global `sampling_rate` per `APP_ENV`:
-
-```php
-// config/runtime_shield.php
-'sampling' => [
-    'env_rates' => [
-        'production' => 0.5,   // sample 50% of production requests
-        'staging'    => 0.8,
-        'testing'    => 0.0,   // zero overhead in tests
-        'local'      => 1.0,   // always sample locally
-    ],
-],
-```
-
-Check the active sampler at any time:
+- **`enabled => false`** — early exit; `SignalPipelineContract` resolves to a **no-op** pipeline → **zero allocations** on the hot path.  
+- **Sampling** — global `sampling_rate` plus optional per-`APP_ENV` overrides (`sampling.env_rates`).  
+- **Batches + `timeout_ms`** — cap how long rule evaluation may run.  
+- **`async`** — queue-backed evaluation after the response is sent (when enabled).  
+- **`runtime-shield:bench`** — always measures **synchronous** rule cost (bypasses async wrapper).  
 
 ```bash
 php artisan runtime-shield:sampling
-```
-
-### Benchmark Command
-
-Measure rule evaluation time across all routes. The command always runs
-rules **synchronously** — bypassing the `async` wrapper — so the timing
-reflects real rule-engine cost, not queue-dispatch overhead.
-
-```bash
 php artisan runtime-shield:bench
-php artisan runtime-shield:bench --iterations=5   # average over 5 passes
-php artisan runtime-shield:bench --format=json    # machine-readable
-```
-
-```
- RuntimeShield Benchmark
-────────────────────────────────────────────────────
-  Routes: 12   Iterations per route: 1
-
- ─────────────────────────────────────────────────────────────────────────
-  Method  Route                 Avg         Min         Max       Violations
- ─────────────────────────────────────────────────────────────────────────
-  GET     api/users             0.012 ms    0.011 ms    0.014 ms  1
-  POST    api/users             0.015 ms    0.013 ms    0.018 ms  3
-  ...
- ─────────────────────────────────────────────────────────────────────────
-  Routes: 12   Avg: 0.013 ms   Max: 0.018 ms   Violations: 24
- ─────────────────────────────────────────────────────────────────────────
-```
-
-### Zero-Overhead Disabled Path
-
-When `runtime_shield.enabled = false`, the `SignalPipelineContract` resolves
-to `NullSignalPipeline` — a no-op implementation that returns immediately with
-zero allocations. Combined with the middleware's early-exit guard, there is
-literally nothing executed on the hot path.
-
----
-
-## Alerting & Notifications (v0.8.0+)
-
-Receive real-time alerts when security violations are detected during live HTTP traffic.
-
-### Enabling alerts
-
-```php
-// config/runtime_shield.php
-'alerts' => [
-    'enabled'          => true,         // master switch
-    'min_severity'     => 'high',       // critical | high | medium | low | info
-    'throttle_seconds' => 300,          // cooldown per rule (0 = no throttle)
-    'async'            => false,        // true = queue via AlertDispatchJob
-
-    'channels' => [
-        'log' => [
-            'enabled' => true,
-            'channel' => 'stack',       // Laravel log channel
-        ],
-        'webhook' => [
-            'enabled' => true,
-            'url'     => env('RUNTIME_SHIELD_WEBHOOK_URL'),
-            'method'  => 'POST',
-            'headers' => [],
-        ],
-        'slack' => [
-            'enabled' => true,
-            'url'     => env('RUNTIME_SHIELD_SLACK_WEBHOOK_URL'),
-        ],
-        'mail' => [
-            'enabled'    => true,
-            'recipients' => ['security@yourapp.com'],
-            'from'       => env('MAIL_FROM_ADDRESS'),
-        ],
-    ],
-],
-```
-
-Or via environment variables:
-
-```ini
-RUNTIME_SHIELD_ALERTS_ENABLED=true
-RUNTIME_SHIELD_ALERT_MIN_SEVERITY=high
-RUNTIME_SHIELD_ALERT_THROTTLE=300
-RUNTIME_SHIELD_WEBHOOK_URL=https://hooks.example.com/security
-RUNTIME_SHIELD_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T/B/x
-```
-
-### How it works
-
-1. Alerts fire in `terminate()` — **after** the HTTP response is already sent, so the client never waits.
-2. The middleware runs rule evaluation only when `alerts.enabled = true` (zero-overhead otherwise).
-3. Violations at or above `min_severity` are forwarded to every enabled channel.
-4. Each rule is **throttled** independently — a rule that fires once won't alert again until the cooldown expires.
-5. Set `async = true` to dispatch `AlertDispatchJob` to your queue instead of blocking `terminate()`.
-
-### Alert Throttling
-
-Each rule ID has its own cooldown window. Once a rule triggers an alert it is silenced for `throttle_seconds`:
-
-```
-RUNTIME_SHIELD_ALERT_THROTTLE=600   # 10 minutes per rule
-```
-
-Set `throttle_seconds = 0` to disable throttling and receive every occurrence.
-
-### Inspect active alert config
-
-```bash
-php artisan runtime-shield:alerts
-```
-
-```
- RuntimeShield Alert Channels
-──────────────────────────────────────────────────
-
-  Status:           ENABLED
-  Min Severity:     HIGH
-  Throttle:         300 s
-  Async Dispatch:   no
-
- ┌─────────┬─────────┬───────────────────────────────────┐
- │ Channel │ Status  │ Config key                        │
- ├─────────┼─────────┼───────────────────────────────────┤
- │ log     │ ✔ On    │ alerts.channels.log.channel       │
- │ webhook │ ✘ Off   │ alerts.channels.webhook.url       │
- │ slack   │ ✘ Off   │ alerts.channels.slack.url         │
- │ mail    │ ✘ Off   │ alerts.channels.mail.recipients   │
- └─────────┴─────────┴───────────────────────────────────┘
-```
-
-### Hooking into alert events
-
-```php
-use RuntimeShield\Laravel\Events\ViolationAlertedEvent;
-
-Event::listen(ViolationAlertedEvent::class, function (ViolationAlertedEvent $e) {
-    // $e->alertEvent->violations, $e->alertEvent->route, $e->alertEvent->triggeredAt
-    MyMonitoringService::record($e->alertEvent->toArray());
-});
+php artisan runtime-shield:bench --iterations=5 --format=json
 ```
 
 ---
 
-## Artisan Commands
+## Extensibility
 
-| Command | Description |
-|---------|-------------|
-| `runtime-shield:install` | Publish the configuration file |
-| `runtime-shield:scan` | Scan all routes for security violations (table/JSON) |
-| `runtime-shield:scan --no-ai` | Skip AI advisory enrichment for this run (v1.0.0+) |
-| `runtime-shield:scan --score` | Scan and display the weighted security score |
-| `runtime-shield:report` | Full security report with per-category score breakdown |
-| `runtime-shield:report --no-ai` | Skip AI advisory enrichment for this run (v1.0.0+) |
-| `runtime-shield:routes` | Route protection inspector (auth · CSRF · rate-limit) |
-| `runtime-shield:score` | Weighted security score with category breakdown (v0.6.0+) |
-| `runtime-shield:bench` | Benchmark rule evaluation time per route (v0.7.0+) |
-| `runtime-shield:sampling` | Display active sampler type and effective rate (v0.7.0+) |
-| `runtime-shield:alerts` | Display alert channel config and status (v0.8.0+) |
-| `runtime-shield:plugins` | List all registered plugins (v0.9.0+) |
-| `runtime-shield:dashboard` | Local debug dashboard: config summary, rule count, recent middleware metrics (v1.2.0+) |
-| `runtime-shield:export` | Write a versioned JSON artifact (`score` or `report`) to stdout or `--output=` (v1.2.0+) |
-| `runtime-shield:ci` | CI gate: non-zero exit when score or severity budgets are exceeded (v1.2.0+) |
+Register in `config/runtime_shield.php` under `extensibility` — no package forks required.
 
-### Developer experience (v1.2.0+)
-
-**Dashboard** — quick visibility into whether shielding is enabled, effective sampling, how many rules are registered, and what the middleware ring buffer last recorded (requires real traffic through `RuntimeShieldMiddleware` for samples):
-
-```bash
-php artisan runtime-shield:dashboard
-php artisan runtime-shield:dashboard --format=json
-php artisan runtime-shield:dashboard --samples=5
-```
-
-**JSON export** — stable `{ export_schema_version, package_version, artifact, generated_at, data }` envelope for tooling:
-
-```bash
-php artisan runtime-shield:export score
-php artisan runtime-shield:export report --output=storage/app/runtime-shield-report.json
-```
-
-Tune defaults under `runtime_shield.dx` in the published config.
-
-**CI gate** — fail a pipeline when the route scan score or severity counts cross your budgets (`--min-score` defaults from `dx.ci.min_score`, then `scoring.thresholds.pass`; `--max-critical` defaults from `dx.ci.max_critical_violations`; set `RUNTIME_SHIELD_CI_MAX_HIGH` / `dx.ci.max_high_violations` to enable a high-severity cap):
-
-```bash
-php artisan runtime-shield:ci
-php artisan runtime-shield:ci --min-score=80 --max-critical=0 --max-high=5
-```
-
-Example GitHub Actions step:
-
-```yaml
-- name: RuntimeShield CI gate
-  run: php artisan runtime-shield:ci --min-score=75 --max-critical=0
-```
-
----
-
-## Extensibility (v0.9.0+)
-
-RuntimeShield is built to be extended without modifying package source code.
-Register your extensions in `config/runtime_shield.php` under the `extensibility` key.
-
-### Custom Rules
-
-Implement `RuleContract` (or extend `AbstractRule`) and list your class in the config:
+**Custom rules** — `RuleContract` / `AbstractRule`:
 
 ```php
-// config/runtime_shield.php
 'extensibility' => [
     'rules' => [
         App\Rules\MyCustomRule::class,
@@ -755,172 +374,33 @@ Implement `RuleContract` (or extend `AbstractRule`) and list your class in the c
 ],
 ```
 
-`AbstractRule` provides a sensible `Severity::LOW` default and a `make()` helper:
+**Signal collectors** — `CustomSignalCollectorContract` for app-specific context (tenant id, flags, etc.).
 
-```php
-use RuntimeShield\Core\Rule\AbstractRule;
-use RuntimeShield\DTO\SecurityRuntimeContext;
+**Plugins** — bundle rules + collectors + boot logic (`AbstractPlugin`).
 
-final class NoAdminEndpointRule extends AbstractRule
-{
-    public function id(): string    { return 'no-admin-endpoint'; }
-    public function title(): string { return 'Admin Endpoint Detected'; }
+**Events** — `BeforeScanEvent`, `AfterScanEvent`, `ViolationDetectedEvent` (disable via `events.enabled` when unused).
 
-    public function evaluate(SecurityRuntimeContext $context): array
-    {
-        if (str_starts_with($context->route?->uri ?? '', '/admin')) {
-            return [$this->make('Admin endpoint accessed without extra verification', $context->route->uri)];
-        }
-        return [];
-    }
-}
-```
+**Runtime registration** — `RuleRegistrar` for disable/replace of built-ins.
 
-Use `RuleRegistrar` in a service provider for fine-grained control:
-
-```php
-use RuntimeShield\Core\Rule\RuleRegistrar;
-
-$registrar = app(RuleRegistrar::class);
-$registrar->rule(new NoAdminEndpointRule())
-          ->disable('public-route-without-auth')   // remove a built-in rule
-          ->replace(new StrictCsrfRule());          // swap a built-in rule
-```
-
-### Custom Signal Collectors
-
-Implement `CustomSignalCollectorContract` to enrich context with application-specific data:
-
-```php
-use Illuminate\Http\Request;
-use RuntimeShield\Contracts\Signal\CustomSignalCollectorContract;
-
-final class TenantSignalCollector implements CustomSignalCollectorContract
-{
-    public function id(): string { return 'tenant'; }
-
-    public function collect(Request $request): array
-    {
-        return ['tenant_id' => $request->header('X-Tenant-ID', 'default')];
-    }
-}
-```
-
-```php
-// config/runtime_shield.php
-'extensibility' => [
-    'signal_collectors' => [
-        App\Signals\TenantSignalCollector::class,
-    ],
-],
-```
-
-Custom signals are stored in `CustomSignalStore` (keyed by collector ID) and available to
-your custom rules and event listeners.
-
-### Plugin System
-
-Bundle rules, collectors, and bootstrap logic into a distributable plugin:
-
-```php
-use RuntimeShield\Core\Plugin\AbstractPlugin;
-
-final class SqlInjectionPlugin extends AbstractPlugin
-{
-    public function id(): string   { return 'acme/sql-injection'; }
-    public function name(): string { return 'Acme SQL Injection Detector'; }
-
-    public function rules(): array
-    {
-        return [new RawQueryRule(), new UnboundParameterRule()];
-    }
-}
-```
-
-```php
-// config/runtime_shield.php
-'extensibility' => [
-    'plugins' => [
-        App\Plugins\SqlInjectionPlugin::class,
-    ],
-],
-```
-
-Run `php artisan runtime-shield:plugins` to list all active plugins.
-
-### Event Hooks
-
-Listen to scan lifecycle events anywhere in your application:
-
-```php
-use RuntimeShield\Laravel\Events\BeforeScanEvent;
-use RuntimeShield\Laravel\Events\AfterScanEvent;
-use RuntimeShield\Laravel\Events\ViolationDetectedEvent;
-
-Event::listen(AfterScanEvent::class, function (AfterScanEvent $event): void {
-    if ($event->hasViolations()) {
-        // persist violations, trigger custom alerting, etc.
-    }
-});
-
-Event::listen(ViolationDetectedEvent::class, function (ViolationDetectedEvent $event): void {
-    logger()->debug('Violation detected', [
-        'rule'  => $event->violation->ruleId,
-        'route' => $event->violation->route,
-    ]);
-});
-```
-
-Disable events to eliminate dispatch overhead when not needed:
-
-```env
-RUNTIME_SHIELD_EVENTS_ENABLED=false
+```bash
+php artisan runtime-shield:plugins
 ```
 
 ---
 
-## AI Advisory (v1.0.0+)
+## AI advisory (optional)
 
-Optional **OpenAI-compatible** Chat Completions enrichment: each violation may gain an `advisory`
-object (summary, impact, remediation, advisory severity hint, confidence, rationale). Rule
-evaluation and security **scores stay deterministic**; only the extra metadata changes.
+OpenAI-compatible Chat Completions can attach an **`advisory`** object per violation (`summary`, `impact`, `remediation`, optional triage hint, confidence). **Rule severity and numeric scores are unchanged.**
 
-### Advisory philosophy
+| Surface | Behaviour |
+|---------|-----------|
+| CLI (`scan`, `report`) | Enrichment when `ai.enabled` + API key set; **`--no-ai`** skips |
+| HTTP / alerts | **Off by default** — set `ai.enrich_http_requests` only if you accept latency/cost |
 
-- Deterministic rule detection remains the source of truth.
-- AI adds explanation and triage hints only.
-- If the API fails, times out, or is off, behaviour matches pre-v1 scans (no advisory keys in JSON).
-
-### Where enrichment runs
-
-- **CLI** (`runtime-shield:scan`, `runtime-shield:report`): runs when `ai.enabled` is true and
-  `api_key` is non-empty. Use `--no-ai` to skip for a single run.
-- **HTTP / middleware alerts**: **off by default**. Set `enrich_http_requests` to `true` only if you
-  accept API latency and cost on the alert path.
-
-### CLI “stuck” or very slow
-
-- The Artisan command is **`runtime-shield:scan`** (spelling **shield**, not `sheild`).
-- With AI enabled, enrichment performs **one Chat Completions request per batch** of violations, so
-  hundreds of findings can mean **several minutes** of wall time. The command now shows a **loader with
-  percentage** while those requests run. For an immediate scan with **no** OpenAI traffic, pass
-  **`--no-ai`**.
-
-### AI explanation payload (`Violation::toArray()`)
-
-When present:
-
-- `advisory.summary` — short plain-language explanation
-- `advisory.impact` — production risk framing
-- `advisory.remediation` — suggested fix
-- `advisory.severity` — optional triage hint (`critical|high|medium|low|info`), separate from rule severity
-- `advisory.confidence` — float `0`–`1` or omitted
-- `advisory.rationale` — why the model chose that hint
-
-### Configuration
+**Slow CLI with AI?** Large violation counts batch to OpenAI — use **`--no-ai`** for an immediate deterministic run. Spelling: **`runtime-shield:scan`** (shield, not `sheild`).
 
 ```php
-// config/runtime_shield.php
+// config/runtime_shield.php (excerpt)
 'ai' => [
     'enabled' => env('RUNTIME_SHIELD_AI_ENABLED', false),
     'enrich_http_requests' => env('RUNTIME_SHIELD_AI_ENRICH_HTTP', false),
@@ -933,44 +413,91 @@ When present:
 ],
 ```
 
-Use `base_url` pointing at any API that implements `/v1/chat/completions` in OpenAI format.
-
-### Environment variables
-
-```env
-RUNTIME_SHIELD_AI_ENABLED=false
-RUNTIME_SHIELD_AI_ENRICH_HTTP=false
-RUNTIME_SHIELD_AI_API_KEY=
-RUNTIME_SHIELD_AI_BASE_URL=https://api.openai.com/v1
-RUNTIME_SHIELD_AI_MODEL=gpt-4o-mini
-RUNTIME_SHIELD_AI_TIMEOUT_MS=60000
-RUNTIME_SHIELD_AI_MAX_TOKENS=4096
-RUNTIME_SHIELD_AI_BATCH_SIZE=20
-```
-
-### Data handling notes
-
-- Prompts include rule id, title, description, deterministic severity, and route URI only — not request bodies.
-- Do not log full API responses if they may contain sensitive content.
-
-### Extending / testing
-
-Bind `RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract` in a service provider
-to replace the default implementation (for example a custom model or offline stub).
+Bind `ViolationAdvisoryEnricherContract` to swap implementations (custom model, air-gapped stub, etc.).
 
 ---
 
-## CI / GitHub Actions
+## CLI commands summary
 
-Three independent workflows run on every push and pull request:
+| Command | What it does |
+|---------|----------------|
+| `runtime-shield:install` | Publish `config/runtime_shield.php` |
+| `runtime-shield:scan` | Route scan — table / JSON; exits **1** on CRITICAL/HIGH |
+| `runtime-shield:scan --no-ai` | Skip AI enrichment for this run |
+| `runtime-shield:scan --score` | Scan + print weighted score |
+| `runtime-shield:report` | Full report + score block |
+| `runtime-shield:report --no-ai` | Skip AI enrichment for this run |
+| `runtime-shield:routes` | Auth · CSRF · rate-limit matrix per route |
+| `runtime-shield:score` | Score + category table / JSON |
+| `runtime-shield:bench` | Per-route timing (sync engine) |
+| `runtime-shield:sampling` | Show effective sampler + rate |
+| `runtime-shield:alerts` | Alert channel status |
+| `runtime-shield:plugins` | List registered plugins |
+| `runtime-shield:dashboard` | Local debug: config, rule count, recent metrics (`--format=json`, `--samples=`) |
+| `runtime-shield:export` | Versioned JSON artifact: `score` or `report`; optional `--output=` |
+| `runtime-shield:ci` | CI gate — non-zero exit if score / severity budgets fail |
 
-| Workflow | Trigger | What it checks |
-|----------|---------|----------------|
-| **Code Style** | push / PR | PHP CS Fixer (PSR-12 + PHP 8.2 migration rules) |
-| **Static Analysis** | push / PR | PHPStan level 9 — zero errors |
-| **Tests** | push / PR | PHPUnit — PHP 8.2/8.3/8.4 × Laravel 10/11/12/13 matrix |
+---
 
-All workflows use concurrency cancellation so only the latest run is active per branch.
+## Developer experience
+
+**Dashboard** — what’s enabled, sampling, async flag, rule count, and recent middleware ring-buffer rows (needs traffic through middleware for samples):
+
+```bash
+php artisan runtime-shield:dashboard
+php artisan runtime-shield:dashboard --format=json --samples=8
+```
+
+**Export** — stable envelope for tooling (`export_schema_version`, `package_version`, `artifact`, `generated_at`, `data`):
+
+```bash
+php artisan runtime-shield:export score
+php artisan runtime-shield:export report --output=storage/app/runtime-shield-report.json
+```
+
+**CI gate** — separate from scan’s CRITICAL/HIGH exit; tune **minimum score** and **severity budgets**:
+
+```bash
+php artisan runtime-shield:ci
+php artisan runtime-shield:ci --min-score=80 --max-critical=0 --max-high=5
+```
+
+Defaults also read from `runtime_shield.dx` in config (see published file).
+
+---
+
+## CI and GitHub Actions
+
+**Project workflows** (this repo) — on every push / PR:
+
+| Workflow | What runs |
+|----------|-----------|
+| Code style | PHP CS Fixer |
+| Static analysis | PHPStan level 9 |
+| Tests | PHPUnit — PHP 8.2 / 8.3 / 8.4 × Laravel 10–13 matrix |
+
+**Your app — example gate step:**
+
+```yaml
+- name: Install dependencies
+  run: composer install --no-interaction --prefer-dist
+
+- name: RuntimeShield CI gate
+  run: php artisan runtime-shield:ci --min-score=75 --max-critical=0
+```
+
+**Alternative — fail on high-severity scan findings:**
+
+```yaml
+- name: RuntimeShield scan (fail on critical/high)
+  run: php artisan runtime-shield:scan --no-ai
+```
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome on [GitHub](https://github.com/zaeem2396/runtime-shield). Before opening a PR, run **`composer run pre-check`** (format, analyse, test).
 
 ---
 
