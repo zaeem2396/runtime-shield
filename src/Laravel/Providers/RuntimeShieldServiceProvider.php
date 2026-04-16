@@ -67,6 +67,7 @@ use RuntimeShield\DTO\Rule\Severity;
 use RuntimeShield\Engine\RuntimeShieldEngine;
 use RuntimeShield\Laravel\Console\AlertsCommand;
 use RuntimeShield\Laravel\Console\BenchCommand;
+use RuntimeShield\Laravel\Console\DashboardCommand;
 use RuntimeShield\Laravel\Console\InstallCommand;
 use RuntimeShield\Laravel\Console\ReportCommand;
 use RuntimeShield\Laravel\Console\RoutesCommand;
@@ -373,6 +374,7 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
         $this->commands([
             InstallCommand::class,
+            DashboardCommand::class,
             ScanCommand::class,
             ReportCommand::class,
             RoutesCommand::class,
