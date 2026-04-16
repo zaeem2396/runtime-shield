@@ -262,4 +262,39 @@ return [
         'batch_size' => (int) env('RUNTIME_SHIELD_AI_BATCH_SIZE', 20),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Developer Experience (v1.2.0+)
+    |--------------------------------------------------------------------------
+    |
+    | Optional tooling for local debugging, machine-readable exports, and CI
+    | gates. None of this runs on the HTTP request path unless you invoke the
+    | related Artisan commands.
+    |
+    | dashboard.enabled — when false, runtime-shield:dashboard exits early
+    | dashboard.recent_metrics — rows of recent middleware timing samples
+    |
+    | export.schema_version — bumped when the JSON export envelope changes
+    |
+    | ci.min_score — minimum overall score (null = use scoring.thresholds.pass)
+    | ci.max_critical_violations — allowed critical findings (0 = fail on any)
+    | ci.max_high_violations — null disables the high-severity gate; set to 0
+    |                          to fail when any high-severity issue exists
+    |
+    */
+    'dx' => [
+        'dashboard' => [
+            'enabled'       => (bool) env('RUNTIME_SHIELD_DASHBOARD_ENABLED', true),
+            'recent_metrics' => (int) env('RUNTIME_SHIELD_DASHBOARD_RECENT_METRICS', 8),
+        ],
+        'export' => [
+            'schema_version' => 1,
+        ],
+        'ci' => [
+            'min_score' => env('RUNTIME_SHIELD_CI_MIN_SCORE'),
+            'max_critical_violations' => (int) env('RUNTIME_SHIELD_CI_MAX_CRITICAL', 0),
+            'max_high_violations' => env('RUNTIME_SHIELD_CI_MAX_HIGH'),
+        ],
+    ],
+
 ];
