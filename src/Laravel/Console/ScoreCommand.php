@@ -5,17 +5,10 @@ declare(strict_types=1);
 namespace RuntimeShield\Laravel\Console;
 
 use Illuminate\Console\Command;
-use Illuminate\Routing\Route;
-use Illuminate\Routing\Router;
-use RuntimeShield\Contracts\Rule\RuleEngineContract;
 use RuntimeShield\Contracts\Score\ScoreEngineContract;
-use RuntimeShield\Core\RuntimeContextBuilder;
-use RuntimeShield\DTO\Rule\ViolationCollection;
 use RuntimeShield\DTO\Score\CategoryScore;
 use RuntimeShield\DTO\Score\SecurityScore;
-use RuntimeShield\DTO\SecurityRuntimeContext;
-use RuntimeShield\DTO\Signal\RequestSignal;
-use RuntimeShield\DTO\Signal\RouteSignal;
+use RuntimeShield\Laravel\Support\ApplicationRouteScanner;
 use RuntimeShield\Support\CliRenderer;
 
 /**
@@ -32,8 +25,7 @@ final class ScoreCommand extends Command
     protected $description = 'Calculate a weighted security score with per-category breakdown';
 
     public function __construct(
-        private readonly Router $router,
-        private readonly RuleEngineContract $ruleEngine,
+        private readonly ApplicationRouteScanner $routeScanner,
         private readonly ScoreEngineContract $scoreEngine,
     ) {
         parent::__construct();
@@ -41,8 +33,7 @@ final class ScoreCommand extends Command
 
     public function handle(): int
     {
-        $routes = $this->collectRoutes();
-        $violations = $this->evaluateRoutes($routes);
+        $violations = $this->routeScanner->scanRoutes();
         $score = $this->scoreEngine->calculate($violations);
 
         if ($this->option('format') === 'json') {
@@ -58,109 +49,6 @@ final class ScoreCommand extends Command
         $this->renderFailedCategoriesWarning($score);
 
         return self::SUCCESS;
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // Route collection & evaluation
-    // ────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Scan all routes and return a merged ViolationCollection.
-     *
-     * @param list<Route> $routes
-     */
-    private function evaluateRoutes(array $routes): ViolationCollection
-    {
-        $all = new ViolationCollection();
-
-        foreach ($routes as $route) {
-            $context = $this->buildContext($route);
-            $violations = $this->ruleEngine->run($context);
-            $all = $all->merge($violations);
-        }
-
-        return $all;
-    }
-
-    /**
-     * Return application routes, skipping internal framework URIs.
-     *
-     * @return list<Route>
-     */
-    private function collectRoutes(): array
-    {
-        $skipPrefixes = ['_ignition', '_telescope', 'horizon/', 'telescope/', 'debugbar/'];
-        $routes = [];
-
-        foreach ($this->router->getRoutes()->getRoutes() as $route) {
-            $uri = $route->uri();
-            $skip = false;
-
-            foreach ($skipPrefixes as $prefix) {
-                if (str_starts_with($uri, $prefix)) {
-                    $skip = true;
-
-                    break;
-                }
-            }
-
-            if (! $skip) {
-                $routes[] = $route;
-            }
-        }
-
-        return $routes;
-    }
-
-    /** Build a synthetic SecurityRuntimeContext from a route definition. */
-    private function buildContext(Route $route): SecurityRuntimeContext
-    {
-        $methods = array_diff($route->methods(), ['HEAD', 'OPTIONS']);
-        $method = $this->pickPrimaryMethod(array_values($methods));
-
-        /** @var list<string> $middleware */
-        $middleware = array_values(
-            array_filter($route->gatherMiddleware(), static fn (mixed $v): bool => is_string($v)),
-        );
-
-        $routeSignal = new RouteSignal(
-            name: (string) ($route->getName() ?? ''),
-            uri: $route->uri(),
-            action: $route->getActionName(),
-            controller: (string) ($route->getControllerClass() ?? ''),
-            middleware: $middleware,
-            hasNamedRoute: $route->getName() !== null,
-        );
-
-        $requestSignal = new RequestSignal(
-            method: $method,
-            url: 'http://localhost/' . ltrim($route->uri(), '/'),
-            path: '/' . ltrim($route->uri(), '/'),
-            ip: '127.0.0.1',
-            headers: [],
-            query: [],
-            bodySize: 0,
-            capturedAt: new \DateTimeImmutable(),
-        );
-
-        return (new RuntimeContextBuilder())
-            ->withRoute($routeSignal)
-            ->withRequest($requestSignal)
-            ->build();
-    }
-
-    /**
-     * @param list<string> $methods
-     */
-    private function pickPrimaryMethod(array $methods): string
-    {
-        foreach (['POST', 'PUT', 'PATCH', 'DELETE', 'GET'] as $preferred) {
-            if (in_array($preferred, $methods, true)) {
-                return $preferred;
-            }
-        }
-
-        return $methods[0] ?? 'GET';
     }
 
     // ────────────────────────────────────────────────────────────────────────
