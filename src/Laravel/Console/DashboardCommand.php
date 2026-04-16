@@ -19,7 +19,8 @@ use RuntimeShield\Support\CliRenderer;
 final class DashboardCommand extends Command
 {
     protected $signature = 'runtime-shield:dashboard
-                            {--format=table : Output format (table|json)}';
+                            {--format=table : Output format (table|json)}
+                            {--samples= : Override recent middleware sample rows (default from config)}';
 
     protected $description = 'Show a local debug dashboard (config, rules, recent middleware metrics)';
 
@@ -51,7 +52,7 @@ final class DashboardCommand extends Command
 
     private function renderTableView(): void
     {
-        $recentLimit = max(0, (int) config('runtime_shield.dx.dashboard.recent_metrics', 8));
+        $recentLimit = $this->resolveRecentMetricsLimit();
 
         $this->line('');
         $this->line('<fg=cyan;options=bold> RuntimeShield Debug Dashboard</>');
@@ -116,7 +117,7 @@ final class DashboardCommand extends Command
      */
     private function payload(): array
     {
-        $recentLimit = max(0, (int) config('runtime_shield.dx.dashboard.recent_metrics', 8));
+        $recentLimit = $this->resolveRecentMetricsLimit();
         $all = $this->metricsStore->all();
         $slice = array_slice($all, -$recentLimit);
         $recent = [];
@@ -140,5 +141,16 @@ final class DashboardCommand extends Command
     private function formatFloat(float $value): string
     {
         return rtrim(rtrim(sprintf('%.4f', $value), '0'), '.') ?: '0';
+    }
+
+    private function resolveRecentMetricsLimit(): int
+    {
+        $opt = $this->option('samples');
+
+        if ($opt !== null && $opt !== '' && is_numeric($opt)) {
+            return max(0, (int) $opt);
+        }
+
+        return max(0, (int) config('runtime_shield.dx.dashboard.recent_metrics', 8));
     }
 }
