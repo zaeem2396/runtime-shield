@@ -34,7 +34,8 @@ final class ExportCommand extends Command
 
     public function handle(): int
     {
-        $artifact = strtolower(trim((string) $this->argument('artifact')));
+        $rawArtifact = $this->argument('artifact');
+        $artifact = strtolower(trim(is_string($rawArtifact) ? $rawArtifact : ''));
 
         if ($artifact === 'score') {
             $payload = $this->buildScorePayload();

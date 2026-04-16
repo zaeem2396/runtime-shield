@@ -102,7 +102,7 @@ final class CiCommand extends Command
             return (int) $fromDx;
         }
 
-        return (int) config('runtime_shield.scoring.thresholds.pass', 75);
+        return $this->intConfig('runtime_shield.scoring.thresholds.pass', 75);
     }
 
     private function resolveMaxCritical(): int
@@ -113,7 +113,7 @@ final class CiCommand extends Command
             return (int) $opt;
         }
 
-        return (int) config('runtime_shield.dx.ci.max_critical_violations', 0);
+        return $this->intConfig('runtime_shield.dx.ci.max_critical_violations', 0);
     }
 
     private function resolveMaxHigh(): int|null
@@ -131,5 +131,20 @@ final class CiCommand extends Command
         }
 
         return is_numeric($fromDx) ? (int) $fromDx : null;
+    }
+
+    private function intConfig(string $key, int $default): int
+    {
+        $v = config($key, $default);
+
+        if (is_int($v)) {
+            return $v;
+        }
+
+        if (is_numeric($v)) {
+            return (int) $v;
+        }
+
+        return $default;
     }
 }

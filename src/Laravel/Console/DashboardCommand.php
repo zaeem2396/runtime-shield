@@ -7,7 +7,6 @@ namespace RuntimeShield\Laravel\Console;
 use Illuminate\Console\Command;
 use RuntimeShield\Core\Performance\MetricsStore;
 use RuntimeShield\Core\Rule\RuleRegistry;
-use RuntimeShield\DTO\Performance\MiddlewareMetrics;
 use RuntimeShield\Support\CliRenderer;
 
 /**
@@ -60,7 +59,7 @@ final class DashboardCommand extends Command
         $this->line('');
 
         $enabled = (bool) config('runtime_shield.enabled', true);
-        $sampling = (float) config('runtime_shield.sampling_rate', 1.0);
+        $sampling = $this->floatConfig('runtime_shield.sampling_rate', 1.0);
         $async = (bool) config('runtime_shield.performance.async', false);
 
         $this->line(sprintf('  Shield enabled:     <options=bold>%s</>', $enabled ? 'yes' : 'no'));
@@ -71,12 +70,13 @@ final class DashboardCommand extends Command
 
         $stats = $this->metricsStore->toArray();
         $this->line('<options=bold>  Middleware metrics (ring buffer)</>');
-        $this->line(sprintf('    Samples: %d   Avg: %s ms   Max: %s ms   Min: %s ms   Sampled %%: %s',
-            $stats['count'],
-            (string) $stats['avg_ms'],
-            (string) $stats['max_ms'],
-            (string) $stats['min_ms'],
-            (string) $stats['sampling_rate'],
+        $this->line(sprintf(
+            '    Samples: %d   Avg: %s ms   Max: %s ms   Min: %s ms   Sampled %%: %s',
+            $this->intFromMixed($stats['count'] ?? 0),
+            $this->stringFromMixed($stats['avg_ms'] ?? 0),
+            $this->stringFromMixed($stats['max_ms'] ?? 0),
+            $this->stringFromMixed($stats['min_ms'] ?? 0),
+            $this->stringFromMixed($stats['sampling_rate'] ?? 0),
         ));
         $this->line('');
 
@@ -89,10 +89,6 @@ final class DashboardCommand extends Command
         $slice = array_slice($all, -$recentLimit);
 
         foreach ($slice as $m) {
-            if (! $m instanceof MiddlewareMetrics) {
-                continue;
-            }
-
             $rows[] = [
                 $m->capturedAt->format('H:i:s'),
                 $m->formattedMs(),
@@ -123,14 +119,12 @@ final class DashboardCommand extends Command
         $recent = [];
 
         foreach ($slice as $m) {
-            if ($m instanceof MiddlewareMetrics) {
-                $recent[] = $m->toArray();
-            }
+            $recent[] = $m->toArray();
         }
 
         return [
             'shield_enabled' => (bool) config('runtime_shield.enabled', true),
-            'sampling_rate' => (float) config('runtime_shield.sampling_rate', 1.0),
+            'sampling_rate' => $this->floatConfig('runtime_shield.sampling_rate', 1.0),
             'async_rule_engine' => (bool) config('runtime_shield.performance.async', false),
             'registered_rules' => $this->ruleRegistry->count(),
             'metrics_summary' => $this->metricsStore->toArray(),
@@ -151,6 +145,62 @@ final class DashboardCommand extends Command
             return max(0, (int) $opt);
         }
 
-        return max(0, (int) config('runtime_shield.dx.dashboard.recent_metrics', 8));
+        return max(0, $this->intConfig('runtime_shield.dx.dashboard.recent_metrics', 8));
+    }
+
+    private function floatConfig(string $key, float $default): float
+    {
+        $v = config($key, $default);
+
+        if (is_float($v) || is_int($v)) {
+            return (float) $v;
+        }
+
+        if (is_numeric($v)) {
+            return (float) $v;
+        }
+
+        return $default;
+    }
+
+    private function intConfig(string $key, int $default): int
+    {
+        $v = config($key, $default);
+
+        if (is_int($v)) {
+            return $v;
+        }
+
+        if (is_numeric($v)) {
+            return (int) $v;
+        }
+
+        return $default;
+    }
+
+    private function intFromMixed(mixed $v): int
+    {
+        if (is_int($v)) {
+            return $v;
+        }
+
+        if (is_numeric($v)) {
+            return (int) $v;
+        }
+
+        return 0;
+    }
+
+    private function stringFromMixed(mixed $v): string
+    {
+        if (is_string($v)) {
+            return $v;
+        }
+
+        if (is_int($v) || is_float($v)) {
+            return (string) $v;
+        }
+
+        return '0';
     }
 }

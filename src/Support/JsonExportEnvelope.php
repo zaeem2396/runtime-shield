@@ -16,7 +16,8 @@ final class JsonExportEnvelope
      */
     public static function wrap(string $artifact, array $body): array
     {
-        $schema = (int) config('runtime_shield.dx.export.schema_version', 1);
+        $schemaRaw = config('runtime_shield.dx.export.schema_version', 1);
+        $schema = is_int($schemaRaw) ? $schemaRaw : (is_numeric($schemaRaw) ? (int) $schemaRaw : 1);
 
         return [
             'export_schema_version' => $schema,

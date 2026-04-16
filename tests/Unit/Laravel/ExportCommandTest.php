@@ -26,6 +26,15 @@ final class ExportCommandTest extends TestCase
     }
 
     #[Test]
+    public function it_rejects_unknown_artifacts(): void
+    {
+        $exit = Artisan::call('runtime-shield:export', ['artifact' => 'invalid']);
+
+        $this->assertSame(2, $exit);
+        $this->assertStringContainsString('Artifact must be', Artisan::output());
+    }
+
+    #[Test]
     public function it_writes_report_export_to_a_file(): void
     {
         $path = sys_get_temp_dir() . '/runtime-shield-export-report-' . uniqid('', true) . '.json';
