@@ -580,30 +580,47 @@ Release status:
 
 ---
 
-# 🖥️ v1.2.0 — Developer Experience &nbsp;🟡 In Progress
+# 🖥️ v1.2.0 — Developer Experience &nbsp;🟢 Completed
 
-## STEP 45 — Debug Dashboard &nbsp;🔴 Planned
+## STEP 45 — Debug Dashboard &nbsp;🟢 Completed
 
 ```
 Optional UI:
 visualize signals + issues
 ```
 
+Implementation: `runtime-shield:dashboard` shows shield/sampling/async flags, registered rule count,
+`MetricsStore` aggregates, and a configurable tail of recent middleware samples (`--format=json`, `--samples=`).
+
 ---
 
-## STEP 46 — JSON Export &nbsp;🔴 Planned
+## STEP 46 — JSON Export &nbsp;🟢 Completed
 
 ```
 Export reports in JSON
 ```
 
+Implementation: `runtime-shield:export score|report` writes a versioned JSON envelope (`JsonExportEnvelope`)
+to stdout or `--output=`; report artifact uses `ReportBuilder` plus embedded `security_score`.
+
 ---
 
-## STEP 47 — CI Integration &nbsp;🔴 Planned
+## STEP 47 — CI Integration &nbsp;🟢 Completed
 
 ```
 Fail CI if score < threshold
 ```
+
+Implementation: `runtime-shield:ci` with `--min-score`, `--max-critical`, optional `--max-high`, and
+`runtime_shield.dx.ci` defaults for pipelines.
+
+---
+
+Release status:
+- [x] Dashboard, export, and CI Artisan commands implemented and registered
+- [x] Command-level tests and config merge coverage
+- [x] README + CHANGELOG updated
+- [ ] `git tag v1.2.0`
 
 ---
 
