@@ -6,6 +6,7 @@ namespace RuntimeShield\Laravel\Providers;
 
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Psr\Log\LoggerInterface;
 use RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract;
@@ -66,6 +67,9 @@ use RuntimeShield\DTO\Rule\Severity;
 use RuntimeShield\Engine\RuntimeShieldEngine;
 use RuntimeShield\Laravel\Console\AlertsCommand;
 use RuntimeShield\Laravel\Console\BenchCommand;
+use RuntimeShield\Laravel\Console\CiCommand;
+use RuntimeShield\Laravel\Console\DashboardCommand;
+use RuntimeShield\Laravel\Console\ExportCommand;
 use RuntimeShield\Laravel\Console\InstallCommand;
 use RuntimeShield\Laravel\Console\ReportCommand;
 use RuntimeShield\Laravel\Console\RoutesCommand;
@@ -78,6 +82,7 @@ use RuntimeShield\Laravel\Signal\RequestCapturer;
 use RuntimeShield\Laravel\Signal\ResponseCapturer;
 use RuntimeShield\Laravel\Signal\RouteSignalCollector;
 use RuntimeShield\Laravel\Signal\SignalPipeline;
+use RuntimeShield\Laravel\Support\ApplicationRouteScanner;
 use RuntimeShield\Rules\BruteForcePatternRule;
 use RuntimeShield\Rules\ErrorExposureRule;
 use RuntimeShield\Rules\FileUploadValidationRule;
@@ -196,6 +201,11 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
             return new AsyncRuleEngine($app->make(BatchedRuleEngine::class), $async);
         });
+
+        $this->app->singleton(ApplicationRouteScanner::class, static fn ($app): ApplicationRouteScanner => new ApplicationRouteScanner(
+            $app->make(Router::class),
+            $app->make(RuleEngineContract::class),
+        ));
 
         $this->app->singleton(EventEmitterContract::class, static function ($app): EventEmitterContract {
             $eventsEnabled = (bool) $app['config']->get('runtime_shield.events.enabled', true);
@@ -366,11 +376,14 @@ final class RuntimeShieldServiceProvider extends ServiceProvider
 
         $this->commands([
             InstallCommand::class,
+            DashboardCommand::class,
+            ExportCommand::class,
             ScanCommand::class,
             ReportCommand::class,
             RoutesCommand::class,
             ScoreCommand::class,
             BenchCommand::class,
+            CiCommand::class,
             SamplingCommand::class,
             AlertsCommand::class,
             \RuntimeShield\Laravel\Console\PluginsCommand::class,

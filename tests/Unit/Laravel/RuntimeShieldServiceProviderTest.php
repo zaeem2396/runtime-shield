@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace RuntimeShield\Tests\Unit\Laravel;
 
+use Illuminate\Support\Facades\Artisan;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeShield\Contracts\Advisory\ViolationAdvisoryEnricherContract;
@@ -29,6 +30,20 @@ final class RuntimeShieldServiceProviderTest extends TestCase
         $this->assertArrayHasKey('rules', $config);
         $this->assertArrayHasKey('performance', $config);
         $this->assertArrayHasKey('ai', $config);
+        $this->assertArrayHasKey('dx', $config);
+        $this->assertArrayHasKey('dashboard', $config['dx']);
+        $this->assertArrayHasKey('export', $config['dx']);
+        $this->assertArrayHasKey('ci', $config['dx']);
+    }
+
+    #[Test]
+    public function it_registers_developer_experience_artisan_commands(): void
+    {
+        $commands = Artisan::all();
+
+        $this->assertArrayHasKey('runtime-shield:dashboard', $commands);
+        $this->assertArrayHasKey('runtime-shield:export', $commands);
+        $this->assertArrayHasKey('runtime-shield:ci', $commands);
     }
 
     #[Test]

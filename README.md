@@ -698,6 +698,42 @@ Event::listen(ViolationAlertedEvent::class, function (ViolationAlertedEvent $e) 
 | `runtime-shield:sampling` | Display active sampler type and effective rate (v0.7.0+) |
 | `runtime-shield:alerts` | Display alert channel config and status (v0.8.0+) |
 | `runtime-shield:plugins` | List all registered plugins (v0.9.0+) |
+| `runtime-shield:dashboard` | Local debug dashboard: config summary, rule count, recent middleware metrics (v1.2.0+) |
+| `runtime-shield:export` | Write a versioned JSON artifact (`score` or `report`) to stdout or `--output=` (v1.2.0+) |
+| `runtime-shield:ci` | CI gate: non-zero exit when score or severity budgets are exceeded (v1.2.0+) |
+
+### Developer experience (v1.2.0+)
+
+**Dashboard** — quick visibility into whether shielding is enabled, effective sampling, how many rules are registered, and what the middleware ring buffer last recorded (requires real traffic through `RuntimeShieldMiddleware` for samples):
+
+```bash
+php artisan runtime-shield:dashboard
+php artisan runtime-shield:dashboard --format=json
+php artisan runtime-shield:dashboard --samples=5
+```
+
+**JSON export** — stable `{ export_schema_version, package_version, artifact, generated_at, data }` envelope for tooling:
+
+```bash
+php artisan runtime-shield:export score
+php artisan runtime-shield:export report --output=storage/app/runtime-shield-report.json
+```
+
+Tune defaults under `runtime_shield.dx` in the published config.
+
+**CI gate** — fail a pipeline when the route scan score or severity counts cross your budgets (`--min-score` defaults from `dx.ci.min_score`, then `scoring.thresholds.pass`; `--max-critical` defaults from `dx.ci.max_critical_violations`; set `RUNTIME_SHIELD_CI_MAX_HIGH` / `dx.ci.max_high_violations` to enable a high-severity cap):
+
+```bash
+php artisan runtime-shield:ci
+php artisan runtime-shield:ci --min-score=80 --max-critical=0 --max-high=5
+```
+
+Example GitHub Actions step:
+
+```yaml
+- name: RuntimeShield CI gate
+  run: php artisan runtime-shield:ci --min-score=75 --max-critical=0
+```
 
 ---
 

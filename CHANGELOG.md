@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.2.0] — 2026-04-16 — Developer Experience
+
+### Overview
+
+Adds first-class **developer tooling**: a local **debug dashboard**, **versioned JSON exports**
+for automation, and a **`runtime-shield:ci` gate** with configurable score and severity budgets.
+Route collection for several Artisan commands now flows through a shared `ApplicationRouteScanner`.
+
+### Added
+
+- `runtime-shield:dashboard` — config summary, registered rule count, middleware `MetricsStore` stats and recent samples (`--format=json`, `--samples=`).
+- `runtime-shield:export {score|report}` — JSON envelope (`export_schema_version`, `package_version`, `artifact`, `generated_at`, `data`) with optional `--output=` file path.
+- `runtime-shield:ci` — non-zero exit when `--min-score` / `--max-critical` / `--max-high` gates fail; defaults from `runtime_shield.dx.ci` and `scoring.thresholds.pass`.
+- `RuntimeShield\Laravel\Support\ApplicationRouteScanner` — shared route scan for `score`, `scan`, `export`, and `ci` commands.
+- `RuntimeShield\Support\JsonExportEnvelope` — stable JSON wrapping for exports.
+- Config block `runtime_shield.dx` (dashboard, export schema version, CI defaults) with related `.env` keys documented in README.
+
 ## [v1.1.0] — 2026-04-14 — Advanced Detection
 
 ### Overview
