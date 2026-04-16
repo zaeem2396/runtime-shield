@@ -580,7 +580,7 @@ Release status:
 
 ---
 
-# 🖥️ v1.2.0 — Developer Experience &nbsp;🔴 Planned
+# 🖥️ v1.2.0 — Developer Experience &nbsp;🟡 In Progress
 
 ## STEP 45 — Debug Dashboard &nbsp;🔴 Planned
 
