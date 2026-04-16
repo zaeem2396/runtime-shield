@@ -32,6 +32,20 @@ final class DashboardCommandTest extends TestCase
         $this->assertArrayHasKey('recent_middleware_metrics', $decoded);
     }
 
+    #[Test]
+    public function it_honors_the_samples_option_in_json_mode(): void
+    {
+        $exit = Artisan::call('runtime-shield:dashboard', [
+            '--format' => 'json',
+            '--samples' => 0,
+        ]);
+
+        $this->assertSame(0, $exit);
+        $decoded = json_decode(Artisan::output(), true);
+        $this->assertIsArray($decoded);
+        $this->assertSame([], $decoded['recent_middleware_metrics']);
+    }
+
     /** @return list<class-string> */
     protected function getPackageProviders($app): array
     {
